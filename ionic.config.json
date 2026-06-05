@@ -1,0 +1,7 @@
+{
+  "name": "TEPes-test",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
