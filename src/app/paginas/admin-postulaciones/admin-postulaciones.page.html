@@ -1,0 +1,155 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="header-blanco">
+    <ion-buttons slot="start">
+      <ion-button (click)="regresar()">
+        <ion-icon name="arrow-back-outline" style="color: #003366;"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" style="margin-left: -10px;" onerror="this.src='assets/logo-gietaes.png'">
+  </ion-toolbar>
+  <div class="linea-separadora"></div>
+</ion-header>
+
+<ion-content class="ion-padding fondo-admin">
+  
+  <h2 class="titulo-seccion">Bandeja de Postulaciones</h2>
+
+<ion-item lines="none" class="input-moderno" style="margin: 0 0 20px 0; --border-radius: 10px; border: 1px solid #cbd5e1; --background: white;">
+    <ion-label style="font-weight: bold; color: #003366;">Filtrar Sede:</ion-label>
+    <ion-select [(ngModel)]="filtroSedePostulaciones" (ionChange)="cargarPostulaciones()" interface="popover" [interfaceOptions]="{ cssClass: 'popover-blanco' }">
+      <ion-select-option value="GLOBAL">🌐 Ver de las 3 Sedes (Global)</ion-select-option>
+      <ion-select-option value="CUENCA">Cuenca</ion-select-option>
+      <ion-select-option value="QUITO">Quito</ion-select-option>
+      <ion-select-option value="GUAYAQUIL">Guayaquil</ion-select-option>
+    </ion-select>
+  </ion-item>
+
+  <div *ngIf="postulaciones.length === 0" style="text-align: center; color: #666; margin-top: 30px; margin-bottom: 30px;">
+    <ion-icon name="checkmark-circle-outline" style="font-size: 4rem; color: #10b981;"></ion-icon>
+    <p style="font-size: 1.1rem; font-weight: bold; color: #003366;">¡Bandeja vacía!</p>
+    <p>No existen solicitudes pendientes para el filtro seleccionado.</p>
+  </div>
+
+  <div *ngFor="let p of postulaciones" class="card-estudiante" style="border-left: 5px solid #d97706; background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+    <div class="contenido-card">
+      <h3 style="color: #003366; margin-top: 0; font-weight: 900; text-transform: uppercase;">{{ p.materia_postulada || 'Materia Desconocida' }}</h3>
+      
+      <p style="margin: 5px 0;"><strong>👤 Postulante:</strong> {{ p.nombre || p.correo }}</p>
+      <p style="margin: 5px 0;"><strong>🎓 Carrera:</strong> {{ p.carrera || 'No especificada' }} (Ciclo {{ p.ciclo }})</p>
+      <p style="margin: 5px 0;"><strong>📍 Sede de Origen:</strong> {{ p.sede || 'No especificada' }}</p>
+      
+      <div class="bloque-horarios" style="background: #f4f7f9; padding: 10px; border-radius: 8px; margin-top: 10px;">
+        <strong style="color: #003366; display: block; margin-bottom: 5px;">Disponibilidad Ofrecida:</strong>
+        <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem; color: #333;">
+          <li *ngFor="let bloque of (p.disponibilidad_horaria | keyvalue)" style="margin-bottom: 3px;">
+            <strong>{{ obtenerDia(bloque.key) }}</strong> ({{ obtenerHora(bloque.key) }}) 
+            <span style="color: #d97706; font-size: 0.8rem; font-weight: bold;">[{{ bloque.value }}]</span>
+          </li>
+        </ul>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <ion-button expand="block" color="danger" fill="outline" (click)="rechazar(p)" style="flex: 1; --border-radius: 8px;">
+          <ion-icon name="close-circle-outline" slot="start"></ion-icon>
+          Rechazar
+        </ion-button>
+        <ion-button expand="block" color="success" (click)="aceptar(p)" style="flex: 1; --border-radius: 8px;">
+          <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+          Aceptar
+        </ion-button>
+      </div>
+    </div>
+  </div>
+
+  <hr class="separador">
+
+  <h2 class="titulo-seccion">Métricas de Rendimiento</h2>
+  
+<ion-item lines="none" class="input-moderno" style="margin: 0 0 15px 0; --border-radius: 10px; border: 1px solid #cbd5e1; --background: white;">
+    <ion-label style="font-weight: bold; color: #003366;">Filtrar Sede:</ion-label>
+    <ion-select [(ngModel)]="filtroSedeGraficas" (ionChange)="cargarEstadisticas()" interface="popover" [interfaceOptions]="{ cssClass: 'popover-blanco' }">
+      <ion-select-option value="GLOBAL">🌐 Rendimiento Global (Todas)</ion-select-option>
+      <ion-select-option value="CUENCA">Sede Cuenca</ion-select-option>
+      <ion-select-option value="QUITO">Sede Quito</ion-select-option>
+      <ion-select-option value="GUAYAQUIL">Sede Guayaquil</ion-select-option>
+    </ion-select>
+  </ion-item>
+  
+  <div class="charts-container">
+    <div class="chart-card">
+      <h3 class="chart-title">Tutores por Carrera</h3>
+      <div class="canvas-wrapper">
+        <canvas #barCanvas style="max-height: 240px; width: 100%;"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3 class="chart-title">Distribución de Oferta</h3>
+      <div class="canvas-wrapper pie-wrapper">
+        <canvas #pieCanvas style="max-height: 220px; width: 100%;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <hr class="separador">
+
+  <h2 class="titulo-seccion">Cartelera Digital</h2>
+  
+  <div class="formulario-eventos" style="margin-bottom: 40px;">
+    <div class="header-azul-gietaes">
+      <ion-icon name="megaphone-outline"></ion-icon>
+      REDACTAR COMUNICADO / TALLER
+    </div>
+
+    <div class="form-body">
+      <p class="form-descripcion">Completa los campos para notificar a los estudiantes. El anuncio aparecerá en su pantalla principal.</p>
+
+      <div class="input-group">
+        <label>Título del Comunicado</label>
+        <ion-input class="gietaes-input" [(ngModel)]="nuevoAnuncio.titulo" placeholder="Ej: Taller de Refuerzo de Programación"></ion-input>
+      </div>
+
+      <div class="input-group">
+        <label>Descripción detallada</label>
+        <ion-textarea class="gietaes-input" [(ngModel)]="nuevoAnuncio.descripcion" placeholder="Escribe los detalles del evento, link de zoom, aula, etc..." rows="4"></ion-textarea>
+      </div>
+
+    <div class="input-group">
+        <label>Fecha y Hora del Evento</label>
+        <div style="background: #ffffff; border: 2px solid #cbd5e1; border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: flex-start;">
+          <ion-datetime-button datetime="calendario-evento"></ion-datetime-button>
+        </div>
+        
+        <ion-modal [keepContentsMounted]="true">
+          <ng-template>
+            <ion-datetime 
+              class="calendario-gietaes"
+              id="calendario-evento" 
+              [(ngModel)]="nuevoAnuncio.fecha_evento" 
+              presentation="date-time" 
+              preferWheel="false"
+              showDefaultButtons="true"
+              cancelText="Cancelar"
+              doneText="Confirmar">
+            </ion-datetime>
+          </ng-template>
+        </ion-modal>
+      </div>
+
+    <div class="input-group">
+        <label>Destino (Segmentación)</label>
+        <ion-select class="gietaes-input" [(ngModel)]="nuevoAnuncio.sede_destino" interface="popover" [interfaceOptions]="{ cssClass: 'popover-blanco' }">
+          <ion-select-option value="GLOBAL">Todas las Sedes (Global)</ion-select-option>
+          <ion-select-option value="CUENCA">Solo Sede Cuenca</ion-select-option>
+          <ion-select-option value="QUITO">Solo Sede Quito</ion-select-option>
+          <ion-select-option value="GUAYAQUIL">Solo Sede Guayaquil</ion-select-option>
+        </ion-select>
+      </div>
+      <ion-button expand="block" class="btn-publicar mt-4" (click)="publicarAnuncio()" style="--background: #003366; --color: white;">
+        <ion-icon slot="start" name="megaphone-outline"></ion-icon>
+        EMITIR COMUNICADO OFICIAL
+      </ion-button>
+    </div>
+  </div>
+
+</ion-content>

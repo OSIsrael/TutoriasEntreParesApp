@@ -1,0 +1,59 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="header-blanco">
+    <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" onerror="this.src='assets/logo-gietaes.png'">
+  </ion-toolbar>
+  <div class="linea-separadora"></div>
+</ion-header>
+<ion-content class="fondo-app">
+  
+
+  <div class="ion-padding">
+    <h2 class="titulo-azul">TUTORÍAS AGENDADAS:</h2>
+
+    <p *ngIf="cargando" style="text-align: center; color: #666;">Cargando tus tutorías...</p>
+    
+    <p *ngIf="!cargando && tutorias.length === 0" style="text-align: center; color: #666;">Aún no tienes tutorías en tu historial.</p>
+
+    <div class="tarjeta-azul" *ngFor="let t of tutorias">
+      <div class="icono-blanco"><ion-icon name="book-outline"></ion-icon></div>
+      <div class="info-texto">
+        <h3>{{ t.materia }} <span *ngIf="t.codigo">( {{ t.codigo }} )</span></h3>
+        <p>{{ t.dia }}</p>
+        <p>{{ t.hora }}</p>
+      </div>
+      <div class="punto-estado" [style.background]="t.color"></div>
+      
+      <ion-icon 
+        name="logo-whatsapp" 
+        class="icono-wa" 
+        *ngIf="t.estado !== 'CANCELADA'"
+        (click)="contactarWhatsApp(t.celularContacto, t.nombreContacto, t.materia)"
+        style="cursor: pointer;">
+      </ion-icon>
+    </div>
+
+    <div class="seccion-codigo">
+      <h2 class="titulo-azul">UNÉTE CON CÓDIGO:</h2>
+      <button class="btn-mas-amarillo" (click)="abrirModalCodigo()">
+        <ion-icon name="add-outline"></ion-icon>
+      </button>
+    </div>
+
+    <div class="leyenda">
+      <span><div class="punto verde"></div> Confirmada</span>
+      <span><div class="punto amarillo"></div> Pendiente</span>
+      <span><div class="punto rojo"></div> Cancelada</span>
+    </div>
+  </div>
+
+  <div class="overlay" *ngIf="mostrarModalCodigo">
+    <div class="modal-amarillo animate__animated animate__zoomIn">
+      <h3>INGRESA EL CÓDIGO:</h3>
+      <input type="text" placeholder="CD - 0101" class="input-codigo" [(ngModel)]="codigoIngresado">
+      <div class="botones-modal">
+        <button class="btn-azul" (click)="unirsePorCodigo()"><ion-icon name="checkmark-outline"></ion-icon></button>
+        <button class="btn-azul" (click)="cerrarModalCodigo()"><ion-icon name="close-outline"></ion-icon></button>
+      </div>
+    </div>
+  </div>
+</ion-content>

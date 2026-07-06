@@ -1,0 +1,47 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="header-blanco">
+    <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" onerror="this.src='assets/logo-gietaes.png'">
+  </ion-toolbar>
+  <div class="linea-separadora"></div>
+</ion-header>
+<ion-content class="ion-padding fondo-avisos">
+  
+  <h2 class="titulo-seccion">Comunicados Oficiales</h2>
+  <p class="subtitulo-seccion">Entérate de los últimos talleres y eventos programados.</p>
+
+  <div *ngIf="cargandoAnuncios" class="loading-center">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Sincronizando cartelera...</p>
+  </div>
+
+  <div *ngIf="!cargandoAnuncios && anuncios.length === 0" class="no-data-center animate__animated animate__fadeIn">
+    <ion-icon name="notifications-off-outline"></ion-icon>
+    <p>No hay avisos recientes para tu sede en este momento.</p>
+  </div>
+
+  <div *ngIf="!cargandoAnuncios" class="cards-stack">
+    
+    <div class="anuncio-card animate__animated animate__fadeInUp" *ngFor="let aviso of anuncios">
+      
+      <div class="anuncio-header">
+        <span class="anuncio-badge" [ngClass]="{'badge-global': aviso.sede_destino === 'GLOBAL'}">
+          {{ aviso.sede_destino }}
+        </span>
+        <span class="anuncio-fecha">{{ aviso.fecha_publicacion | date:'mediumDate' }}</span>
+      </div>
+      
+      <h3 class="anuncio-titulo">
+        <ion-icon name="megaphone-outline"></ion-icon> 
+        {{ aviso.titulo }}
+      </h3>
+      <p class="anuncio-desc">{{ aviso.descripcion }}</p>
+      
+      <div class="anuncio-footer" *ngIf="aviso.fecha_evento && aviso.fecha_evento !== 'Sin fecha' && aviso.fecha_evento !== ''">
+        <strong>📅 Fecha del Evento:</strong> {{ aviso.fecha_evento }}
+      </div>
+      
+    </div>
+    
+  </div>
+
+</ion-content>

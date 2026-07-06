@@ -1,0 +1,107 @@
+<ion-content class="login-bg" [fullscreen]="true">
+  
+  <div class="layout-centrado">
+    <!-- 🌟 ESTE CONTENEDOR EVITA QUE SE ENSANCHE FEO EN PANTALLAS GRANDES -->
+    <div class="contenedor-limitado">
+
+      <!-- ========================================== -->
+      <!-- VISTA 1: LOGIN PRINCIPAL -->
+      <!-- ========================================== -->
+      <div *ngIf="!modoRegistro" class="animate__animated animate__fadeIn">
+        
+        <!-- 🌟 LOGO DE TUTORÍAS RESTAURADO -->
+        <div class="logo-container">
+          <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" onerror="this.src='assets/logo-gietaes.png'">
+        </div>
+
+        <div class="tarjeta-premium">
+          <h2 class="titulo-bienvenida">BIENVENIDO</h2>
+          <p class="subtitulo-bienvenida">Plataforma Nacional de Tutorías</p>
+
+          <div class="divisor"></div>
+
+          <p class="instruccion">Ingresa con tu correo institucional para acceder al sistema.</p>
+
+          <ion-button expand="block" class="btn-google-auth" (click)="ingresarConGoogle()" [disabled]="cargando">
+            <ion-icon name="logo-google" slot="start"></ion-icon>
+            {{ cargando ? 'Conectando...' : 'Iniciar con Google' }}
+          </ion-button>
+          
+          <div *ngIf="cargando" class="cargando-estado">
+            <ion-spinner name="crescent"></ion-spinner>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ========================================== -->
+      <!-- VISTA 2: FORMULARIO DE REGISTRO COMPLETO -->
+      <!-- ========================================== -->
+      <div *ngIf="modoRegistro && !cargando" class="animate__animated animate__fadeInUp">
+        
+        <div class="header-registro">
+          <div class="btn-atras" (click)="modoRegistro = false">
+            <ion-icon name="arrow-back-outline"></ion-icon>
+          </div>
+          <!-- 🌟 LOGO DE TUTORÍAS EN EL REGISTRO -->
+          <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-pequeno" onerror="this.src='assets/logo-gietaes.png'">
+        </div>
+
+        <div class="tarjeta-premium form-registro">
+          <h2 class="titulo-registro">COMPLETA TU PERFIL</h2>
+          <p class="subtitulo-registro">Verifica tus datos académicos antes de continuar.</p>
+
+          <div class="campos-contenedor">
+            <ion-input class="input-moderno input-bloqueado" label="Cuenta vinculada" labelPlacement="stacked" fill="outline" [(ngModel)]="correoGoogle" readonly="true"></ion-input>
+
+            <ion-input class="input-moderno mt-3" type="email" label="Correo Institucional" labelPlacement="stacked" fill="outline" [(ngModel)]="correoInstitucional" placeholder="ejemplo@est.ups.edu.ec"></ion-input>
+
+            <!-- Menú desplegable -->
+            <ion-select class="input-moderno mt-3" label="Sede Universitaria" labelPlacement="stacked" fill="outline" [(ngModel)]="sede" interface="popover">
+              <ion-select-option value="CUENCA">Cuenca</ion-select-option>
+              <ion-select-option value="QUITO">Quito</ion-select-option>
+              <ion-select-option value="GUAYAQUIL">Guayaquil</ion-select-option>
+            </ion-select>
+
+            <ion-input class="input-moderno mt-3" type="text" label="Nombres Completos" labelPlacement="stacked" fill="outline" [(ngModel)]="nombreCompleto"></ion-input>
+
+            <ion-input class="input-moderno mt-3" type="tel" maxlength="10" label="Cédula Ecuatoriana" labelPlacement="stacked" fill="outline" [(ngModel)]="cedula"></ion-input>
+
+            <ion-input class="input-moderno mt-3" type="text" label="Buscar Carrera" labelPlacement="stacked" fill="outline" [(ngModel)]="busquedaCarrera" (ionInput)="filtrarCarreras()"></ion-input>
+            
+            <ion-list *ngIf="carrerasFiltradas.length > 0" class="lista-autocompletado">
+              <ion-item *ngFor="let c of carrerasFiltradas" (click)="seleccionarCarrera(c)" button lines="full">
+                <span class="texto-carrera">{{ c }}</span>
+              </ion-item>
+            </ion-list>
+
+            <div class="grid-2-columnas mt-3">
+              <ion-select class="input-moderno" label="Ciclo" labelPlacement="stacked" fill="outline" [(ngModel)]="ciclo" interface="popover">
+                <ion-select-option value="1">1°</ion-select-option>
+                <ion-select-option value="2">2°</ion-select-option>
+                <ion-select-option value="3">3°</ion-select-option>
+                <ion-select-option value="4">4°</ion-select-option>
+                <ion-select-option value="5">5°</ion-select-option>
+                <ion-select-option value="6">6°</ion-select-option>
+                <ion-select-option value="7">7°</ion-select-option>
+                <ion-select-option value="8">8°</ion-select-option>
+              </ion-select>
+
+              <ion-select class="input-moderno" label="Beca" labelPlacement="stacked" fill="outline" [(ngModel)]="beca" interface="popover">
+                <ion-select-option value="SI">Sí</ion-select-option>
+                <ion-select-option value="NO">No</ion-select-option>
+              </ion-select>
+            </div>
+
+            <ion-input class="input-moderno mt-3" type="tel" maxlength="10" label="Número Celular" labelPlacement="stacked" fill="outline" [(ngModel)]="celular" placeholder="09xxxxxxxx"></ion-input>
+          </div>
+
+          <ion-button expand="block" class="btn-finalizar mt-4" (click)="procesarRegistroCompleto()">
+            Finalizar Registro
+          </ion-button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</ion-content>

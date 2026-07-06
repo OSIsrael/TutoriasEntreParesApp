@@ -1,0 +1,43 @@
+/* Un azul más claro y vibrante igual a tu diseño */
+.fondo-splash {
+  --background: #1e88e5; 
+}
+
+.contenedor-logo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 70%;
+}
+
+.logo-splash {
+  width: 250px;
+  /* Si tu logo tiene fondo, aquí resaltará. 
+     Idealmente usa un PNG transparente */
+}
+
+.contenedor-inferior {
+  height: 30%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.btn-empezar {
+  background: #003366; /* Azul marino */
+  color: white;
+  font-weight: 900;
+  font-size: 1.2rem;
+  padding: 12px 35px;
+  border-radius: 30px;
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.8rem;
+  }
+}

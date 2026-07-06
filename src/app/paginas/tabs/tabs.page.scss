@@ -1,0 +1,77 @@
+.custom-tab-bar {
+  --background: #eaeadfcb;
+  border-top: 1px solid #e2e8f0;
+  box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.06);
+  height: 65px; /* Altura ideal para albergar el texto cómodamente */
+}
+
+ion-tab-button {
+  /* 🔘 ESTADO INACTIVO (Gris elegante) */
+  --color: #718096;
+  --icon-margin-bottom: 4px;
+  transition: all 0.2s ease-in-out;
+
+  ion-icon {
+    font-size: 1.4rem;
+  }
+
+  ion-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+  }
+
+  /* 🌟 ESTADO ACTIVO / SELECCIONADO (Azul supremo) */
+  &.tab-selected {
+    --color-selected: #ffffff; /* Tu azul de la app */
+    
+    ion-label {
+      font-weight: 700; /* Resalta el texto */
+    }
+
+    ion-icon {
+      transform: translateY(-2px) scale(1.05); /* Sutil animación de enfoque */
+    }
+  }
+}
+// 1. Convertimos la barra completa en una "cápsula" flotante oscura
+ion-tab-bar {
+  position: absolute;
+  bottom: 15px; // Flota 15px por encima del borde inferior
+  left: 5%;
+  width: 90%;
+  border-radius: 40px; // Bordes totalmente redondeados
+  
+  // Fondo oscuro estilo WhatsApp
+  --background: #1c1f24; 
+  --border: none; // Quitamos la línea molesta de arriba
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3); // Sombra para que resalte
+  padding: 8px 10px;
+  height: 75px; // Un poco más alta para que respiren los botones
+}
+
+// 2. Estilizamos los botones (las opciones individuales)
+ion-tab-button {
+  background: transparent;
+  --color: #003366;          // Color gris para los que NO están seleccionados
+  --color-selected: #ffffff; // Color blanco brillante para el seleccionado
+  border-radius: 30px;       // Forma de píldora interna
+  margin: 0 4px;             // Pequeña separación entre cada botón
+  transition: all 0.3s ease; // Animación suave al cambiar
+  
+  // 🌟 AQUÍ ESTÁ LA MAGIA: El resaltado de la pestaña actual
+  &.tab-selected {
+    background-color: #003366; // El gris más claro que envuelve al ícono
+  }
+
+  ion-icon {
+    font-size: 26px;
+    margin-top: 4px;
+  }
+
+  ion-label {
+    font-weight: 600;
+    font-size: 11px;
+    margin-top: 4px;
+  }
+}

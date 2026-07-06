@@ -1,0 +1,135 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="header-blanco">
+    <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
+  </ion-toolbar>
+  <div class="linea-separadora"></div>
+</ion-header>
+
+<ion-content class="fondo-app">
+  <div class="layout-centrado">
+    <div class="contenedor-limitado" style="padding-bottom: 60px;"> <!-- 🌟 PARCHE CSS PARA LA TABLA CORTADA -->
+      
+      <div class="btn-atras-flotante" (click)="regresar()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </div>
+
+      <!-- CARGANDO -->
+      <div *ngIf="estadoVista === 'CARGANDO'" class="estado-centro animate__animated animate__fadeIn">
+        <ion-spinner name="crescent"></ion-spinner>
+        <p>Procesando información...</p>
+      </div>
+
+      <!-- BLOQUEADO CICLO 1 -->
+      <div *ngIf="estadoVista === 'BLOQUEADO'" class="tarjeta-premium estado-centro animate__animated animate__zoomIn">
+        <ion-icon name="warning-outline" style="font-size: 4rem; color: #dc2626;"></ion-icon>
+        <h2 class="titulo-registro" style="margin-top: 15px;">Acceso Restringido</h2>
+        <p class="instruccion">Para garantizar la calidad, el programa está habilitado a partir del <strong>segundo ciclo</strong>.</p>
+        <ion-button expand="block" class="btn-volver mt-4" (click)="regresar()">Volver al Perfil</ion-button>
+      </div>
+
+      <!-- EN REVISIÓN -->
+      <div *ngIf="estadoVista === 'REVISION'" class="tarjeta-premium estado-centro animate__animated animate__zoomIn">
+        <ion-icon name="time-outline" style="font-size: 4.5rem; color: #d97706;"></ion-icon>
+        <h2 class="titulo-registro" style="margin-top: 15px;">Postulación en Revisión</h2>
+        <p class="instruccion">Actualmente tienes asignaturas en evaluación. Por favor, espera el veredicto antes de enviar nuevas solicitudes.</p>
+        <ion-button expand="block" class="btn-volver mt-4" (click)="regresar()">Volver al Perfil</ion-button>
+      </div>
+
+      <!-- 🌟 NUEVA PANTALLA: RESULTADOS -->
+      <div *ngIf="estadoVista === 'RESULTADOS'" class="animate__animated animate__zoomIn">
+        <h2 class="titulo-seccion-postulacion" style="margin-bottom: 20px;">Resultados de Postulación</h2>
+        
+        <!-- Aceptadas -->
+        <div *ngIf="materiasAceptadas.length > 0" class="tarjeta-premium" style="border-left: 5px solid #10b981; margin-bottom: 15px;">
+          <h3 style="color: #10b981; margin-top: 0;"><ion-icon name="checkmark-circle-outline"></ion-icon> Fuiste seleccionado en:</h3>
+          <ul style="color: #333; font-weight: bold;">
+            <li *ngFor="let mat of materiasAceptadas">{{ mat }}</li>
+          </ul>
+        </div>
+
+        <!-- Rechazadas -->
+        <div *ngIf="materiasRechazadas.length > 0" class="tarjeta-premium" style="border-left: 5px solid #ef4444; margin-bottom: 15px;">
+          <h3 style="color: #ef4444; margin-top: 0;"><ion-icon name="close-circle-outline"></ion-icon> Materias no aprobadas:</h3>
+          <ul style="color: #333; font-weight: bold; margin-bottom: 5px;">
+            <li *ngFor="let mat of materiasRechazadas">{{ mat }}</li>
+          </ul>
+          <p style="color: #666; font-size: 0.85rem; margin-top: 5px;">* No cumples con los requisitos para impartir esta materia en este periodo.</p>
+        </div>
+
+        <ion-button expand="block" class="btn-volver mt-4" (click)="regresar()">Volver al Perfil</ion-button>
+      </div>
+
+      <!-- FORMULARIO DE POSTULACIÓN -->
+      <div *ngIf="estadoVista === 'FORMULARIO'" class="animate__animated animate__fadeInUp">
+        <h2 class="titulo-seccion-postulacion">Ficha de Postulación</h2>
+
+        <div class="tarjeta-premium form-registro">
+          
+          <h3 class="mini-titulo"><ion-icon name="book-outline"></ion-icon> 1. Selección de Materias</h3>
+          
+          <ion-item class="input-moderno mt-3" lines="none">
+            <ion-label position="stacked">Asignaturas a impartir</ion-label>
+            <ion-select [(ngModel)]="materiasSeleccionadas" multiple="true" placeholder="Elige una o varias" cancelText="Cancelar" okText="Aceptar" [interfaceOptions]="{ cssClass: 'alerta-premium-gietaes', header: 'Selecciona Materias' }">
+              <ion-select-option *ngFor="let mat of materiasDisponibles" [value]="mat.nombre">{{ mat.nombre }} (Ciclo {{ mat.ciclo }})</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <!-- 🌟 NUEVA PREGUNTA DE ANTIGÜEDAD -->
+          <ion-item class="input-moderno mt-3" lines="none">
+            <ion-label position="stacked">¿Cuánto tiempo tienes como tutor?</ion-label>
+            <ion-select [(ngModel)]="tiempoTutor" interface="popover" [interfaceOptions]="{ cssClass: 'popover-premium-gietaes' }">
+              <ion-select-option value="Soy nuevo">Soy nuevo</ion-select-option>
+              <ion-select-option value="1 ciclo">1 Ciclo</ion-select-option>
+              <ion-select-option value="2 ciclos">2 Ciclos</ion-select-option>
+              <ion-select-option value="Mas de 2 ciclos">Más de 2 Ciclos</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <div class="divisor mt-4"></div>
+
+          <h3 class="mini-titulo"><ion-icon name="calendar-outline"></ion-icon> 2. Tu Disponibilidad</h3>
+          
+          <div class="modalidad-selector mt-3">
+            <ion-item class="input-moderno" lines="none">
+              <ion-select [(ngModel)]="modalidadGlobal" interface="popover" [interfaceOptions]="{ cssClass: 'popover-premium-gietaes' }">
+                <ion-select-option value="PRESENCIAL">📍 Presencial</ion-select-option>
+                <ion-select-option value="VIRTUAL">💻 Virtual</ion-select-option>
+                <ion-select-option value="AMBAS">🔄 Ambas</ion-select-option>
+              </ion-select>
+            </ion-item>
+          </div>
+
+          <p style="font-size: 0.75rem; color: #d97706; font-weight: bold; margin-bottom: 10px; margin-top: 15px;">
+            * Nota: Las tutorías de los días sábados se imparten exclusivamente VIRTUAL.
+          </p>
+          
+          <div class="calendario-scroll">
+            <table class="tabla-horarios">
+              <thead>
+                <tr>
+                  <th>Hora</th>
+                  <th *ngFor="let dia of diassemana">{{ dia }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let franja of franjasHorarias">
+                  <td class="columna-hora">{{ franja }}</td>
+                  <td *ngFor="let dia of diassemana" [class.seleccionado]="horarioSeleccionado[dia + '-' + franja]" (click)="seleccionarBloque(dia, franja)">
+                    <div class="celda-contenido">
+                      <span *ngIf="horarioSeleccionado[dia + '-' + franja]" class="texto-modalidad">{{ horarioSeleccionado[dia + '-' + franja] }}</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <ion-button expand="block" class="btn-finalizar mt-4" (click)="enviarPostulaciones()">
+            <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon> Enviar
+          </ion-button>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

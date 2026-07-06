@@ -1,0 +1,113 @@
+.fondo-app { 
+  --background: #ffffff; 
+}
+
+.logo-superior { 
+  padding: 15px; 
+  border-bottom: 2px solid #003366; 
+  text-align: center;
+}
+.input-codigo{
+  color: #003366; 
+}
+.logo-img { 
+  width: 140px; 
+}
+
+.titulo-azul { 
+  color: #003366; 
+  font-weight: 900; 
+  font-size: 1.1rem; 
+  margin: 30px 0 15px 0; 
+}
+
+.tarjeta-azul {
+  background: #003366; 
+  border-radius: 25px; 
+  padding: 10px 15px; 
+  display: flex; 
+  align-items: center; 
+  margin-bottom: 15px; 
+  position: relative;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+  
+  .icono-blanco {
+    background: white; 
+    border-radius: 50%; 
+    min-width: 45px; 
+    height: 45px;
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    margin-right: 15px;
+    ion-icon { color: #003366; font-size: 1.5rem; }
+  }
+  .info-texto {
+    flex: 1; 
+    color: white;
+    h3 { margin: 0; font-size: 0.75rem; font-weight: 900; }
+    p { margin: 0; font-size: 0.7rem; color: #cbd5e1; }
+  }
+  .punto-estado { 
+    width: 20px; 
+    height: 20px; 
+    border-radius: 50%; 
+    margin-left: 10px; 
+  }
+  .icono-wa { 
+    position: absolute; 
+    right: -10px; 
+    top: 50%;
+    transform: translateY(-50%);
+    color: #25D366; 
+    font-size: 2.2rem; 
+    background: white;
+    border-radius: 50%;
+  }
+}
+
+.seccion-codigo {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-top: 50px;
+  .btn-mas-amarillo {
+    background: #EAB308; 
+    border: 2px solid #003366; 
+    border-radius: 50%;
+    width: 60px; 
+    height: 60px; 
+    font-size: 2.5rem; 
+    color: #003366; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  }
+}
+
+.leyenda { 
+  display: flex; 
+  justify-content: space-between; 
+  margin-top: 30px; 
+  font-size: 0.8rem; 
+  color: #475569; 
+  span { display: flex; align-items: center; } 
+  .punto { width: 15px; height: 15px; border-radius: 50%; margin-right: 5px; } 
+  .verde { background: #34d399; } 
+  .amarillo { background: #fde047; } 
+  .rojo { background: #ef4444; }
+}
+
+.overlay { 
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+  background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 100; 
+}
+
+.modal-amarillo {
+  background: #EAB308; padding: 30px; border-radius: 20px; text-align: center; border: 2px solid #003366; width: 80%; max-width: 350px;
+  h3 { color: #003366; font-weight: 900; margin-top: 0; margin-bottom: 20px;}
+  .input-codigo { width: 100%; padding: 15px; border-radius: 25px; border: 2px solid #003366; text-align: center; font-weight: bold; font-size: 1.2rem; margin-bottom: 20px; outline: none; background: white;}
+  .botones-modal { display: flex; justify-content: center; gap: 20px; }
+  .btn-azul { background: #003366; color: white; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; display: flex; justify-content: center; align-items: center; border: none; }
+}

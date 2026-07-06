@@ -1,0 +1,187 @@
+/* ========================================== */
+/* ESTILOS ORIGINALES INTACTOS (POSTULACIONES)*/
+/* ========================================== */
+.fondo-admin {
+  --background: #f4f5f8;
+}
+
+.card-estudiante {
+  background: #ffffff;
+  border: 1px solid #dcdcdc;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  color: #333333;
+}
+
+.bloque-horarios {
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-top: 10px;
+  color: #555555;
+}
+
+.btn-aceptar {
+  margin-top: 15px;
+  font-weight: bold;
+}
+
+/* ========================================== */
+/* NUEVOS ESTILOS FASE 4 (LÍNEA GRÁFICA GIETAES) */
+/* ========================================== */
+.titulo-seccion {
+  color: #003366; 
+  font-weight: 800; 
+  font-size: 1.25rem;
+  margin-top: 25px;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-left: 5px solid #EAB308; /* Detalle dorado a la izquierda */
+  padding-left: 10px;
+}
+
+.separador {
+  margin: 35px 0;
+  border: 0;
+  height: 2px;
+  background: #cbd5e1;
+}
+
+/* --- DASHBOARD --- */
+.charts-container {
+  display: grid;
+  grid-template-columns: 1fr; 
+  gap: 20px;
+  
+  @media (min-width: 768px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.chart-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+  border-top: 4px solid #003366; /* Cabecera azul sutil */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.chart-title {
+  font-size: 1.05rem;
+  color: #003366;
+  font-weight: 800;
+  margin-top: 0;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+.canvas-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.pie-wrapper {
+  max-height: 220px;
+}
+
+/* --- FORMULARIO ESTILO GIETAES --- */
+.formulario-eventos {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  border: 1px solid #e2e8f0;
+  overflow: hidden; /* Para que la cabecera azul respete los bordes redondos */
+}
+
+.header-azul-gietaes {
+  background: #003366;
+  color: #ffffff;
+  padding: 15px 20px;
+  font-weight: 800;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: 0.5px;
+}
+
+.form-body {
+  padding: 25px;
+}
+
+.form-descripcion {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-bottom: 25px;
+  margin-top: 0;
+  line-height: 1.4;
+}
+
+.input-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+
+  label {
+    color: #003366;
+    font-weight: 800;
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    margin-left: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.gietaes-input {
+  --background: #f8fafc; 
+  --color: #0f172a; 
+  --placeholder-color: #94a3b8;
+  --placeholder-opacity: 1;
+  --padding-start: 15px;
+  --padding-end: 15px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+  
+  border: 2px solid #cbd5e1; 
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  color: #0f172a; /* 🌟 FUERZA EL COLOR BASE */
+
+  /* 🌟 FUERZA EL COLOR DENTRO DEL ION-SELECT */
+  &::part(text) {
+    color: #0f172a; 
+  }
+
+  &.ion-focused {
+    border-color: #EAB308; 
+    --background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.1);
+  }
+}
+
+
+.mt-4 {
+  margin-top: 30px;
+}
+
+.btn-publicar {
+  --background: #EAB308; /* Botón en dorado para contrastar con la cabecera */
+  --background-hover: #EAB308;
+  --color: #003366;
+  --border-radius: 8px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  height: 50px;
+}

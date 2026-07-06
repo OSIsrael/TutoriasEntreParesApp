@@ -1,0 +1,129 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="header-blanco">
+    <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" onerror="this.src='assets/logo-gietaes.png'">
+  </ion-toolbar>
+  <div class="linea-separadora"></div>
+</ion-header>
+<ion-content class="fondo-app">
+
+  <div class="ion-padding ion-text-center">
+    
+    <h1 class="titulo-principal">AGENDA UNA TUTORÍA</h1>
+    <div *ngIf="esCoordinadorPanel" style="margin: 15px auto 25px auto; text-align: left; max-width: 500px;">
+      <ion-item lines="none" style="--border-radius: 12px; border: 2px solid #EAB308; --background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+        <ion-icon name="business-outline" slot="start" style="color: #003366; font-size: 1.4rem;"></ion-icon>
+        <ion-label style="font-weight: bold; color: #003366;">Sede de Agenda:</ion-label>
+        <ion-select [(ngModel)]="filtroSedeAgenda" (ionChange)="recargarAgendaSede()" interface="popover" [interfaceOptions]="{ cssClass: 'popover-premium-gietaes' }">
+          <ion-select-option value="GLOBAL">🌐 Ver Todas las Sedes (Global)</ion-select-option>
+          <ion-select-option value="CUENCA">Cuenca</ion-select-option>
+          <ion-select-option value="QUITO">Quito</ion-select-option>
+          <ion-select-option value="GUAYAQUIL">Guayaquil</ion-select-option>
+        </ion-select>
+      </ion-item>
+    </div>
+    <div style="margin-bottom: 20px;">
+      <button (click)="toggleCoordinacion()" style="background: #EAB308; color:#003366; border-style: solid;border-color: #003366; padding: 12px 20px; border-radius: 25px; font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+        <ion-icon name="people-outline" style="font-size: 1.2rem;"></ion-icon>
+        {{ mostrarCoordinacion ? 'Ocultar Contacto Coordinación' : 'Contactar a Coordinación' }}
+      </button>
+    </div>
+
+    <div *ngIf="mostrarCoordinacion" class="animate__animated animate__fadeIn" style="background: rgba(255, 255, 255, 0.9); border: 2px solid #d97706; border-radius: 16px; padding: 20px; margin-bottom: 30px; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
+      <h3 style="color: #003366; font-weight: bold; margin-top: 0; margin-bottom: 15px; font-size: 1.1rem;">EQUIPO DE COORDINACIÓN GIETAES</h3>
+      <p style="color: #555; font-size: 0.85rem; margin-bottom: 20px;">¿Tienes inconvenientes con algún horario o necesitas asistencia especial? Escríbenos directamente:</p>
+      
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; text-align: left;">
+        <div *ngFor="let coord of equipoCoordinacion" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+          <div>
+            <h4 style="margin: 0; color: #003366; font-size: 0.95rem; font-weight: bold;">{{ coord.nombre }}</h4>
+            <span style="font-size: 0.75rem; color: #718096; font-weight: 600; text-transform: uppercase;">{{ coord.rol }}</span>
+          </div>
+          <a [href]="'mailto:' + coord.correo + '?subject=Consulta%20Tutorias%20GIETAES'" style="margin-top: 10px; font-size: 0.85rem; color: #1d4ed8; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; font-weight: 500;">
+            <ion-icon name="mail-outline"></ion-icon> {{ coord.correo }}
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="buscador-contenedor">
+      <input type="text" placeholder="🔍 Busca asignatura o tutor..." class="input-busqueda" [(ngModel)]="textoBusqueda" (keyup)="filtrar()">
+    </div>
+
+    <div *ngIf="cargando" style="margin-top: 50px; color: #003366;">
+      <p>Cargando disponibilidad...</p>
+    </div>
+
+    <div id="listaAsignaturas" style="margin-top: 30px;" *ngIf="!cargando">
+      
+      <div class="asignatura-block animate__animated animate__fadeIn" *ngFor="let bloque of asignaturasFiltradas">
+        <section class="seccion-tabla">
+          <div class="header-asig-azul">{{ bloque.asignatura }}</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:25%">Tutor</th>
+                <th>L</th><th>M</th><th>X</th><th>J</th><th>V</th><th>S</th>
+                <th style="width:10%">WA</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let tutor of bloque.tutores">
+                <td class="col-nombre">
+                  {{ tutor.nombre }}
+                  <span *ngIf="tutor.rol === 'COORDINADOR'" style="display:block; font-size:0.65rem; color:#d97706; font-weight:900; margin-top: 3px;">
+                    <ion-icon name="star" style="vertical-align: middle;"></ion-icon> COORDINADOR
+                  </span>
+                </td>
+                
+                <td (click)="abrirConfirmacion(tutor, 'Lunes', tutor.horarioVisible?.lunes, bloque.asignatura)" [class.celda-llena]="tutor.horarioVisible?.lunes" style="white-space: pre-line;">{{ tutor.horarioVisible?.lunes }}</td>
+                <td (click)="abrirConfirmacion(tutor, 'Martes', tutor.horarioVisible?.martes, bloque.asignatura)" [class.celda-llena]="tutor.horarioVisible?.martes" style="white-space: pre-line;">{{ tutor.horarioVisible?.martes }}</td>
+                <td (click)="abrirConfirmacion(tutor, 'Miércoles', tutor.horarioVisible?.miercoles, bloque.asignatura)" [class.celda-llena]="tutor.horarioVisible?.miercoles" style="white-space: pre-line;">{{ tutor.horarioVisible?.miercoles }}</td>
+                <td (click)="abrirConfirmacion(tutor, 'Jueves', tutor.horarioVisible?.jueves, bloque.asignatura)" [class.celda-llena]="tutor.horarioVisible?.jueves" style="white-space: pre-line;">{{ tutor.horarioVisible?.jueves }}</td>
+                <td (click)="abrirConfirmacion(tutor, 'Viernes', tutor.horarioVisible?.viernes, bloque.asignatura)" [class.celda-llena]="tutor.horarioVisible?.viernes" style="white-space: pre-line;">{{ tutor.horarioVisible?.viernes }}</td>
+                <td (click)="abrirConfirmacion(tutor, 'Sábado', tutor.horarioVisible?.sabado, bloque.asignatura)" [class.celda-llena]="tutor.horarioVisible?.sabado" style="white-space: pre-line;">{{ tutor.horarioVisible?.sabado }}</td>
+                
+                <td>
+                  <a [href]="'https://wa.me/593' + formatearNumeroWA(tutor.celular)" target="_blank" class="btn-wa-icon" (click)="$event.stopPropagation()">
+                    <ion-icon name="logo-whatsapp"></ion-icon>
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+
+      <div *ngIf="asignaturasFiltradas.length === 0" style="margin-top: 50px; color: #666;">
+        <p>No se encontraron tutores activos para esta búsqueda en tu Sede y Carrera.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="overlay" *ngIf="mostrarModal">
+    <div class="modal-amarillo animate__animated animate__zoomIn">
+      <h3>¿ESTÁS SEGURO DE AGENDAR LA TUTORÍA?</h3>
+      
+      <p style="color: #003366; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem;">
+        {{ reservaActual?.tutorNombre }} <br><br>
+        {{ reservaActual?.dia }}: <br>
+        <span style="font-size: 0.95rem; font-weight: normal; white-space: pre-line;">{{ reservaActual?.horas }}</span>
+      </p>
+
+      <div style="margin-bottom: 25px;">
+        <p style="color: #003366; font-size: 0.9rem; font-weight: bold; background: rgba(255,255,255,0.4); padding: 5px 10px; border-radius: 8px; display: inline-block;">
+          {{ reservaActual?.materia }}
+        </p>
+      </div>
+      
+      <div class="botones-modal">
+        <button class="btn-azul" (click)="confirmarReserva()">
+          <ion-icon name="checkmark-outline"></ion-icon>
+        </button>
+        <button class="btn-azul btn-rojo" (click)="cerrarConfirmacion()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</ion-content>

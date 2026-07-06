@@ -1,0 +1,289 @@
+.fondo-app {
+  --background: #f4f7f9;
+}
+
+.layout-centrado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100%;
+  padding: 20px 10px;
+}
+
+.contenedor-limitado {
+  width: 100%;
+  max-width: 600px; /* Un poco más ancho para que el calendario quepa bien */
+  margin: 0 auto;
+}
+
+.btn-atras-flotante {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #003366;
+  font-size: 1.4rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.estado-centro {
+  text-align: center;
+  padding: 60px 20px;
+  color: #003366;
+  
+  ion-spinner {
+    width: 50px;
+    height: 50px;
+    --color: #003366;
+  }
+
+  p {
+    font-weight: bold;
+    margin-top: 20px;
+  }
+}
+
+.tarjeta-premium {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 30px 20px;
+  box-shadow: 0 8px 30px rgba(0, 51, 102, 0.06);
+  border: 1px solid #e2e8f0;
+}
+
+.titulo-seccion-postulacion {
+  color: #003366;
+  font-weight: 900;
+  font-size: 1.5rem;
+  margin-top: 0;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.subtitulo-seccion {
+  color: #64748b;
+  font-size: 0.95rem;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.mini-titulo {
+  color: #003366;
+  font-weight: 800;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  ion-icon {
+    color: #EAB308;
+  }
+}
+
+.nota-filtro {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 0;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.divisor {
+  height: 2px;
+  background: #e2e8f0;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.input-moderno {
+  --background: #ffffff !important;
+  --color: #1e293b !important;
+  --border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.95rem;
+
+  &::part(label) {
+    color: #003366 !important;
+    font-weight: 700;
+  }
+
+  &::part(text) {
+    color: #1e293b !important;
+  }
+}
+
+/* --- CALENDARIO TÁCTIL --- */
+.calendario-scroll {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.tabla-horarios {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  min-width: 600px; /* Activa el scroll en móviles pequeños */
+
+  th {
+    background: #003366;
+    color: #ffffff;
+    font-weight: 700;
+    padding: 10px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    text-align: center;
+    border: 1px solid #002244;
+  }
+
+  td {
+    border: 1px solid #e2e8f0;
+    height: 50px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 14%;
+    padding: 2px;
+
+    /* Estado inactivo */
+    &:hover { background: #f8fafc; }
+    
+    /* ESTADO ACTIVO (SELECCIONADO) */
+    &.seleccionado {
+      background: rgba(217, 119, 6, 0.1); 
+      border: 2px solid #d97706; 
+    }
+  }
+}
+
+.columna-hora {
+  background: #f1f5f9;
+  color: #003366;
+  font-weight: 800;
+  font-size: 0.7rem;
+  width: 16% !important;
+  pointer-events: none; /* No se puede hacer clic en la hora */
+}
+
+.celda-contenido {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+}
+
+.texto-modalidad {
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: #b46000;
+  text-transform: uppercase;
+}
+
+.mt-3 { margin-top: 15px; }
+.mt-4 { margin-top: 25px; }
+
+.btn-finalizar {
+  --background: #EAB308; 
+  --background-hover: #b46000;
+  --color: #003366;
+  --border-radius: 12px;
+  --box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+  height: 55px;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.5px;
+}
+
+.btn-volver {
+  --background: #f1f5f9;
+  --color: #003366;
+  --box-shadow: none;
+  font-weight: bold;
+}
+/* ========================================== */
+/* ESTILO PREMIUM PARA SELECTORES MULTIPLES   */
+/* ========================================== */
+.alerta-premium-gietaes {
+  // Fondo general blanco puro
+  --background: #ffffff !important;
+  --backdrop-opacity: 0.5;
+
+  .alert-wrapper {
+    border-radius: 20px !important; // Esquinas bien redondeadas
+    box-shadow: 0 15px 40px rgba(0, 51, 102, 0.2) !important;
+    border: 1px solid #e2e8f0;
+  }
+
+  // Cabecera del cuadro
+  .alert-head {
+    background-color: #f4f7f9 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 20px 15px 15px 15px !important;
+  }
+
+  .alert-title {
+    color: #003366 !important;
+    font-weight: 900 !important;
+    font-size: 1.2rem !important;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  // Estilo de los textos de las materias
+  .alert-checkbox-label {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    white-space: normal !important; // Permite que nombres largos bajen de línea
+  }
+
+  // Los cuadritos de verificación
+  .alert-checkbox-icon {
+    border-color: #cbd5e1 !important;
+    border-radius: 6px !important;
+  }
+
+  // Cuando se selecciona una materia (Fondo dorado, visto azul)
+  [aria-checked="true"] .alert-checkbox-icon {
+    background-color: #d97706 !important;
+    border-color: #d97706 !important;
+  }
+  
+  [aria-checked="true"] .alert-checkbox-inner {
+    border-color: #ffffff !important; // La palomita en blanco
+  }
+
+  // Zona de botones abajo
+  .alert-button-group {
+    border-top: 1px solid #e2e8f0 !important;
+    background-color: #ffffff !important;
+    padding: 5px 10px !important;
+  }
+
+  .alert-button {
+    font-weight: 800 !important;
+    letter-spacing: 0.5px;
+
+    // Botón de Cancelar
+    &.alert-button-role-cancel {
+      color: #64748b !important; 
+    }
+    
+    // Botón de Aceptar
+    &:not(.alert-button-role-cancel) {
+      color: #003366 !important; 
+    }
+  }
+}

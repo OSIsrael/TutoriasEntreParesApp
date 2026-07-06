@@ -1,0 +1,256 @@
+/* Fondo general de la app */
+.login-bg {
+  --background: #f4f7f9; 
+}
+
+/* El truco para centrar vertical y horizontalmente */
+.layout-centrado {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 🌟 Centra el contenido horizontalmente */
+  justify-content: center;
+  min-height: 100%;
+  padding: 20px;
+}
+
+/* 🌟 ESTO EVITA EL ENSANCHAMIENTO EN PANTALLAS GRANDES */
+.contenedor-limitado {
+  width: 100%;
+  max-width: 450px; /* Tamaño máximo equivalente a un celular/tablet pequeña */
+  margin: 0 auto;
+}
+
+/* --- LOGO --- */
+.logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+
+  img {
+    max-width: 220px; /* Tamaño ideal para el logo de Tutorías */
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+  }
+}
+
+.logo-pequeno {
+  max-width: 150px;
+}
+
+/* --- LA TARJETA PREMIUM --- */
+.tarjeta-premium {
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 35px 25px;
+  box-shadow: 0 10px 40px rgba(0, 51, 102, 0.08); 
+  border: 1px solid rgba(0, 51, 102, 0.05);
+  text-align: center;
+}
+
+.titulo-bienvenida {
+  color: #003366;
+  font-weight: 900;
+  font-size: 1.4rem;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.subtitulo-bienvenida {
+  color: #64748b;
+  font-size: 0.95rem;
+  margin-top: 5px;
+  margin-bottom: 20px;
+}
+
+.divisor {
+  height: 2px;
+  background: #e2e8f0;
+  width: 50px;
+  margin: 0 auto 20px auto;
+  border-radius: 2px;
+}
+
+.instruccion {
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin-bottom: 30px;
+  padding: 0 10px;
+}
+
+/* --- BOTÓN GOOGLE INTEGRADO --- */
+.btn-google-auth {
+  --background: #003366;
+  --background-hover: #002244;
+  --color: #ffffff;
+  --border-radius: 14px; 
+  --box-shadow: 0 4px 12px rgba(0, 51, 102, 0.2);
+  height: 55px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: none; 
+}
+
+.cargando-estado {
+  margin-top: 20px;
+  ion-spinner {
+    --color: #003366;
+  }
+}
+
+/* ========================================== */
+/* VISTA DE REGISTRO */
+/* ========================================== */
+
+.header-registro {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 25px;
+}
+
+.btn-atras {
+  position: absolute;
+  left: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #003366;
+  font-size: 1.4rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  cursor: pointer;
+}
+
+.form-registro {
+  padding: 30px 20px;
+  text-align: left; 
+}
+
+.titulo-registro {
+  color: #003366;
+  font-weight: 900;
+  font-size: 1.2rem;
+  text-align: center;
+  margin-bottom: 5px;
+  margin-top: 0;
+}
+
+.subtitulo-registro {
+  color: #64748b;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+/* --- INPUTS MODERNOS --- */
+.campos-contenedor {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-moderno {
+  --background: #ffffff !important;
+  --color: #1e293b !important; /* Azul muy oscuro/casi negro */
+  --placeholder-color: #94a3b8;
+  --border-color: #cbd5e1;
+  --border-radius: 10px;
+  --highlight-color-focused: #003366;
+  font-size: 0.95rem;
+  color: #1e293b !important;
+
+  &::part(label) {
+    color: #003366 !important;
+    font-weight: 700;
+  }
+
+  /* 🌟 ESTO HACE VISIBLE EL TEXTO AL SELECCIONAR (Sede, Ciclo, Beca) */
+  &::part(text) {
+    color: #1e293b !important;
+  }
+
+  /* 🌟 ESTO HACE VISIBLE EL TEXTO AL ESCRIBIR (Nombre, Cédula, Celular) */
+  &::part(native) {
+    color: #1e293b !important;
+  }
+}
+
+.input-bloqueado {
+  --background: #f1f5f9;
+  opacity: 0.8;
+}
+
+.grid-2-columnas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.mt-3 {
+  margin-top: 15px;
+}
+.mt-4 {
+  margin-top: 30px;
+}
+
+.lista-autocompletado {
+  max-height: 150px;
+  overflow-y: auto;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  margin-top: 5px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+
+  /* 🌟 FORZAMOS EL FONDO BLANCO EN LOS ITEMS DE LA LISTA */
+  ion-item {
+    --background: #ffffff !important;
+    --color: #1e293b !important;
+  }
+}
+
+.texto-carrera {
+  font-size: 0.85rem;
+  color: #1e293b !important; /* 🌟 FORZAMOS EL TEXTO OSCURO */
+  white-space: normal;
+  font-weight: 600;
+}
+ion-select-option {
+  color: #0f172a;
+}
+
+
+
+.btn-finalizar {
+  --background: #003366; 
+  --background-hover: #b46000;
+  --color: #ffffff;
+  --border-radius: 12px;
+  --box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+  height: 50px;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.5px;
+}
+
+/* 🌟 ESTO FORZA A QUE EL MENÚ DESPLEGABLE NUNCA SEA NEGRO */
+::ng-deep ion-popover {
+  --background: #ffffff !important;
+  --color: #1e293b !important;
+
+  ion-item {
+    --background: #ffffff !important;
+    --color: #1e293b !important;
+  }
+  
+  /* Asegura que el texto seleccionado o los bordes no se oscurezcan */
+  ion-radio {
+    --color: #1e293b !important;
+    --color-checked: #003366 !important;
+  }
+}

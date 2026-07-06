@@ -1,0 +1,202 @@
+.fondo-app { --background: #f8fafc; }
+
+.logo-superior { 
+  padding: 15px; 
+  border-bottom: 2px solid #003366; 
+  display: flex; 
+  justify-content: flex-start;
+  background: white;
+}
+.logo-img { width: 140px; }
+
+.titulo-principal { 
+  color: #003366; 
+  font-weight: 900; 
+  font-size: 1.6rem; 
+  margin-top: 10px; 
+}
+
+/* Buscador */
+.buscador-contenedor {
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  margin: 20px auto;
+  max-width: 500px;
+  
+  .input-busqueda {
+    background: white; 
+    border: 2px solid #003366; 
+    border-radius: 12px; 
+    padding: 12px 20px;
+    width: 100%; 
+    font-size: 1rem; 
+    color: #333; 
+    outline: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  }
+}
+
+/* --- ESTILOS DE LA TABLA (ANTIGUO SCRIPT) --- */
+.asignatura-block {
+  margin-bottom: 25px;
+}
+
+.seccion-tabla { 
+  width: 100%; 
+  max-width: 1000px; 
+  margin: 0 auto; 
+  background: white; 
+  border-radius: 10px; 
+  overflow: hidden; 
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.header-asig-azul { 
+  padding: 12px; 
+  background: #003366; 
+  color: white; 
+  font-weight: 800; 
+  text-align: center; 
+  text-transform: uppercase; 
+  font-size: 0.9rem; 
+}
+
+table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  table-layout: auto; 
+}
+
+th, td { 
+  padding: 8px 2px; 
+  border: 1px solid #cbd5e1; 
+  text-align: center; 
+  font-size: 0.75rem; 
+  word-wrap: break-word; 
+  white-space: pre-line; /* Mantiene el salto de línea en las horas */
+}
+
+th { background: #f1f5f9; color: #003366; font-weight: 800; font-size: 0.7rem; }
+
+.col-nombre {
+  font-weight: 700; 
+  text-align: left; 
+  font-size: 0.65rem; 
+  padding-left: 5px;
+  color: #003366;
+}
+
+/* Celdas con Horario */
+.celda-llena { 
+  background: #e2e8f0; 
+  cursor: pointer; 
+  color: #003366;
+  font-weight: bold;
+}
+.celda-llena:active {
+  background: #cbd5e1;
+}
+
+.btn-wa-icon { 
+  text-decoration: none; 
+  color: #25D366; 
+  font-size: 1.5rem; 
+  display: flex; 
+  justify-content: center; 
+  align-items: center;
+}
+
+/* --- ESTILOS DEL MODAL AMARILLO --- */
+.overlay { 
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+  background: rgba(0,0,0,0.6); 
+  display: flex; justify-content: center; align-items: center; z-index: 100; 
+}
+
+.modal-amarillo {
+  background: #EAB308; padding: 30px 20px; border-radius: 20px; text-align: center;
+  border: 2px solid #003366; width: 80%; max-width: 300px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  
+  h3 { color: #003366; font-weight: 900; margin-top: 0; margin-bottom: 15px; font-size: 1.2rem; line-height: 1.3;}
+  
+  .botones-modal { display: flex; justify-content: center; gap: 30px; }
+  
+  .btn-azul {
+    background: #003366; color: white; width: 60px; height: 60px; border-radius: 50%;
+    font-size: 2rem; display: flex; justify-content: center; align-items: center; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer;
+  }
+  .btn-rojo { background: #ef4444; }
+}
+.seccion-coordinacion { 
+  border: 2px solid #003366; 
+  border-radius: 12px; 
+  margin: 20px auto; 
+  overflow: hidden; 
+  width: 100%; 
+  max-width: 1000px; 
+  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+}
+
+.header-bloque-fijo { 
+  width: 100%; 
+  background-color: #003366 !important; 
+  color: white !important; 
+  border-collapse: collapse; 
+  table-layout: fixed; 
+}
+
+.celda-materia-fija { 
+  padding: 10px; 
+  text-align: center; 
+  font-weight: 800; 
+  border: 1px solid rgba(255,255,255,0.2); 
+  font-size: 0.8rem; 
+}
+
+.celda-contacto-fija { 
+  text-align: center; 
+  font-size: 0.75rem; 
+  border: 1px solid rgba(255,255,255,0.2); 
+  padding: 10px;
+}
+
+.fila-nombre-fija { 
+  padding: 10px; 
+  text-align: center; 
+  font-weight: 700; 
+  background: rgba(255,255,255,0.1) !important; 
+  font-size: 0.9rem; 
+}
+
+.fila-tutorias-fija { 
+  padding: 8px; 
+  text-align: center; 
+  font-size: 0.75rem; 
+  border: 1px solid rgba(255,255,255,0.2); 
+}
+
+.wa-burbuja-fija { 
+  background: white !important; 
+  color: #25D366 !important; 
+  padding: 5px 12px; 
+  border-radius: 15px; 
+  text-decoration: none; 
+  font-weight: bold; 
+  font-size: 0.85rem; 
+  display: inline-flex; 
+  align-items: center; 
+  margin-top: 5px;
+}
+.columna-hora-fija { 
+  font-weight: 800; 
+  color: #003366; 
+  background: #f8fafc !important; 
+  width: 15%; 
+}
+
+@media screen and (max-width: 600px) {
+  th, td { font-size: 0.65rem; padding: 5px 1px; }
+  .btn-wa-icon { font-size: 1.3rem; }
+}

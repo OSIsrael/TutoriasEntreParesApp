@@ -35,3 +35,204 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import '@ionic/angular/css/palettes/dark.system.css';
+/* ========================================== */
+/* CABECERA UNIVERSAL - TUTORÍAS ENTRE PARES  */
+/* ========================================== */
+/* ========================================== */
+/* CABECERA UNIVERSAL - TUTORÍAS ENTRE PARES  */
+/* ========================================== */
+.header-blanco {
+  --background: #ffffff;
+  --border-width: 0 !important; 
+  --padding-start: 20px; /* Un poco más de margen a la izquierda */
+  
+  /* 🌟 FORZAMOS A LA BARRA A SER MÁS ALTA PARA QUE EL LOGO QUEPA BIEN */
+  --min-height: 75px; 
+  display: flex;
+  align-items: center;
+}
+
+.logo-cabecera {
+  height: 75px; /* 🌟 Aumentamos drásticamente el tamaño del logo */
+  max-width: 250px; /* Evita que se estire demasiado si la pantalla es muy ancha */
+  object-fit: contain; /* Mantiene las proporciones perfectas sin deformarse */
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.linea-separadora {
+  height: 3px; /* Línea un poco más gruesa para que destaque */
+  background-color: #003366; 
+  width: 100%;
+  /* 🌟 Sombra pronunciada debajo de la línea para dar el efecto de que la cabecera está "flotando" sobre la página */
+  box-shadow: 0 4px 10px rgba(0, 51, 102, 0.15); 
+  position: relative;
+  z-index: 10; /* Asegura que la sombra se pinte por encima del contenido de abajo */
+}
+/* ========================================== */
+/* ESTILO PREMIUM PARA SELECTORES (BLINDAJE)  */
+/* ========================================== */
+
+/* Al poner 'ion-alert' antes de la clase, aumentamos la fuerza del código 
+   para vencer las reglas internas del Modo Oscuro */
+ion-alert.alerta-premium-gietaes {
+  
+  /* 1. VARIABLES GLOBALES FORZADAS AL MODO CLARO */
+  --background: #ffffff !important;
+  --ion-background-color: #ffffff !important;
+  --ion-text-color: #1e293b !important;
+  --ion-color-primary: #d97706 !important; /* El color dorado para los checks */
+  --backdrop-opacity: 0.6 !important;
+  color: #1e293b !important;
+
+  /* 2. ATACAMOS EL SHADOW DOM (Ionic Moderno) */
+  &::part(header) {
+    background-color: #f4f7f9 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 20px 15px 15px 15px !important;
+  }
+  
+  &::part(title) {
+    color: #003366 !important;
+    font-weight: 900 !important;
+    font-size: 1.25rem !important;
+    text-transform: uppercase !important;
+    text-align: center !important;
+  }
+  
+  &::part(button) {
+    color: #003366 !important;
+    font-weight: bold !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  /* 3. ATACAMOS EL LIGHT DOM (Textos internos y estructura) */
+  .alert-wrapper {
+    background-color: #ffffff !important;
+    border-radius: 20px !important;
+    box-shadow: 0 15px 40px rgba(0, 51, 102, 0.2) !important;
+  }
+  
+  .alert-checkbox-label {
+    color: #003366 !important; /* Fuerza las letras a azul oscuro/casi negro */
+    font-weight: 600 !important;
+    white-space: normal !important; /* Evita que los textos largos se corten */
+  }
+
+  /* El visto bueno (checkbox) cuando se selecciona */
+  [aria-checked="true"] .alert-checkbox-icon {
+    border-color: #EAB308 !important;
+    background-color: #d97706 !important;
+  }
+}
+/* ========================================== */
+/* ESTILO PREMIUM PARA POPOVERS (MODALIDAD)   */
+/* ========================================== */
+
+ion-popover.popover-premium-gietaes {
+  
+  /* 1. Fondo principal del globo */
+  --background: #ffffff !important;
+  --ion-background-color: #ffffff !important;
+  --ion-text-color: #003366 !important;
+
+  /* 2. Damos forma al contenedor flotante */
+  &::part(content) {
+    border-radius: 15px !important;
+    box-shadow: 0 10px 30px rgba(0, 51, 102, 0.15) !important;
+    border: 1px solid #e2e8f0 !important;
+    overflow: hidden !important; /* Para que las esquinas no se salgan */
+  }
+
+  /* 3. Forzamos los elementos de la lista a ser blancos con letra oscura */
+  ion-item {
+    --background: #ffffff !important;
+    --color: #003366 !important;
+    --border-color: #f1f5f9 !important; /* Una línea divisoria muy suave */
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+  }
+
+  /* 4. Estilo del botón circular de selección (Radio Button) */
+  ion-radio {
+    --color: #cbd5e1 !important; /* Gris cuando no está marcado */
+    --color-checked: #EAB308 !important; /* Dorado institucional al marcarlo */
+  }
+}
+/* =======================================================
+   BLINDAJE DE COLORES CLAROS PARA COMPONENTES EMERGENTES
+   ======================================================= */
+
+/* 1. Estilo para los Popovers (Menús desplegables) */
+.popover-blanco {
+  /* 🌟 ESTO APAGA EL MODO OSCURO SOLO PARA ESTE MENÚ */
+  color-scheme: light !important; 
+  
+  --background: #ffffff !important;
+  --backdrop-opacity: 0.3 !important;
+  
+  ion-item {
+    --background: #ffffff !important;
+    --color: #0f172a !important; /* Azul muy oscuro casi negro */
+    font-weight: 500;
+  }
+
+  ion-item::part(native) {
+    color: #0f172a !important;
+  }
+
+  /* Color azul oscuro al hacer hover/clic en una opción */
+  ion-item::part(native):hover {
+    color: #003366 !important;
+    background: #f4f7f9 !important;
+  }
+}
+
+/* 2. Estilo para el Calendario (ion-datetime) */
+.calendario-gietaes {
+  /* 🌟 ESTO APAGA EL MODO OSCURO PARA EL CALENDARIO Y HACE VISIBLES LOS NÚMEROS */
+  color-scheme: light !important;
+
+  /* Fondos Obligatorios */
+  --background: #ffffff !important;
+  --background-rgb: 255,255,255 !important;
+  background: #ffffff !important;
+  
+  /* Textos Principales */
+  color: #0f172a !important;
+  --color: #0f172a !important;
+  --title-color: #003366 !important;
+  --ion-text-color: #0f172a !important;
+
+  /* Color principal GIETAES (Azul oscuro para selecciones y círculo) */
+  --ion-color-base: #003366 !important;
+  --ion-color-primary: #003366 !important;
+  --ion-color-primary-rgb: 0,51,102 !important;
+
+  /* Configuración del selector de la HORA */
+  --wheel-item-color: #0f172a !important; /* Números de la hora oscuros */
+  --wheel-fade-background-rgb: 255,255,255 !important;
+  --wheel-highlight-background: rgba(234, 179, 8, 0.25) !important; /* Cinta dorada */
+  
+  border-radius: 12px;
+}
+
+/* Forzar que los días del calendario sean negros */
+.calendario-gietaes::part(calendar-day) {
+  color: #0f172a;
+}
+
+/* Forzar los botones de Cancelar / Confirmar */
+.calendario-gietaes::part(cancel-button),
+.calendario-gietaes::part(confirm-button) {
+  color: #003366 !important;
+  font-weight: bold;
+}
+
+/* 3. Forzar el botón del calendario (donde se lee la fecha elegida) a ser claro */
+ion-datetime-button::part(native) {
+  background: #ffffff;
+  color: #003366;
+  border: 1px solid #cbd5e1;
+  font-weight: bold;
+} 
