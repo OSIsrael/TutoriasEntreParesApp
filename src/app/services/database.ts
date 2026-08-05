@@ -447,6 +447,20 @@ async aceptarTutor(idPostulacion: string, datosPostulacion: any) {
       estado: 'PENDIENTE', // Inicia esperando la respuesta del tutor
       fecha_solicitud: new Date().toISOString()
     };
+    try {
+      await addDoc(collection(this.firestore, 'Tutorias_Agendadas'), datosReserva);
+      
+      // 🌟 ESCENARIO 1: Notificar SOLO al Tutor específico
+      await this.crearNotificacion({
+        titulo: '📅 ¡Nueva Tutoría Agendada!',
+        mensaje: `${datosReserva.nombreEstudiante} ha agendado una tutoría de ${datosReserva.materia} el ${datosReserva.dia_elegido} a las ${datosReserva.hora_elegida}.`,
+        tipo: 'TUTORIA',
+        correo_destino: datosReserva.correoTutor // Va directo a su correo
+      });
+
+    } catch (error) {
+      throw error;
+    }
     
     return addDoc(reservasRef, nuevaReserva);
   }
@@ -596,6 +610,79 @@ async aceptarTutor(idPostulacion: string, datosPostulacion: any) {
     } catch (error) {
       console.error("Error al rechazar postulación:", error);
       throw error;
+    }
+  }
+  // 🌟 MOTOR MAESTRO DE NOTIFICACIONES
+  async crearNotificacion(datos: {
+    titulo: string, 
+    mensaje: string, 
+    tipo: 'TUTORIA' | 'POSTULACION' | 'AVISO', 
+    correo_destino?: string, // Para un usuario específico (Ej. El Tutor)
+    rol_destino?: string,    // 'ADMIN', 'ESTUDIANTE', 'TODOS'
+    sede_destino?: string    // 'CUENCA', 'QUITO', 'GUAYAQUIL', 'GLOBAL'
+  }) {
+    try {
+      const payload = {
+        ...datos,
+        fecha: new Date().toISOString(),
+        leida_por: [] // Aquí guardaremos quiénes ya vieron la campanita
+      };
+      await addDoc(collection(this.firestore, 'Notificaciones'), payload);
+    } catch (error) {
+      console.error("Error al crear notificación: ", error);
+    }
+  }
+  // 🌟 1. Obtener Notificaciones Filtradas por Usuario, Rol y Sede
+  async obtenerNotificacionesUsuario(correo: string, rol: string, sede: string) {
+    try {
+      const snapshot = await getDocs(collection(this.firestore, 'Notificaciones'));
+      const todas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+
+      const correoLimpio = (correo || '').toLowerCase().trim();
+      const rolLimpio = (rol || '').toUpperCase().trim();
+      const sedeLimpia = (sede || 'CUENCA').toUpperCase().trim();
+
+      // Filtrado inteligente
+      return todas.filter(notif => {
+        const correoDestino = (notif.correo_destino || '').toLowerCase().trim();
+        const rolDestino = (notif.rol_destino || '').toUpperCase().trim();
+        const sedeDestino = (notif.sede_destino || '').toUpperCase().trim();
+
+        // REGLA A: Es para un usuario específico (ej. el Tutor)
+        if (correoDestino && correoDestino === correoLimpio) {
+          return true;
+        }
+
+        // REGLA B: Es para un Rol (ej. ADMIN) o para TODOS
+        const coincideRol = (rolDestino === 'TODOS' || rolDestino === rolLimpio);
+        const coincideSede = (sedeDestino === 'GLOBAL' || sedeDestino === sedeLimpia);
+
+        return coincideRol && coincideSede;
+      }).sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+    } catch (error) {
+      console.error("Error al obtener notificaciones:", error);
+      return [];
+    }
+  }
+
+  // 🌟 2. Marcar Notificación como Leída por este usuario
+  async marcarNotificacionLeida(idNotificacion: string, correoUsuario: string) {
+    try {
+      const notifRef = doc(this.firestore, 'Notificaciones', idNotificacion);
+      const notifSnap = await getDoc(notifRef);
+
+      if (notifSnap.exists()) {
+        const datos = notifSnap.data();
+        const leidaPor: string[] = datos['leida_por'] || [];
+
+        if (!leidaPor.includes(correoUsuario)) {
+          leidaPor.push(correoUsuario);
+          await updateDoc(notifRef, { leida_por: leidaPor });
+        }
+      }
+    } catch (error) {
+      console.error("Error al marcar como leída:", error);
     }
   }
 }

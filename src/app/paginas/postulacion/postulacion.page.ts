@@ -136,7 +136,7 @@ export class PostulacionPage {
         ciclo: this.cicloUsuario,
         cedula: cedula,
         celular: celular,
-        permanencia: this.tiempoTutor, // 🌟 Nuevo dato inyectado
+        permanencia: this.tiempoTutor, 
         disponibilidad_horaria: this.horarioSeleccionado, 
         estado_aprobacion: 'PENDIENTE',
         fecha_postulacion: new Date().toISOString()
@@ -144,7 +144,18 @@ export class PostulacionPage {
 
       for (const nombreMateria of this.materiasSeleccionadas) {
         const documentoPostulacion = { ...datosBasePostulacion, materia_postulada: nombreMateria };
-        await this.dbService.enviarPostulacion(documentoPostulacion); // 🌟 Llama a tu función
+        
+        // 1. Guarda la postulación en la base de datos
+        await this.dbService.enviarPostulacion(documentoPostulacion); 
+
+        // 2. 🌟 ESCENARIO 2: Avisa a los Admins de la Sede
+        await this.dbService.crearNotificacion({
+          titulo: '📝 Nueva Postulación de Tutor',
+          mensaje: `${nombre} postuló para dictar ${nombreMateria}.`,
+          tipo: 'POSTULACION',
+          rol_destino: 'ADMIN', // Solo la ven los Admins/Coordinadores
+          sede_destino: this.sedeUsuario // Solo los de la misma sede de la solicitud
+        });
       }
 
       alert("🎉 Postulaciones enviadas con éxito.");

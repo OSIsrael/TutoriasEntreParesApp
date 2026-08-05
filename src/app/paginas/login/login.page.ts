@@ -48,7 +48,7 @@ export class LoginPage implements OnInit {
   carrerasFiltradas: string[] = [];
 
   constructor() {
-    addIcons({ logoGoogle, arrowBackOutline }); // 🌟 Agregado al registro
+    addIcons({ logoGoogle, arrowBackOutline }); 
   }
 
   async ngOnInit() {

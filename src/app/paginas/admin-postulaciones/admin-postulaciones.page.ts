@@ -171,7 +171,6 @@ export class AdminPostulacionesPage {
       options: { responsive: true },
     });
   }
-
   async publicarAnuncio() {
     if (!this.nuevoAnuncio.titulo || !this.nuevoAnuncio.descripcion) {
       alert('Por favor, llena el título y la descripción del comunicado.');
@@ -181,19 +180,33 @@ export class AdminPostulacionesPage {
     const payload = {
       titulo: this.nuevoAnuncio.titulo.toUpperCase(),
       descripcion: this.nuevoAnuncio.descripcion,
-      fecha_evento: this.nuevoAnuncio.fecha_evento,
+      fecha_evento: this.nuevoAnuncio.fecha_evento || 'Sin fecha',
       fecha_publicacion: new Date().toISOString(),
       sede_destino: this.nuevoAnuncio.sede_destino.toUpperCase(),
       autor: localStorage.getItem('nombre') || 'COORDINACIÓN',
     };
 
     try {
+      // 1. Guarda el anuncio en Firebase
       await addDoc(collection(this.firestore, 'Anuncios'), payload);
+      
+      // 2. 🌟 ESCENARIO 3: Dispara la Notificación
+      await this.dbService.crearNotificacion({
+        titulo: '📢 Nuevo Comunicado Oficial',
+        mensaje: this.nuevoAnuncio.titulo.toUpperCase(),
+        tipo: 'AVISO',
+        rol_destino: 'TODOS',
+        sede_destino: this.nuevoAnuncio.sede_destino.toUpperCase() 
+      });
+
       alert('¡Comunicado oficial publicado con éxito!');
+      
+      // Limpia el formulario
       this.nuevoAnuncio = { titulo: '', descripcion: '', fecha_evento: new Date().toISOString(), sede_destino: 'GLOBAL' };
     } catch (error) {
       console.error('Error al publicar:', error);
       alert('Error al publicar el comunicado.');
     }
   }
+
 }

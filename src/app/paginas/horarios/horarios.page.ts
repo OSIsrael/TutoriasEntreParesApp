@@ -1,25 +1,34 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Firestore, collection, getDocs } from '@angular/fire/firestore';
 import { 
   IonContent, IonHeader, IonTitle, IonToolbar, 
-  IonIcon,IonItem,IonLabel,IonSelect,IonSelectOption 
+  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption,IonButtons,IonButton 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { searchOutline, closeOutline, logoWhatsapp, star, mailOutline, peopleOutline, checkmarkOutline, arrowBackOutline, checkmarkCircleOutline, closeCircleOutline, megaphoneOutline, businessOutline } from 'ionicons/icons';
+import { searchOutline, closeOutline, logoWhatsapp, star, mailOutline, peopleOutline, checkmarkOutline, businessOutline, notificationsOutline } from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
+import { Router } from '@angular/router'; // 🌟 Router para la navegación
 
 @Component({
   selector: 'app-horarios',
   templateUrl: './horarios.page.html',
   styleUrls: ['./horarios.page.scss'],
   standalone: true,
-  imports: [IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule, IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption]
+  imports: [
+    IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule, 
+    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption,IonButtons, IonButton
+  ]
 })
 export class HorariosPage implements OnInit {
   private dbService = inject(DatabaseService);
-  esCoordinadorPanel: boolean = false;
-  filtroSedeAgenda: string = 'GLOBAL';
+  private firestore = inject(Firestore);
+  private router = inject(Router); // 🌟 Inyectamos Router
+
+  // 2. La variable que enciende o apaga el punto dorado
+  hayNotificacionesSinLeer: boolean = false;
+
   textoBusqueda: string = '';
   cargando: boolean = false;
   mostrarModal: boolean = false;
@@ -31,6 +40,9 @@ export class HorariosPage implements OnInit {
   reservaActual: any = null;
   correoUsuario: string = '';
   nombreUsuario: string = '';
+
+  esCoordinadorPanel: boolean = false;
+  filtroSedeAgenda: string = 'GLOBAL';
 
   equipoCoordinacion = [
     { nombre: 'GIETAES', correo: 'gietaes@ups.edu.ec', rol: 'Contacto GIETAES' },
@@ -45,43 +57,85 @@ export class HorariosPage implements OnInit {
   ];
 
   constructor() {
-    addIcons({businessOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,arrowBackOutline,checkmarkCircleOutline,closeCircleOutline,megaphoneOutline,searchOutline});
+    addIcons({notificationsOutline,businessOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,searchOutline});
   }
 
   ngOnInit() {
     this.correoUsuario = localStorage.getItem('correo') || '';
     this.nombreUsuario = localStorage.getItem('nombre') || '';
   }
+  irANotificaciones() {
+    this.router.navigate(['/notificaciones']);
+  }
 
-async ionViewWillEnter() {
+  async ionViewWillEnter() {
+    const correo = localStorage.getItem('correo') || '';
+    const rol = localStorage.getItem('rol') || 'ESTUDIANTE';
+    const sede = localStorage.getItem('sede') || 'CUENCA';
+
+    // 🌟 Disparamos la revisión de la campanita
+    await this.verificarNotificaciones(correo, rol, sede);
     this.cargando = true;
     this.textoBusqueda = ''; 
     
     const rolActual = (localStorage.getItem('rol') || '').toUpperCase();
-    
-    // Si es ADMIN o COORDINADOR habilitamos el interruptor en la UI
     this.esCoordinadorPanel = (rolActual === 'ADMIN' || rolActual === 'COORDINADOR');
-    
-    const carreraActual = localStorage.getItem('carrera') || '';
+
+    const sedeEstudiante = (localStorage.getItem('sede') || 'CUENCA').toUpperCase();
+    const carreraEstudiante = (localStorage.getItem('carrera') || '').toUpperCase();
+
+    // 🌟 1. Obtenemos todos los tutores activos de Firebase
+    const snapshot = await getDocs(collection(this.firestore, 'Tutores'));
+    let todosLosTutores = snapshot.docs.map(doc => doc.data());
+    todosLosTutores = todosLosTutores.filter(t => t['estado'] === 'ACTIVO');
+
     let tutoresBrutos: any[] = [];
 
-    if (this.filtroSedeAgenda === 'GLOBAL') {
-      // 🌟 COMBINACIÓN GLOBAL: Hace un barrido secuencial por las tres sedes reales
-      const sedes = ['CUENCA', 'QUITO', 'GUAYAQUIL'];
-      for (const s of sedes) {
-        const porSede = await this.dbService.obtenerTutoresFiltrados(s, carreraActual);
-        tutoresBrutos = [...tutoresBrutos, ...porSede];
+    if (this.esCoordinadorPanel) {
+      // 🌟 VISTA ADMIN: Si es Global ve todo, si elige sede filtra tutores de esa sede
+      if (this.filtroSedeAgenda === 'GLOBAL') {
+        tutoresBrutos = todosLosTutores;
+      } else {
+        tutoresBrutos = todosLosTutores.filter(t => (t['sede'] || '').toUpperCase() === this.filtroSedeAgenda);
       }
+      this.agruparPorMateria(tutoresBrutos, this.filtroSedeAgenda, true);
+
     } else {
-      // Filtrado por la sede seleccionada en el menú dropdown
-      tutoresBrutos = await this.dbService.obtenerTutoresFiltrados(this.filtroSedeAgenda, carreraActual);
+      // 🌟 VISTA ESTUDIANTE:
+      // Filtramos por la carrera del estudiante
+      if (carreraEstudiante) {
+        tutoresBrutos = todosLosTutores.filter(t => {
+          const carreraTutor = (t['carrera'] || '').toUpperCase();
+          return carreraTutor === carreraEstudiante || carreraTutor === '';
+        });
+      } else {
+        tutoresBrutos = todosLosTutores;
+      }
+
+      // Procesamos agrupamiento pasando la sede del estudiante y bandera de estudiante (false)
+      this.agruparPorMateria(tutoresBrutos, sedeEstudiante, false);
     }
 
-    this.agruparPorMateria(tutoresBrutos);
     this.cargando = false;
   }
+  async verificarNotificaciones(correo: string, rol: string, sede: string) {
+    try {
+      const notifs = await this.dbService.obtenerNotificacionesUsuario(correo, rol, sede);
+      const sinLeer = notifs.filter((n: any) => {
+        const leidas = n['leida_por'] || [];
+        return !leidas.includes(correo);
+      });
+      this.hayNotificacionesSinLeer = sinLeer.length > 0;
+    } catch (error) {
+      console.error("Error al verificar notificaciones:", error);
+    }
+  }
 
-  agruparPorMateria(tutores: any[]) {
+  async recargarAgendaSede() {
+    await this.ionViewWillEnter();
+  }
+
+  agruparPorMateria(tutores: any[], sedeUsuario: string, esAdmin: boolean = false) {
     const diccionario: { [materia: string]: any[] } = {};
 
     tutores.forEach(tutor => {
@@ -92,7 +146,9 @@ async ionViewWillEnter() {
         materiasArray = tutor.materias.split(',').map((m: string) => m.trim());
       }
 
-      // 🌟 EL TRADUCTOR: Convierte los formatos nuevos y viejos a texto visible
+      const sedeTutor = (tutor.sede || '').toUpperCase();
+      const esMismaSede = (sedeTutor === sedeUsuario.toUpperCase());
+
       let hVisible: any = { lunes: '', martes: '', miercoles: '', jueves: '', viernes: '', sabado: '' };
 
       if (tutor.horarios) {
@@ -100,45 +156,60 @@ async ionViewWillEnter() {
           let dashIndex = clave.indexOf('-');
           
           if (dashIndex > -1) {
-            // FORMATO NUEVO: "Lunes-07:00 - 09:00" -> "PRESENCIAL"
             let diaCrudo = clave.substring(0, dashIndex); 
             let horaCruda = clave.substring(dashIndex + 1); 
             
             let diaClave = diaCrudo.toLowerCase().replace('é', 'e').replace('á', 'a').trim();
-            let modalidad = tutor.horarios[clave];
+            let modalidad = (tutor.horarios[clave] || '').toUpperCase();
             
-            let etiqueta = '(P)';
-            if (modalidad === 'VIRTUAL') etiqueta = '(V)';
-            if (modalidad === 'AMBAS') etiqueta = '(P)(V)';
+            // 🌟 REGLA CLAVE DE VIRTUAL VS PRESENCIAL:
+            // - Si es Admin o si el tutor es de la MISMA sede -> Acepta Presencial, Virtual y Ambas
+            // - Si el tutor es de OTRA sede -> SOLO acepta horarios Virtuales o Ambas (descarta Presencial)
+            const esPermitido = esAdmin || esMismaSede || (modalidad === 'VIRTUAL' || modalidad === 'AMBAS');
 
-            if (hVisible[diaClave] !== undefined) {
-              hVisible[diaClave] += `${horaCruda.trim()} ${etiqueta}\n`; // Agrega salto de línea
+            if (esPermitido) {
+              let etiqueta = '(P)';
+              if (modalidad === 'VIRTUAL') etiqueta = '(V)';
+              if (modalidad === 'AMBAS') etiqueta = '(P)(V)';
+
+              if (hVisible[diaClave] !== undefined) {
+                hVisible[diaClave] += `${horaCruda.trim()} ${etiqueta}\n`;
+              }
             }
           } else {
-            // FORMATO VIEJO: "lunes" -> "07:00 - 09:00" (Para no borrar tutores antiguos)
+            // Compatibilidad con formato antiguo
             let diaClave = clave.toLowerCase().replace('é', 'e').replace('á', 'a').trim();
-            if (hVisible[diaClave] !== undefined && typeof tutor.horarios[clave] === 'string') {
-              hVisible[diaClave] += `${tutor.horarios[clave]}\n`;
+            if (esAdmin || esMismaSede) {
+              if (hVisible[diaClave] !== undefined && typeof tutor.horarios[clave] === 'string') {
+                hVisible[diaClave] += `${tutor.horarios[clave]}\n`;
+              }
             }
           }
         }
       }
 
-      // Limpiamos los espacios extras al final
+      // Verificamos si al tutor le quedó al menos un horario visible permitido
+      let tieneHorariosValidos = false;
       for (let d in hVisible) {
         hVisible[d] = hVisible[d].trim();
+        if (hVisible[d] !== '') {
+          tieneHorariosValidos = true;
+        }
       }
 
-      tutor.horarioVisible = hVisible;
+      // 🌟 Solo mostramos al tutor si tiene al menos un horario válido para este alumno
+      if (tieneHorariosValidos || esAdmin) {
+        const tutorCopia = { ...tutor, horarioVisible: hVisible };
 
-      materiasArray.forEach((materia: string) => {
-        if (!materia) return;
-        const nombreMateria = materia.toUpperCase();
-        if (!diccionario[nombreMateria]) {
-          diccionario[nombreMateria] = [];
-        }
-        diccionario[nombreMateria].push({ ...tutor });
-      });
+        materiasArray.forEach((materia: string) => {
+          if (!materia) return;
+          const nombreMateria = materia.toUpperCase();
+          if (!diccionario[nombreMateria]) {
+            diccionario[nombreMateria] = [];
+          }
+          diccionario[nombreMateria].push(tutorCopia);
+        });
+      }
     });
 
     this.asignaturasMaster = Object.keys(diccionario).sort().map(nombre => ({
@@ -192,7 +263,6 @@ async ionViewWillEnter() {
         celularTutor: this.reservaActual.celularTutor || 'No registrado',
         materia: this.reservaActual.materia,
         dia_elegido: this.reservaActual.dia,
-        // Al enviar a la base de datos de agendamiento, se manda la hora tal cual la vio
         hora_elegida: this.reservaActual.horas, 
         codigo: this.dbService.generarCodigoTutoria(this.reservaActual.materia)
       };
@@ -216,8 +286,5 @@ async ionViewWillEnter() {
 
   toggleCoordinacion() {
     this.mostrarCoordinacion = !this.mostrarCoordinacion;
-  }
-  async recargarAgendaSede() {
-    await this.ionViewWillEnter();
   }
 }

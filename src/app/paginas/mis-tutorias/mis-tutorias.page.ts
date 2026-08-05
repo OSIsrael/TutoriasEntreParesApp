@@ -2,15 +2,16 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
-import { bookOutline, logoWhatsapp, addOutline, checkmarkOutline, closeOutline, filterOutline, personCircleOutline, mailOutline, businessOutline, settingsOutline, logOutOutline, peopleOutline } from 'ionicons/icons';
+import { bookOutline, logoWhatsapp, addOutline, checkmarkOutline, closeOutline, filterOutline, personCircleOutline, mailOutline, businessOutline, settingsOutline, logOutOutline, peopleOutline, notificationsOutline } from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
-import { IonContent, IonIcon, IonHeader, IonToolbar, NavController } from '@ionic/angular/standalone';
+import { IonContent, IonIcon, IonHeader, IonToolbar, NavController,IonButtons,IonButton } from '@ionic/angular/standalone';
+import { Router } from '@angular/router'; // 🌟 Router para la navegación
 @Component({
   selector: 'app-mis-tutorias',
   templateUrl: './mis-tutorias.page.html',
   styleUrls: ['./mis-tutorias.page.scss'],
   standalone: true,
-  imports: [IonContent, IonIcon, CommonModule, FormsModule, IonHeader, IonToolbar]
+  imports: [IonContent, IonIcon, CommonModule, FormsModule, IonHeader, IonToolbar,IonButtons,IonButton]
 })
 export class MisTutoriasPage {
   private dbService = inject(DatabaseService);
@@ -21,15 +22,38 @@ export class MisTutoriasPage {
   cargando: boolean = true;
   correoUsuario: string = '';
   rolUsuario: string = '';
+  private router = inject(Router); 
+
+  hayNotificacionesSinLeer: boolean = false;
 
   constructor() {
-    addIcons({personCircleOutline,mailOutline,businessOutline,bookOutline,settingsOutline,logOutOutline,peopleOutline,logoWhatsapp,addOutline,checkmarkOutline,closeOutline,filterOutline});
+    addIcons({notificationsOutline,bookOutline,logoWhatsapp,addOutline,checkmarkOutline,closeOutline,personCircleOutline,mailOutline,businessOutline,settingsOutline,logOutOutline,peopleOutline,filterOutline});
   }
-
+  irANotificaciones() {
+    this.router.navigate(['/notificaciones']);
+  }
   async ionViewWillEnter() {
+    const correo = localStorage.getItem('correo') || '';
+    const rol = localStorage.getItem('rol') || 'ESTUDIANTE';
+    const sede = localStorage.getItem('sede') || 'CUENCA';
+    await this.verificarNotificaciones(correo, rol, sede);
+
     this.correoUsuario = localStorage.getItem('correo') || '';
     this.rolUsuario = localStorage.getItem('rol') || 'ESTUDIANTE';
     await this.cargarMisTutorias();
+
+  }
+  async verificarNotificaciones(correo: string, rol: string, sede: string) {
+    try {
+      const notifs = await this.dbService.obtenerNotificacionesUsuario(correo, rol, sede);
+      const sinLeer = notifs.filter((n: any) => {
+        const leidas = n['leida_por'] || [];
+        return !leidas.includes(correo);
+      });
+      this.hayNotificacionesSinLeer = sinLeer.length > 0;
+    } catch (error) {
+      console.error("Error al verificar notificaciones:", error);
+    }
   }
 async cargarMisTutorias() {
     this.cargando = true;

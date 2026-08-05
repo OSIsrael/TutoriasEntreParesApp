@@ -1,0 +1,58 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="header-blanco">
+    <ion-buttons slot="start">
+      <ion-button (click)="regresar()">
+        <ion-icon name="arrow-back-outline" style="color: #003366; font-size: 1.4rem;"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" style="margin-left: -10px;" onerror="this.src='assets/logo-gietaes.png'">
+  </ion-toolbar>
+  <div class="linea-separadora"></div>
+</ion-header>
+
+<ion-content class="ion-padding fondo-notificaciones">
+
+  <div class="header-seccion">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <h2 class="titulo-seccion">Centro de Notificaciones</h2>
+    </div>
+    <p class="subtitulo-seccion">Novedades, tutorías y comunicados relevantes para ti.</p>
+  </div>
+
+  <div *ngIf="cargando" class="estado-vacio">
+    <p>Cargando notificaciones...</p>
+  </div>
+
+  <div *ngIf="!cargando && notificaciones.length === 0" class="estado-vacio">
+    <ion-icon name="notifications-outline" class="icono-vacio"></ion-icon>
+    <h3>¡Estás al día!</h3>
+    <p>No tienes notificaciones pendientes por revisar.</p>
+  </div>
+
+  <div *ngIf="!cargando && notificaciones.length > 0" class="lista-notificaciones">
+    <div 
+      *ngFor="let n of notificaciones" 
+      class="card-notificacion" 
+      [class.no-leida]="!esLeida(n)"
+      (click)="seleccionarNotificacion(n)">
+
+      <div class="icono-contenedor" [class]="'tipo-' + (n.tipo | lowercase)">
+        <ion-icon [name]="obtenerIcono(n.tipo)"></ion-icon>
+      </div>
+
+      <div class="contenido-notificacion">
+        <div class="cabecera-card">
+          <span class="categoria-tag">{{ n.tipo }}</span>
+          <span class="fecha-texto">{{ formatearFecha(n.fecha) }}</span>
+        </div>
+
+        <h4 class="titulo-notif">{{ n.titulo }}</h4>
+        <p class="mensaje-notif">{{ n.mensaje }}</p>
+      </div>
+
+      <div class="indicador-leida" *ngIf="!esLeida(n)"></div>
+      <ion-icon name="chevron-forward-outline" class="flecha-link" *ngIf="esLeida(n)"></ion-icon>
+    </div>
+  </div>
+
+</ion-content>

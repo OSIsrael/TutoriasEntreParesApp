@@ -1,7 +1,17 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="header-blanco">
     <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
+
+    <ion-buttons slot="end" style="margin-right: 10px;">
+      <ion-button (click)="irANotificaciones()" style="position: relative; --background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px;">
+        <ion-icon name="notifications-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
+        
+        <div *ngIf="hayNotificacionesSinLeer" style="position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background-color: #EAB308; border-radius: 50%; border: 2px solid white;"></div>
+      
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
+
   <div class="linea-separadora"></div>
 </ion-header>
 

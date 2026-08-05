@@ -35,5 +35,9 @@ export const routes: Routes = [
     path: 'avisos',
     loadComponent: () => import('./paginas/avisos/avisos.page').then( m => m.AvisosPage)
   },
+  {
+    path: 'notificaciones',
+    loadComponent: () => import('./paginas/notificaciones/notificaciones.page').then( m => m.NotificacionesPage)
+  },
   
 ];
