@@ -7,7 +7,6 @@
         <ion-icon name="notifications-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
         
         <div *ngIf="hayNotificacionesSinLeer" style="position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background-color: #EAB308; border-radius: 50%; border: 2px solid white;"></div>
-      
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -39,14 +38,22 @@
   <div class="fab-container">
     <div class="fab-menu" *ngIf="menuAbierto">
       
+      <!-- Botón para Postularse -->
       <button class="fab-item" (click)="irAPostulacion()">
         POSTULARSE <ion-icon name="book-outline"></ion-icon>
       </button>
 
+      <!-- Botón dinámico para el Panel del Tutor -->
+      <button class="fab-item" *ngIf="esTutor" (click)="irAPanelTutor()">
+        PANEL TUTOR <ion-icon name="school-outline"></ion-icon>
+      </button>
+
+      <!-- Botón Admin -->
       <button class="fab-item" *ngIf="esAdmin" (click)="irAAdministracion()">
         PANEL ADMIN <ion-icon name="settings-outline"></ion-icon>
       </button>
 
+      <!-- Cerrar Sesión -->
       <button class="fab-item" (click)="cerrarSesion()">
         CERRAR SESIÓN <ion-icon name="log-out-outline"></ion-icon>
       </button>

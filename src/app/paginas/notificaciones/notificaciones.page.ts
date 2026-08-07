@@ -80,7 +80,7 @@ export class NotificacionesPage implements OnInit {
     } else if (notif.tipo === 'TUTORIA') {
       this.router.navigate(['/tabs/mis-tutorias']);
     } else if (notif.tipo === 'AVISO') {
-      this.router.navigate(['/tabs/horarios']);
+      this.router.navigate(['/tabs/avisos']);
     }
   }
 

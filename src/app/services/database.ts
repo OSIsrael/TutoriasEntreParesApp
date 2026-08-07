@@ -4,6 +4,7 @@ import {
   getDocs, doc, setDoc, collectionData, getDoc, updateDoc
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
+
 // 🌟 Agrega esto en la parte superior de tu database.ts
 export interface MateriaCatalogo {
   sede: string;
@@ -11,24 +12,23 @@ export interface MateriaCatalogo {
   ciclo: number;
   nombre: string;
 }
+
 @Injectable({
   providedIn: 'root'
 })
 export class DatabaseService {
   materiasMaster: MateriaCatalogo[] = [];
- public firestore = inject(Firestore);
+  public firestore = inject(Firestore);
+
   // ==========================================
   // URL MAESTRA DE GOOGLE APPS SCRIPT (Fases 1 y 2)
   // ==========================================
   private scriptURL = 'https://script.google.com/macros/s/AKfycbyMZ8C9QCOWrEmL95aSGSZjcJLRpSxGxCymWBHkDp90WjGaQBek8APCAwQ169sNccg/exec';
 
   // ==========================================
-  // LECTURA DE CATÁLOGOS (EXCEL)
-  // ==========================================
-// ==========================================
   // CATÁLOGOS Y MALLAS
   // ==========================================
-// 🌟 3. LA FUNCIÓN ACTUALIZADA
+  // 🌟 3. LA FUNCIÓN ACTUALIZADA
   async obtenerCatalogosDesdeExcel(): Promise<{carreras: string[], materias: MateriaCatalogo[]}> {
     try {
       let urlLimpia = this.scriptURL.split('?')[0]; 
@@ -79,6 +79,7 @@ export class DatabaseService {
   obtenerMateriasMaestras(): MateriaCatalogo[] {
     return this.materiasMaster;
   }
+
   async guardarPostulacion(datosPostulacion: any): Promise<boolean> {
     try {
       // 1. Guardar en Firebase Firestore (Colección 'Postulaciones')
@@ -133,7 +134,7 @@ export class DatabaseService {
   // ==========================================
   // SEGURIDAD ADMIN
   // ==========================================
- async verificarSiEsAdmin(correo: string): Promise<boolean> {
+  async verificarSiEsAdmin(correo: string): Promise<boolean> {
     try {
       const correoLimpio = correo.toLowerCase().trim();
       
@@ -152,15 +153,6 @@ export class DatabaseService {
   }
 
   // ==========================================
-  // LOGIN Y REGISTRO DE ESTUDIANTES
-  // ==========================================
- // ==========================================
-  // FUNCIONES DEL LOGIN ACTUALIZADAS
-  // ==========================================
-
-// 🌟 NUEVO: Busca al usuario por su cuenta de GMAIL vinculada
-// 🌟 ACTUALIZADO: Ahora también busca en la colección ADMINISTRADORES
-// ==========================================
   // FUNCIONES DEL LOGIN ACTUALIZADAS (FUSIÓN DE PERFILES)
   // ==========================================
   async verificarUsuarioExistente(correoGoogle: string) {
@@ -211,8 +203,7 @@ export class DatabaseService {
     }
   }
 
-
-// 🌟 Asegúrate de que registrarNuevoEstudiante mande los nuevos datos al Excel
+  // 🌟 Asegúrate de que registrarNuevoEstudiante mande los nuevos datos al Excel
   async registrarNuevoEstudiante(datos: any) {
     try {
       // Guarda en Firebase
@@ -244,7 +235,7 @@ export class DatabaseService {
     await setDoc(nuevaRef, paquete);
   }
 
-async aceptarTutor(idPostulacion: string, datosPostulacion: any) {
+  async aceptarTutor(idPostulacion: string, datosPostulacion: any) {
     try {
       const correoID = datosPostulacion.correo.toLowerCase().trim();
 
@@ -413,6 +404,7 @@ async aceptarTutor(idPostulacion: string, datosPostulacion: any) {
       console.error('Error puenteando a Excel', error);
     }
   }
+
   // ==========================================
   // ESTUDIANTES Y RESERVAS
   // ==========================================
@@ -425,10 +417,6 @@ async aceptarTutor(idPostulacion: string, datosPostulacion: any) {
     const horariosRef = collection(this.firestore, 'HorariosDisponibles');
     return collectionData(horariosRef, { idField: 'id' });
   } 
-
-// ==========================================
-  // ESTUDIANTES Y RESERVAS
-  // ==========================================
 
   // Generador de códigos tipo "MAT - 001"
   generarCodigoTutoria(materia: string): string {
@@ -465,7 +453,7 @@ async aceptarTutor(idPostulacion: string, datosPostulacion: any) {
     return addDoc(reservasRef, nuevaReserva);
   }
   
-// Función para leer mis reservas (Actualizada: Visión 360°)
+  // Función para leer mis reservas (Actualizada: Visión 360°)
   async obtenerMisTutorias(correo: string, rol: string) {
     try {
       const correoLimpio = correo.toLowerCase().trim();
@@ -491,7 +479,8 @@ async aceptarTutor(idPostulacion: string, datosPostulacion: any) {
       return [];
     }
   }
- async obtenerRolUsuario(correo: string): Promise<string> {
+
+  async obtenerRolUsuario(correo: string): Promise<string> {
     try {
       const correoID = correo.toLowerCase().trim();
       
@@ -517,7 +506,8 @@ async aceptarTutor(idPostulacion: string, datosPostulacion: any) {
       return 'ESTUDIANTE'; 
     }
   }
-// ==========================================
+
+  // ==========================================
   // UNIRSE POR CÓDIGO
   // ==========================================
   async unirseATutoriaPorCodigo(codigoIngresado: string, correoUsuario: string, nombreUsuario: string) {
@@ -584,6 +574,7 @@ async aceptarTutor(idPostulacion: string, datosPostulacion: any) {
       return { exito: false, mensaje: 'Ocurrió un error en el servidor.' };
     }
   }
+
   // 🌟 NUEVA FUNCIÓN: Verifica si el usuario ya tiene postulaciones en espera
   async verificarPostulacionPendiente(correo: string): Promise<boolean> {
     try {
@@ -602,6 +593,7 @@ async aceptarTutor(idPostulacion: string, datosPostulacion: any) {
       return false;
     }
   }
+
   async rechazarPostulacion(idPostulacion: string): Promise<void> {
     try {
       const postRef = doc(this.firestore, 'Postulaciones', idPostulacion);
@@ -612,11 +604,12 @@ async aceptarTutor(idPostulacion: string, datosPostulacion: any) {
       throw error;
     }
   }
+
   // 🌟 MOTOR MAESTRO DE NOTIFICACIONES
   async crearNotificacion(datos: {
     titulo: string, 
     mensaje: string, 
-    tipo: 'TUTORIA' | 'POSTULACION' | 'AVISO', 
+    tipo: 'TUTORIA' | 'POSTULACION' | 'AVISO' | 'CANCELACION', // 🌟 AÑADIDO 'CANCELACION' AQUÍ
     correo_destino?: string, // Para un usuario específico (Ej. El Tutor)
     rol_destino?: string,    // 'ADMIN', 'ESTUDIANTE', 'TODOS'
     sede_destino?: string    // 'CUENCA', 'QUITO', 'GUAYAQUIL', 'GLOBAL'
@@ -632,6 +625,7 @@ async aceptarTutor(idPostulacion: string, datosPostulacion: any) {
       console.error("Error al crear notificación: ", error);
     }
   }
+
   // 🌟 1. Obtener Notificaciones Filtradas por Usuario, Rol y Sede
   async obtenerNotificacionesUsuario(correo: string, rol: string, sede: string) {
     try {

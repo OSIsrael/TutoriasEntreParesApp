@@ -1,5 +1,5 @@
 import { Component, inject, ElementRef, ViewChild } from '@angular/core';
-import { Firestore, collection, query, where, getDocs, addDoc } from '@angular/fire/firestore';
+import { Firestore, collection, query, where, getDocs, addDoc,doc,deleteDoc } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
 import { CommonModule, KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 import {
   IonContent, IonHeader, IonToolbar, IonButton, IonButtons, IonIcon,
   IonItem, IonLabel, IonInput, IonTextarea, IonSelect, IonSelectOption,
-  IonDatetime, IonDatetimeButton, IonModal // 🌟 NUEVAS IMPORTACIONES PARA EL CALENDARIO
+  IonDatetime, IonDatetimeButton, IonModal 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { arrowBackOutline, megaphoneOutline, checkmarkCircleOutline, closeCircleOutline } from 'ionicons/icons';
@@ -52,7 +52,7 @@ export class AdminPostulacionesPage {
     addIcons({ arrowBackOutline, megaphoneOutline, checkmarkCircleOutline, closeCircleOutline });
   }
 
-  async ionViewWillEnter() {
+async ionViewWillEnter() {
     const rolActual = localStorage.getItem('rol') || '';
     this.sedeAdmin = (localStorage.getItem('sede') || 'CUENCA').toUpperCase();
 
@@ -61,7 +61,12 @@ export class AdminPostulacionesPage {
       return;
     }
 
+    // Cargamos lo que el Admin/Coordinador necesita ver
     await this.cargarPostulaciones();
+
+    // 🌟 Disparamos la limpieza automática de fondo
+    this.limpiarAnunciosExpirados();
+
     setTimeout(() => { this.cargarEstadisticas(); }, 500);
   }
 
@@ -206,6 +211,46 @@ export class AdminPostulacionesPage {
     } catch (error) {
       console.error('Error al publicar:', error);
       alert('Error al publicar el comunicado.');
+    }
+  }
+  // 🌟 CONSERJE AUTOMÁTICO: Elimina eventos pasados de Firebase
+  async limpiarAnunciosExpirados() {
+    try {
+      // Traemos todos los anuncios
+      const q = query(collection(this.firestore, 'Anuncios'));
+      const snapshot = await getDocs(q);
+
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0); // Hoy a medianoche
+
+      snapshot.forEach(async (documento) => {
+        const data = documento.data();
+        const fechaEvento = data['fecha_evento'];
+
+        // Si tiene fecha, la analizamos
+        if (fechaEvento && fechaEvento !== 'Sin fecha' && fechaEvento !== '') {
+          
+          const soloFecha = fechaEvento.split('T')[0]; 
+          const partes = soloFecha.split('-'); 
+
+          if (partes.length === 3) {
+            const anio = parseInt(partes[0], 10);
+            const mes = parseInt(partes[1], 10) - 1; 
+            const dia = parseInt(partes[2], 10);
+
+            // Horario local hasta las 23:59:59
+            const fechaDelAviso = new Date(anio, mes, dia, 23, 59, 59, 999);
+
+            // Si el aviso expiró, lo destruimos de Firebase
+            if (fechaDelAviso.getTime() < hoy.getTime()) {
+              await deleteDoc(doc(this.firestore, 'Anuncios', documento.id));
+              console.log(`🗑️ Aviso expirado eliminado automáticamente: ${data['titulo'] || documento.id}`);
+            }
+          }
+        }
+      });
+    } catch (error) {
+      console.error("Error al limpiar anuncios expirados:", error);
     }
   }
 

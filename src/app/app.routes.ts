@@ -22,9 +22,31 @@ export const routes: Routes = [
         path: 'avisos',
         loadComponent: () => import('./paginas/avisos/avisos.page').then(m => m.AvisosPage)
       },
-      // Por defecto entra al calendario (horarios)
       { path: '', redirectTo: 'horarios', pathMatch: 'full' }
-      
+    ]
+  },
+  // 🌟 NUEVAS RUTAS PARA EL PANEL DEL TUTOR
+  {
+    path: 'tabs-tutor',
+    loadComponent: () => import('./paginas/tabs-tutor/tabs-tutor.page').then(m => m.TabsTutorPage),
+    children: [
+      {
+        path: 'tutorias',
+        loadComponent: () => import('./paginas/tutor-tutorias/tutor-tutorias.page').then(m => m.TutorTutoriasPage)
+      },
+      {
+        path: 'asistencia',
+        loadComponent: () => import('./paginas/tutor-asistencia/tutor-asistencia.page').then(m => m.TutorAsistenciaPage)
+      },
+      {
+        path: 'avisos',
+        loadComponent: () => import('./paginas/avisos/avisos.page').then(m => m.AvisosPage)
+      },
+      {
+        path: 'estadisticas',
+        loadComponent: () => import('./paginas/tutor-estadisticas/tutor-estadisticas.page').then(m => m.TutorEstadisticasPage)
+      },
+      { path: '', redirectTo: 'tutorias', pathMatch: 'full' }
     ]
   },
   {
@@ -39,5 +61,20 @@ export const routes: Routes = [
     path: 'notificaciones',
     loadComponent: () => import('./paginas/notificaciones/notificaciones.page').then( m => m.NotificacionesPage)
   },
-  
+  {
+    path: 'tabs-tutor',
+    loadComponent: () => import('./paginas/tabs-tutor/tabs-tutor.page').then( m => m.TabsTutorPage)
+  },
+  {
+    path: 'tutor-tutorias',
+    loadComponent: () => import('./paginas/tutor-tutorias/tutor-tutorias.page').then( m => m.TutorTutoriasPage)
+  },
+  {
+    path: 'tutor-asistencia',
+    loadComponent: () => import('./paginas/tutor-asistencia/tutor-asistencia.page').then( m => m.TutorAsistenciaPage)
+  },
+  {
+    path: 'tutor-estadisticas',
+    loadComponent: () => import('./paginas/tutor-estadisticas/tutor-estadisticas.page').then( m => m.TutorEstadisticasPage)
+  },
 ];

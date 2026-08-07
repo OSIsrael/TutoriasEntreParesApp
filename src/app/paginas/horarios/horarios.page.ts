@@ -232,18 +232,39 @@ export class HorariosPage implements OnInit {
       return coincideMateria || coincideTutor;
     });
   }
+abrirConfirmacion(tutor: any, dia: string, horas: string, materia: string) { 
+    if (!horas || horas.trim() === '') return; 
 
-  abrirConfirmacion(tutor: any, dia: string, horas: string, materia: string) {
-    if (!horas || horas.trim() === '') return;
-    this.reservaActual = {
-      tutorNombre: tutor.nombre,
-      correoTutor: tutor.correo,
-      celularTutor: tutor.celular,
-      dia: dia,
-      horas: horas,
-      materia: materia
-    };
-    this.mostrarModal = true;
+    // 🌟 ESCUDO REFORZADO: Leemos la memoria del celular en este preciso instante
+    const miCorreo = String(localStorage.getItem('correo') || '').toLowerCase().trim();
+    const miNombre = String(localStorage.getItem('nombre') || '').toLowerCase().trim();
+    
+    // Extraemos los datos del tutor previniendo que vengan nulos o vacíos
+    const correoDelTutor = String(tutor.correo || tutor.correo_google || '').toLowerCase().trim();
+    const nombreDelTutor = String(tutor.nombre || '').toLowerCase().trim();
+
+    // 🛡️ BLOQUEO 1: Comprobación por correo electrónico
+    if (correoDelTutor !== '' && correoDelTutor === miCorreo) {
+      alert('⚠️ No puedes agendar una tutoría contigo mismo.');
+      return; 
+    }
+
+    // 🛡️ BLOQUEO 2 (Respaldo): Comprobación por coincidencia de nombre
+    if (nombreDelTutor !== '' && nombreDelTutor === miNombre) {
+      alert('⚠️ Acción bloqueada: No puedes ser el estudiante y el tutor a la vez.');
+      return;
+    }
+
+    // Si pasa la seguridad, abrimos el modal normalmente
+    this.reservaActual = { 
+      tutorNombre: tutor.nombre, 
+      correoTutor: tutor.correo || tutor.correo_google, // Pasamos el correo que sí exista
+      celularTutor: tutor.celular, 
+      dia: dia, 
+      horas: horas, 
+      materia: materia 
+    }; 
+    this.mostrarModal = true; 
   }
 
   cerrarConfirmacion() {

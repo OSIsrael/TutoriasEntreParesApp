@@ -15,8 +15,6 @@
 </ion-header>
 
 <ion-content class="fondo-app">
-  
-
   <div class="ion-padding">
     <h2 class="titulo-azul">TUTORÍAS AGENDADAS:</h2>
 
@@ -24,31 +22,69 @@
     
     <p *ngIf="!cargando && tutorias.length === 0" style="text-align: center; color: #666;">Aún no tienes tutorías en tu historial.</p>
 
-    <div class="tarjeta-azul" *ngFor="let t of tutorias">
-      <div class="icono-blanco"><ion-icon name="book-outline"></ion-icon></div>
-      <div class="info-texto">
-        <h3>{{ t.materia }} <span *ngIf="t.codigo">( {{ t.codigo }} )</span></h3>
-        <p>{{ t.dia }}</p>
-        <p>{{ t.hora }}</p>
-      </div>
-      <div class="punto-estado" [style.background]="t.color"></div>
-      
-      <ion-icon 
-        name="logo-whatsapp" 
-        class="icono-wa" 
-        *ngIf="t.estado !== 'CANCELADA'"
-        (click)="contactarWhatsApp(t.celularContacto, t.nombreContacto, t.materia)"
-        style="cursor: pointer;">
-      </ion-icon>
+    <!-- 🌟 GUÍA PASO A PASO PARA CONTACTAR AL TUTOR (Se muestra solo si hay tutorías) -->
+    <div class="guia-contacto" *ngIf="!cargando && tutorias.length > 0" style="margin-bottom: 25px; background: rgba(16, 185, 129, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
+      <h4 style="color: #003366; font-size: 0.95rem; font-weight: 800; margin-top: 0; margin-bottom: 12px; display: flex; align-items: center;">
+        <ion-icon name="chatbubbles-outline" style="font-size: 1.4rem; color: #10b981; margin-right: 6px;"></ion-icon>
+        ¿Qué hacer ahora?
+      </h4>
+      <ol style="margin: 0; padding-left: 25px; color: #555; font-size: 0.85rem; line-height: 1.6;">
+        <li style="margin-bottom: 6px;"><strong>Desliza</strong> la tarjeta de tu tutoría hacia la izquierda 👉</li>
+        <li style="margin-bottom: 6px;">Toca el botón verde de <strong>WhatsApp</strong>.</li>
+        <li><strong>Envía el mensaje</strong> pre-cargado para coordinar con tu tutor.</li>
+      </ol>
     </div>
 
-    <div class="seccion-codigo">
+    <!-- TARJETAS DESLIZABLES -->
+    <ion-list style="background: transparent;" lines="none" *ngIf="!cargando">
+      <ion-item-sliding *ngFor="let t of tutorias" style="background: transparent; margin-bottom: 15px;">
+        
+        <ion-item style="--padding-start: 0; --inner-padding-end: 0; --background: transparent;">
+          <div class="tarjeta-azul" style="width: 100%; margin: 0;">
+            <div class="icono-blanco"><ion-icon name="book-outline"></ion-icon></div>
+            <div class="info-texto">
+              <h3>{{ t.materia }} <span *ngIf="t.codigo">( {{ t.codigo }} )</span></h3>
+              <p>{{ t.dia }}</p>
+              <p>{{ t.hora }}</p>
+            </div>
+            <div class="punto-estado" [style.background]="t.color"></div>
+          </div>
+        </ion-item>
+
+        <!-- OPCIONES AL DESLIZAR -->
+        <ion-item-options side="end">
+          <ion-item-option *ngIf="t.estado !== 'CANCELADA'" color="success" (click)="contactarWhatsApp(t.celularContacto, t.nombreContacto, t.materia)">
+            <ion-icon slot="icon-only" name="logo-whatsapp" style="font-size: 1.8rem;"></ion-icon>
+          </ion-item-option>
+          <ion-item-option *ngIf="t.estado !== 'CANCELADA'" color="danger" (click)="cancelarTutoria(t)">
+            <ion-icon slot="icon-only" name="trash-outline" style="font-size: 1.8rem;"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+
+      </ion-item-sliding>
+    </ion-list>
+
+    <!-- GUÍA DE UNIRSE CON CÓDIGO (AFUERA Y ABAJO) -->
+    <div class="seccion-codigo" style="margin-top: 30px;">
       <h2 class="titulo-azul">UNÉTE CON CÓDIGO:</h2>
       <button class="btn-mas-amarillo" (click)="abrirModalCodigo()">
         <ion-icon name="add-outline"></ion-icon>
       </button>
     </div>
 
+    <div class="guia-codigo" style="margin-top: 15px; margin-bottom: 30px; background: rgba(0, 51, 102, 0.04); padding: 15px; border-radius: 12px; border: 1px solid rgba(0, 51, 102, 0.1);">
+      <h4 style="color: #003366; font-size: 0.95rem; font-weight: 800; margin-top: 0; margin-bottom: 12px; display: flex; align-items: center;">
+        <ion-icon name="information-circle" style="font-size: 1.4rem; color: #EAB308; margin-right: 6px;"></ion-icon>
+        ¿Cómo unirme a una clase?
+      </h4>
+      <ol style="margin: 0; padding-left: 25px; color: #555; font-size: 0.85rem; line-height: 1.6;">
+        <li style="margin-bottom: 6px;">Pide a un compañero el código de su tutoría agendada <strong style="color: #003366;">(Ej: MAT - 1234)</strong>.</li>
+        <li style="margin-bottom: 6px;">Toca el botón dorado <strong style="color: #003366;">(+)</strong> e ingresa el código.</li>
+        <li>¡Listo! Te unirás a su misma sesión, con el mismo tutor.</li>
+      </ol>
+    </div>
+
+    <!-- LEYENDA -->
     <div class="leyenda">
       <span><div class="punto verde"></div> Confirmada</span>
       <span><div class="punto amarillo"></div> Pendiente</span>

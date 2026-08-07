@@ -3,7 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { addIcons } from 'ionicons';
-import { personCircleOutline, bookOutline, logOutOutline, peopleOutline, settingsOutline, businessOutline, mailOutline, notificationsOutline, personOutline } from 'ionicons/icons';
+import { 
+  personCircleOutline, bookOutline, logOutOutline, peopleOutline, 
+  settingsOutline, businessOutline, mailOutline, notificationsOutline, 
+  personOutline, schoolOutline 
+} from 'ionicons/icons';
 import { Auth, signOut } from '@angular/fire/auth';
 import { 
   IonContent, IonHeader, IonTitle, IonToolbar, 
@@ -12,7 +16,6 @@ import {
   NavController 
 } from '@ionic/angular/standalone';
 
-// 🌟 IMPORTAMOS TU BASE DE DATOS
 import { DatabaseService } from '../../services/database';
 
 @Component({
@@ -30,33 +33,32 @@ export class PerfilPage implements OnInit {
   private router = inject(Router);
   private auth = inject(Auth);
   private navCtrl = inject(NavController); 
-  private dbService = inject(DatabaseService); // 🌟 INYECTAMOS EL SERVICIO
+  private dbService = inject(DatabaseService); 
 
+  esTutor: boolean = false;
   usuario = {
     nombre: 'CARGANDO...',
     correo: '',
     sede: ''
   };
   menuAbierto: boolean = false; 
-
   rolUsuario: string = '';
   esAdmin: boolean = false;
-  
-  // 🌟 VARIABLE PARA LA CAMPANITA
   hayNotificacionesSinLeer: boolean = false;
 
   constructor() {
-    addIcons({notificationsOutline, personCircleOutline, mailOutline, businessOutline, bookOutline, settingsOutline, logOutOutline, peopleOutline, personOutline});
+    addIcons({
+      notificationsOutline, personCircleOutline, mailOutline, businessOutline, 
+      bookOutline, settingsOutline, logOutOutline, peopleOutline, personOutline, schoolOutline
+    });
   }
 
   ngOnInit() {}
 
-  // 🌟 AÑADIMOS ASYNC AQUÍ
   async ionViewWillEnter() {
     this.menuAbierto = false; 
 
     const correoGuardado = localStorage.getItem('correo');
-
     if (!correoGuardado) {
       this.navCtrl.navigateRoot('/login');
       return;
@@ -74,22 +76,18 @@ export class PerfilPage implements OnInit {
 
     this.rolUsuario = rolGuardado;
     this.esAdmin = (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR');
+    this.esTutor = (rolGuardado === 'TUTOR' || rolGuardado === 'COORDINADOR' || rolGuardado === 'ADMIN');
 
-    // 🌟 REVISAMOS SI HAY NOTIFICACIONES CON LAS VARIABLES CORRECTAS
     await this.verificarNotificaciones(correoGuardado, rolGuardado, sedeGuardada);
   }
 
-  // 🌟 FUNCIÓN VERIFICADORA ADAPTADA
   async verificarNotificaciones(correo: string, rol: string, sede: string) {
     try {
       const notifs = await this.dbService.obtenerNotificacionesUsuario(correo, rol, sede);
-      
-      // Agregamos (n: any) para que TypeScript no se queje
       const sinLeer = notifs.filter((n: any) => {
         const leidas = n['leida_por'] || [];
         return !leidas.includes(correo);
       });
-
       this.hayNotificacionesSinLeer = sinLeer.length > 0;
     } catch (error) {
       console.error("Error al verificar notificaciones:", error);
@@ -100,16 +98,20 @@ export class PerfilPage implements OnInit {
     this.menuAbierto = !this.menuAbierto;
   }
 
+  irANotificaciones() {
+    this.router.navigate(['/notificaciones']);
+  }
+
   irAPostulacion() {
     this.router.navigate(['/tabs/postulacion']);
   }
 
-  irAAdministracion() {
-    this.router.navigate(['/admin-postulaciones']);
+  irAPanelTutor() {
+    this.router.navigate(['/tabs-tutor/tutorias']);
   }
 
-  irANotificaciones() {
-    this.router.navigate(['/notificaciones']);
+  irAAdministracion() {
+    this.router.navigate(['/admin-postulaciones']);
   }
 
   async cerrarSesion() {
@@ -118,7 +120,6 @@ export class PerfilPage implements OnInit {
       localStorage.clear();
       this.navCtrl.navigateRoot('/login');
     } catch (error) {
-      console.error("Error al cerrar sesión:", error);
       localStorage.clear();
       this.navCtrl.navigateRoot('/login');
     }
