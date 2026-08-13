@@ -236,3 +236,81 @@ ion-datetime-button::part(native) {
   border: 1px solid #cbd5e1;
   font-weight: bold;
 } 
+/* ========================================================
+   🌟 POPOVER PREMIUM PARA ESTADOS DE TUTORÍA
+   ======================================================== */
+.popover-estado-gietaes {
+  --background: #ffffff !important;
+  --border-radius: 16px !important;
+  --box-shadow: 0 10px 25px rgba(0, 51, 102, 0.15) !important;
+  color-scheme: light !important;
+
+  .menu-estado-header {
+    background: #f8fafc;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: center;
+
+    .sub {
+      margin: 0;
+      font-size: 0.75rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    h4 {
+      margin: 5px 0 0 0;
+      color: #003366;
+      font-weight: 800;
+      font-size: 1rem;
+    }
+  }
+
+  .lista-estados {
+    background: #ffffff;
+    padding: 10px 0;
+
+    ion-item {
+      --background: transparent;
+      --background-hover: #f1f5f9;
+      font-weight: 700;
+      color: #334155;
+      font-size: 0.95rem;
+
+      .bolita {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        margin-right: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+
+        &.verde { background: #34d399; }
+        &.amarilla { background: #fde047; }
+        &.roja { background: #ef4444; }
+      }
+    }
+  }
+  /* 🌟 POPOVER PREMIUM GIETAES (Para Selects) */
+ion-popover.popover-premium-gietaes {
+  --background: #ffffff !important;
+  color-scheme: light !important;
+
+  &::part(content) {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 25px rgba(0, 51, 102, 0.15) !important;
+  }
+
+  ion-item {
+    --background: #ffffff !important;
+    --color: #334155 !important;
+    font-weight: 600;
+  }
+
+  ion-radio {
+    --color: #cbd5e1 !important;
+    --color-checked: #EAB308 !important;
+  }
+}
+}

@@ -1,13 +1,30 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>tabs-tutor</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-tabs>
+  <!-- 🌟 LA BARRA FLOTANTE -->
+  <ion-tab-bar slot="bottom">
+    
+    <!-- 1. Tutorías Agendadas -->
+    <ion-tab-button tab="tutorias">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <ion-label>Tutorías</ion-label>
+    </ion-tab-button>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">tabs-tutor</ion-title>
-    </ion-toolbar>
-  </ion-header>
-</ion-content>
+    <!-- 2. Registro de Asistencia -->
+    <ion-tab-button tab="asistencia">
+      <ion-icon name="checkbox-outline"></ion-icon>
+      <ion-label>Asistencia</ion-label>
+    </ion-tab-button>
+
+    <!-- 3. Avisos -->
+    <ion-tab-button tab="avisos">
+      <ion-icon name="megaphone-outline"></ion-icon>
+      <ion-label>Avisos</ion-label>
+    </ion-tab-button>
+
+    <!-- 4. Perfil -->
+    <ion-tab-button tab="perfil">
+      <ion-icon name="person-outline"></ion-icon>
+      <ion-label>Perfil</ion-label>
+    </ion-tab-button>
+
+  </ion-tab-bar>
+</ion-tabs>

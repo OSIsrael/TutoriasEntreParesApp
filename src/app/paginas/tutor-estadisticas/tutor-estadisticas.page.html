@@ -1,13 +1,84 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>tutor-estadisticas</ion-title>
+<ion-header class="ion-no-border">
+  <ion-toolbar class="header-blanco">
+    <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
+
+    <ion-buttons slot="end" style="margin-right: 10px;">
+      <ion-button (click)="irANotificaciones()" style="position: relative; --background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px;">
+        <ion-icon name="notifications-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
+        <div *ngIf="hayNotificacionesSinLeer" style="position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background-color: #EAB308; border-radius: 50%; border: 2px solid white;"></div>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
+  <div class="linea-separadora"></div>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">tutor-estadisticas</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="fondo-app">
+  
+  <!-- 🌟 TU CABECERA DE PERFIL ORIGINAL -->
+  <div class="ion-padding ion-text-center contenedor-perfil" style="margin-top: 30px;">
+    <div class="usuario-fila">
+      <ion-icon name="person-circle-outline" class="icono-avatar"></ion-icon>
+      <div class="texto-usuario">
+        <h2>{{ usuario.nombre }}</h2>
+        <p style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin-top: 5px;">
+          <ion-icon name="mail-outline" style="color: #003366;"></ion-icon> {{ usuario.correo }}
+        </p>
+        
+        <p style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin-top: 5px; font-weight: bold; color: #003366;">
+          <ion-icon name="business-outline"></ion-icon> SEDE: {{ usuario.sede }}
+        </p>
+        <p style="font-size: 0.8rem; color: #666; margin-top: 8px; font-weight: bold; text-transform: uppercase; background: rgba(0,0,0,0.05); padding: 4px 10px; border-radius: 6px; display: inline-block;">
+          Rol: {{ rolUsuario }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🌟 SECCIÓN EXCLUSIVA DE GRÁFICAS -->
+  <div class="ion-padding animate__animated animate__fadeIn">
+    
+    <h3 class="subtitulo-seccion"><ion-icon name="bar-chart-outline"></ion-icon> Mi Dashboard de Rendimiento</h3>
+    
+    <ion-grid class="ion-no-padding mt-3">
+      <ion-row>
+        <ion-col size="6" class="stat-box right-border">
+          <h1 class="stat-number">{{ totalClasesDadas }}</h1>
+          <p class="stat-label">Tutorías<br>Impartidas</p>
+        </ion-col>
+        <ion-col size="6" class="stat-box">
+          <h1 class="stat-number">{{ totalAlumnosAtendidos }}</h1>
+          <p class="stat-label">Estudiantes<br>Atendidos</p>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <div class="chart-card mt-4">
+      <h3 class="chart-title">Tutorías por Materia</h3>
+      <div class="canvas-wrapper">
+        <canvas #barCanvas style="max-height: 240px; width: 100%;"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 🌟 TU BOTÓN FLOTANTE ORIGINAL MODIFICADO -->
+  <div class="fab-container">
+    <div class="fab-menu" *ngIf="menuAbierto">
+      
+      <!-- Botón para Volver a Estudiante -->
+      <button class="fab-item" (click)="irAPanelEstudiante()">
+        PANEL ESTUDIANTE <ion-icon name="person-outline"></ion-icon>
+      </button>
+
+      <!-- Cerrar Sesión -->
+      <button class="fab-item" (click)="cerrarSesion()">
+        CERRAR SESIÓN <ion-icon name="log-out-outline"></ion-icon>
+      </button>
+
+    </div>
+    
+    <button class="fab-amarillo" (click)="toggleMenu()">
+      <ion-icon name="people-outline"></ion-icon>
+    </button>
+  </div>
 </ion-content>

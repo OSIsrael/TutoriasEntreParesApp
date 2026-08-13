@@ -1,13 +1,106 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>tutor-tutorias</ion-title>
+<ion-header class="ion-no-border">
+  <ion-toolbar class="header-blanco">
+    <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
+
+     <ion-buttons slot="end" style="margin-right: 10px;">
+      <ion-button (click)="irANotificaciones()" style="position: relative; --background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px;">
+        <ion-icon name="notifications-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
+        
+        <div *ngIf="hayNotificacionesSinLeer" style="position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background-color: #EAB308; border-radius: 50%; border: 2px solid white;"></div>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
+  <div class="linea-separadora"></div>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">tutor-tutorias</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="fondo-app">
+  <div class="ion-padding">
+    <h2 class="titulo-azul">CLASES A IMPARTIR:</h2>
+
+    <p *ngIf="cargando" style="text-align: center; color: #666; margin-top: 30px;">Cargando tu agenda de estudiante...</p>
+    
+    <div *ngIf="!cargando && tutoriasPorImpartir.length === 0" style="text-align: center; color: #666; margin-top: 40px;">
+      <ion-icon name="calendar-outline" style="font-size: 4rem; color: #cbd5e1;"></ion-icon>
+      <p style="font-size: 1.1rem; font-weight: bold; color: #003366; margin-top: 10px;">Agenda Libre</p>
+      <p>Aún no tienes estudiantes agendados en tus horarios.</p>
+    </div>
+
+    <div class="guia-contacto" *ngIf="!cargando && tutoriasPorImpartir.length > 0">
+      <h4><ion-icon name="book-outline"></ion-icon> Gestión de Estudiantes</h4>
+      <ol>
+        <li><strong>Toca la bolita de color</strong> para cambiar el estado de la cita.</li>
+        <li><strong>Desliza a la izquierda</strong> para enviar un WhatsApp.</li>
+        <li>Si la cita se canceló y no sirve, <strong>desliza y usa el basurero</strong>.</li>
+      </ol>
+    </div>
+
+    <ion-list style="background: transparent;" lines="none" *ngIf="!cargando">
+      <ion-item-sliding *ngFor="let t of tutoriasPorImpartir" style="background: transparent; margin-bottom: 15px;">
+        
+        <ion-item style="--padding-start: 0; --inner-padding-end: 0; --background: transparent;">
+          <div class="tarjeta-azul" style="width: 100%; margin: 0; border-left: 5px solid #EAB308;">
+            <div class="icono-blanco" style="color: #003366;"><ion-icon name="person-outline"></ion-icon></div>
+            <div class="info-texto">
+              <h3 style="font-size: 1.1rem; margin-bottom: 5px;">{{ t.materia }}</h3>
+              
+              <p style="color: #003366; font-weight: 900; font-size: 0.9rem; margin-bottom: 5px;">
+                👨‍🎓 Alumno: {{ t.nombreEstudiante }}
+              </p>
+              
+              <p style="margin-bottom: 2px;"><ion-icon name="calendar-outline"></ion-icon> {{ t.dia }}</p>
+              <p><ion-icon name="time-outline"></ion-icon> {{ t.hora }}</p>
+              
+              <p *ngIf="t.codigo" style="font-size: 0.75rem; color: #666; margin-top: 8px; font-weight: bold; background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px; display: inline-block;">
+                CÓDIGO DE CLASE: {{ t.codigo }}
+              </p>
+            </div>
+            
+            <!-- 🌟 BOLITA DE ESTADO (Ahora activa el Popover) -->
+            <div class="punto-estado interactivo" [style.background]="t.color" (click)="abrirMenuEstado($event, t)"></div>
+          </div>
+        </ion-item>
+
+        <ion-item-options side="end">
+          <ion-item-option color="success" (click)="contactarEstudiante(t.celularEstudiante, t.nombreEstudiante, t.materia)">
+            <ion-icon slot="icon-only" name="logo-whatsapp" style="font-size: 1.8rem;"></ion-icon>
+          </ion-item-option>
+          <ion-item-option color="danger" (click)="eliminarTutoria(t)">
+            <ion-icon slot="icon-only" name="trash-outline" style="font-size: 1.8rem;"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+
+      </ion-item-sliding>
+    </ion-list>
+    
+    <div class="leyenda" *ngIf="!cargando && tutoriasPorImpartir.length > 0">
+      <span><div class="punto verde"></div> Confirmada</span>
+      <span><div class="punto amarillo"></div> Pendiente</span>
+      <span><div class="punto rojo" style="background: #ef4444;"></div> Cancelada</span>
+    </div>
+
+    <!-- 🌟 ESTE ES EL NUEVO MENÚ VISUAL (Popover) -->
+    <ion-popover #popoverEstado [isOpen]="menuEstadoAbierto" (didDismiss)="menuEstadoAbierto = false" class="popover-estado-gietaes">
+      <ng-template>
+        <div class="menu-estado-header">
+          <p class="sub">Cambiar estado de:</p>
+          <h4>{{ tutoriaSeleccionada?.nombreEstudiante }}</h4>
+        </div>
+        <ion-list lines="none" class="lista-estados">
+          <ion-item button (click)="seleccionarNuevoEstado('CONFIRMADA', '#34d399')">
+            <div class="bolita verde" slot="start"></div>
+            <ion-label>Confirmada</ion-label>
+          </ion-item>
+          <ion-item button (click)="seleccionarNuevoEstado('PENDIENTE', '#fde047')">
+            <div class="bolita amarilla" slot="start"></div>
+            <ion-label>Pendiente</ion-label>
+          </ion-item>
+          <ion-item button (click)="seleccionarNuevoEstado('CANCELADA', '#ef4444')">
+            <div class="bolita roja" slot="start"></div>
+            <ion-label>Cancelada</ion-label>
+          </ion-item>
+        </ion-list>
+      </ng-template>
+    </ion-popover>
+
+  </div>
 </ion-content>

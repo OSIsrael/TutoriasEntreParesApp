@@ -25,7 +25,8 @@ export const routes: Routes = [
       { path: '', redirectTo: 'horarios', pathMatch: 'full' }
     ]
   },
-  // 🌟 NUEVAS RUTAS PARA EL PANEL DEL TUTOR
+  
+  // 🌟 RUTAS PARA EL PANEL DEL TUTOR (LIMPIAS Y ESTRUCTURADAS)
   {
     path: 'tabs-tutor',
     loadComponent: () => import('./paginas/tabs-tutor/tabs-tutor.page').then(m => m.TabsTutorPage),
@@ -43,12 +44,13 @@ export const routes: Routes = [
         loadComponent: () => import('./paginas/avisos/avisos.page').then(m => m.AvisosPage)
       },
       {
-        path: 'estadisticas',
+        path: 'perfil', // 🌟 Reutilizamos tu perfil actual para la cuarta pestaña
         loadComponent: () => import('./paginas/tutor-estadisticas/tutor-estadisticas.page').then(m => m.TutorEstadisticasPage)
       },
       { path: '', redirectTo: 'tutorias', pathMatch: 'full' }
     ]
   },
+
   {
     path: 'admin-postulaciones',
     loadComponent: () => import('./paginas/admin-postulaciones/admin-postulaciones.page').then( m => m.AdminPostulacionesPage)
@@ -60,21 +62,5 @@ export const routes: Routes = [
   {
     path: 'notificaciones',
     loadComponent: () => import('./paginas/notificaciones/notificaciones.page').then( m => m.NotificacionesPage)
-  },
-  {
-    path: 'tabs-tutor',
-    loadComponent: () => import('./paginas/tabs-tutor/tabs-tutor.page').then( m => m.TabsTutorPage)
-  },
-  {
-    path: 'tutor-tutorias',
-    loadComponent: () => import('./paginas/tutor-tutorias/tutor-tutorias.page').then( m => m.TutorTutoriasPage)
-  },
-  {
-    path: 'tutor-asistencia',
-    loadComponent: () => import('./paginas/tutor-asistencia/tutor-asistencia.page').then( m => m.TutorAsistenciaPage)
-  },
-  {
-    path: 'tutor-estadisticas',
-    loadComponent: () => import('./paginas/tutor-estadisticas/tutor-estadisticas.page').then( m => m.TutorEstadisticasPage)
-  },
+  }
 ];

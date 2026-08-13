@@ -1,0 +1,50 @@
+/* 🌟 1. LA CÁPSULA FLOTANTE (Fondo claro del diseño) */
+ion-tab-bar {
+  position: absolute;
+  bottom: 20px; /* Flota por encima del borde inferior */
+  left: 5%;
+  width: 90%;
+  border-radius: 50px; /* Bordes totalmente redondeados */
+  
+  /* El color beige/crema muy clarito de tu imagen */
+  --background: #f2f2e9; 
+  --border: none; /* Adiós a la línea molesta de arriba */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Sombra elegante para que resalte */
+  padding: 6px;
+  height: 75px; /* Altura ideal para que respiren los botones */
+}
+
+/* 🌟 2. LOS BOTONES (Las pestañas individuales) */
+ion-tab-button {
+  background: transparent;
+  --color: #003366;          /* Azul corporativo para los NO seleccionados */
+  --color-selected: #ffffff; /* Blanco puro para el que SÍ está seleccionado */
+  
+  border-radius: 40px;       /* Forma de píldora interna */
+  margin: 0 4px;             /* Separación entre botones */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Animación fluida */
+  
+  /* 🌟 3. EL ESTADO ACTIVO (La píldora azul marino) */
+  &.tab-selected {
+    background-color: #003366; /* Fondo azul oscuro de GIETAES */
+    box-shadow: 0 4px 10px rgba(0, 51, 102, 0.2); /* Sutil brillo azul */
+    
+    ion-icon {
+      transform: translateY(-2px) scale(1.05); /* Pequeño salto al seleccionarlo */
+    }
+  }
+
+  ion-icon {
+    font-size: 24px;
+    margin-top: 6px;
+    transition: transform 0.3s ease;
+  }
+
+  ion-label {
+    font-weight: 700;
+    font-size: 11px;
+    margin-top: 2px;
+    margin-bottom: 4px;
+    letter-spacing: 0.3px;
+  }
+}

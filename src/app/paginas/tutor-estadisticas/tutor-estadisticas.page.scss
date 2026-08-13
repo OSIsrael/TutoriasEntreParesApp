@@ -1,0 +1,94 @@
+.fondo-app { --background: #ffffff; color-scheme: light !important; }
+
+/* 🌟 TU CONTENEDOR ORIGINAL DE PERFIL */
+.contenedor-perfil { margin-top: 40px; }
+
+.usuario-fila {
+  display: flex; align-items: center; justify-content: center; gap: 15px;
+  .icono-avatar { font-size: 5rem; color: #003366; }
+  .texto-usuario {
+    text-align: left;
+    h2 { color: #003366; font-weight: 900; font-size: 1.1rem; margin: 0; }
+    p { color: #003366; font-weight: bold; font-size: 0.9rem; margin: 5px 0 0 0; }
+  }
+}
+
+/* 🌟 TU MENÚ FLOTANTE (FAB) ORIGINAL */
+.fab-container { 
+  position: fixed; 
+  bottom: 5%; 
+  right: 5%; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: flex-end; 
+  z-index: 100;
+}
+.fab-menu {
+  display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;
+  .fab-item { background: #003366; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 0.8rem;}
+}
+.fab-amarillo { background: #EAB308; border: 3px solid #003366; width: 60px; height: 60px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2rem; color: #003366; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+
+/* 🌟 ESTILOS DEL DASHBOARD */
+.subtitulo-seccion {
+  font-size: 1.1rem;
+  color: #003366;
+  font-weight: 900;
+  margin-top: 20px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mt-3 { margin-top: 15px; }
+.mt-4 { margin-top: 25px; }
+
+.stat-box {
+  text-align: center;
+  padding: 10px 0;
+
+  &.right-border {
+    border-right: 1px solid #e2e8f0;
+  }
+
+  .stat-number {
+    margin: 0;
+    font-size: 2.8rem;
+    font-weight: 900;
+    color: #003366;
+  }
+
+  .stat-label {
+    margin: 5px 0 0 0;
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+}
+
+.chart-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+  border-top: 4px solid #003366;
+
+  .chart-title {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1rem;
+    color: #334155;
+    font-weight: 800;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .canvas-wrapper {
+    position: relative;
+    height: 240px;
+    width: 100%;
+  }
+}

@@ -20,10 +20,8 @@ export class DatabaseService {
   materiasMaster: MateriaCatalogo[] = [];
   public firestore = inject(Firestore);
 
-  // ==========================================
-  // URL MAESTRA DE GOOGLE APPS SCRIPT (Fases 1 y 2)
-  // ==========================================
-  private scriptURL = 'https://script.google.com/macros/s/AKfycbyMZ8C9QCOWrEmL95aSGSZjcJLRpSxGxCymWBHkDp90WjGaQBek8APCAwQ169sNccg/exec';
+
+  private scriptURL = 'https://script.google.com/macros/s/AKfycbyi4Vqs-mTz4Tu0_sD2yQulFb_K2_yWTnuQZPRQO2Zwn0iQ1eUIUKkaiP28T5xqWoFh/exec';
 
   // ==========================================
   // CATÁLOGOS Y MALLAS
@@ -606,59 +604,45 @@ export class DatabaseService {
   }
 
   // 🌟 MOTOR MAESTRO DE NOTIFICACIONES
-  async crearNotificacion(datos: {
-    titulo: string, 
-    mensaje: string, 
-    tipo: 'TUTORIA' | 'POSTULACION' | 'AVISO' | 'CANCELACION', // 🌟 AÑADIDO 'CANCELACION' AQUÍ
-    correo_destino?: string, // Para un usuario específico (Ej. El Tutor)
-    rol_destino?: string,    // 'ADMIN', 'ESTUDIANTE', 'TODOS'
-    sede_destino?: string    // 'CUENCA', 'QUITO', 'GUAYAQUIL', 'GLOBAL'
-  }) {
+ async crearNotificacion(datos: any) {
     try {
-      const payload = {
-        ...datos,
+      const notificacionRef = doc(collection(this.firestore, 'Notificaciones'));
+      await setDoc(notificacionRef, {
+        titulo: datos.titulo,
+        mensaje: datos.mensaje,
+        tipo: datos.tipo,
+        correo_destino: datos.correo_destino,
+        sede_destino: datos.sede_destino || 'GLOBAL',
+        rol_destino: datos.rol_destino || 'ESTUDIANTE', // 🌟 ETIQUETA POR DEFECTO
         fecha: new Date().toISOString(),
-        leida_por: [] // Aquí guardaremos quiénes ya vieron la campanita
-      };
-      await addDoc(collection(this.firestore, 'Notificaciones'), payload);
+        leida_por: [] 
+      });
     } catch (error) {
-      console.error("Error al crear notificación: ", error);
+      console.error("Error al crear notificación:", error);
     }
   }
 
-  // 🌟 1. Obtener Notificaciones Filtradas por Usuario, Rol y Sede
-  async obtenerNotificacionesUsuario(correo: string, rol: string, sede: string) {
+  async obtenerNotificacionesUsuario(correo: string, rol: string, sede: string, contextoPanel: string = 'ESTUDIANTE') {
     try {
-      const snapshot = await getDocs(collection(this.firestore, 'Notificaciones'));
-      const todas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+      const q = query(
+        collection(this.firestore, 'Notificaciones'),
+        where('correo_destino', '==', correo),
+        where('rol_destino', '==', contextoPanel) // 🌟 EL NUEVO FILTRO MÁGICO
+      );
+      
+      const querySnapshot = await getDocs(q);
+      let notificaciones: any[] = [];
+      querySnapshot.forEach((doc) => {
+        notificaciones.push({ id: doc.id, ...doc.data() });
+      });
 
-      const correoLimpio = (correo || '').toLowerCase().trim();
-      const rolLimpio = (rol || '').toUpperCase().trim();
-      const sedeLimpia = (sede || 'CUENCA').toUpperCase().trim();
-
-      // Filtrado inteligente
-      return todas.filter(notif => {
-        const correoDestino = (notif.correo_destino || '').toLowerCase().trim();
-        const rolDestino = (notif.rol_destino || '').toUpperCase().trim();
-        const sedeDestino = (notif.sede_destino || '').toUpperCase().trim();
-
-        // REGLA A: Es para un usuario específico (ej. el Tutor)
-        if (correoDestino && correoDestino === correoLimpio) {
-          return true;
-        }
-
-        // REGLA B: Es para un Rol (ej. ADMIN) o para TODOS
-        const coincideRol = (rolDestino === 'TODOS' || rolDestino === rolLimpio);
-        const coincideSede = (sedeDestino === 'GLOBAL' || sedeDestino === sedeLimpia);
-
-        return coincideRol && coincideSede;
-      }).sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-
+      return notificaciones.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
     } catch (error) {
-      console.error("Error al obtener notificaciones:", error);
+      console.error("Error obteniendo notificaciones:", error);
       return [];
     }
   }
+ 
 
   // 🌟 2. Marcar Notificación como Leída por este usuario
   async marcarNotificacionLeida(idNotificacion: string, correoUsuario: string) {
@@ -679,4 +663,56 @@ export class DatabaseService {
       console.error("Error al marcar como leída:", error);
     }
   }
+  // 🌟 NUEVA FUNCIÓN: Trae a todos los estudiantes de una carrera a nivel nacional
+  async obtenerEstudiantesPorCarrera(carrera: string) {
+    try {
+      const q = query(
+        collection(this.firestore, 'Estudiantes'),
+        where('carrera', '==', carrera.toUpperCase())
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => doc.data());
+    } catch (error) {
+      console.error("Error obteniendo estudiantes:", error);
+      return [];
+    }
+  }
+
+  // 🌟 ACTUALIZADA: Solo guarda el registro silenciosamente en Firebase y Excel
+  async guardarAsistencia(datosAsistencia: any) {
+    try {
+      const nuevaRef = doc(collection(this.firestore, 'Asistencias'));
+      await setDoc(nuevaRef, datosAsistencia);
+
+      const payloadExcel = {
+        opcion: 'registrarAsistencia',
+        ...datosAsistencia
+      };
+
+      await fetch(this.scriptURL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadExcel)
+      });
+      
+    } catch (error) {
+      console.error('Error al guardar asistencia:', error);
+      throw error;
+    }
+  }
+  // 🌟 OBTENER DOCENTES DESDE EXCEL
+  async obtenerDocentesDesdeExcel(): Promise<string[]> {
+    try {
+      let urlLimpia = this.scriptURL.split('?')[0];
+      const url = `${urlLimpia}?api=true`;
+      const response = await fetch(url);
+      const data = await response.json();
+      return data.docentes || [];
+    } catch (error) {
+      console.error("Error obteniendo docentes:", error);
+      return [];
+    }
+  }
+ 
 }

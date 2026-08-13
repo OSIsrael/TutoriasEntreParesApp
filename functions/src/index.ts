@@ -4,7 +4,7 @@ import * as admin from 'firebase-admin';
 // Inicializamos el motor de Firebase
 admin.initializeApp();
 
-// Este es el Vigilante: Se activa cada vez que se crea un documento en "Notificaciones"
+// 🌟 EL VIGILANTE: Se activa cada vez que se crea un documento en "Notificaciones"
 export const enviarNotificacionPush = onDocumentCreated('Notificaciones/{notificacionId}', async (event) => {
     
     const snap = event.data;
@@ -15,31 +15,39 @@ export const enviarNotificacionPush = onDocumentCreated('Notificaciones/{notific
 
     const nuevaNotificacion = snap.data();
     
-    // 1. Extraemos los datos del aviso
+    // 1. Extraemos los datos del aviso (Con los nombres EXACTOS de database.ts)
     const titulo = nuevaNotificacion['titulo'] || 'Nueva Alerta en GIETAES';
     const mensaje = nuevaNotificacion['mensaje'] || 'Tienes una nueva actualización.';
-    const rolDestino = nuevaNotificacion['para_rol']; 
-    const sedeDestino = nuevaNotificacion['para_sede']; 
-    const correoDestino = nuevaNotificacion['para_correo']; 
+    const rolDestino = nuevaNotificacion['rol_destino']; 
+    const sedeDestino = nuevaNotificacion['sede_destino']; 
+    const correoDestino = nuevaNotificacion['correo_destino']; 
 
     try {
       const db = admin.firestore();
       let tokens: string[] = []; // Aquí guardaremos las "matrículas" de los celulares
 
-      // CASO A: Notificación para una persona específica (Ej: Alumno)
-      if (correoDestino) {
+      // =========================================================================
+      // CASO A: Notificación Directa (Ej: Alumno recibe confirmación de Tutoría)
+      // =========================================================================
+      if (correoDestino && correoDestino !== 'sin_correo') {
         const dispositivoDoc = await db.collection('Dispositivos_Push').doc(correoDestino).get();
         if (dispositivoDoc.exists) {
           const token = dispositivoDoc.data()?.['token_dispositivo'];
           if (token) tokens.push(token);
         }
       } 
-      // CASO B: Notificación para un grupo (Ej: Todos los Coordinadores de Cuenca)
-      else if (rolDestino && sedeDestino) {
-        const dispositivosSnapshot = await db.collection('Dispositivos_Push')
-          .where('rol', '==', rolDestino)
-          .where('sede', '==', sedeDestino)
-          .get();
+      // =========================================================================
+      // CASO B: Notificación Grupal (Ej: Admins de Cuenca, o Avisos Globales)
+      // =========================================================================
+      else if (rolDestino) {
+        let dispositivosQuery: admin.firestore.Query = db.collection('Dispositivos_Push').where('rol', '==', rolDestino);
+        
+        // Si el destino NO es global, filtramos estrictamente por la sede (Ej: CUENCA)
+        if (sedeDestino && sedeDestino !== 'GLOBAL') {
+          dispositivosQuery = dispositivosQuery.where('sede', '==', sedeDestino);
+        }
+
+        const dispositivosSnapshot = await dispositivosQuery.get();
           
         dispositivosSnapshot.forEach(doc => {
           const token = doc.data()['token_dispositivo'];
@@ -47,7 +55,7 @@ export const enviarNotificacionPush = onDocumentCreated('Notificaciones/{notific
         });
       }
 
-      // Si nadie cumple los requisitos o no han registrado su celular, abortamos
+      // Si nadie cumple los requisitos o no han registrado su celular, abortamos en silencio
       if (tokens.length === 0) {
         console.log('No se encontraron dispositivos registrados para esta alerta.');
         return;

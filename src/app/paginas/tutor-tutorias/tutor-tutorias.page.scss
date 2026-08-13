@@ -1,0 +1,122 @@
+/* 🌟 FORZAMOS EL MODO CLARO IGNORANDO EL TEMA DEL CELULAR */
+ion-content {
+  --background: #f4f5f8 !important;
+  color: #333333 !important;
+  color-scheme: light !important;
+}
+
+.titulo-azul {
+  color: #003366 !important;
+  font-weight: 900;
+  font-size: 1.25rem;
+  margin-top: 15px;
+  margin-bottom: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.guia-contacto {
+  background: rgba(0, 51, 102, 0.04) !important;
+  border: 1px solid rgba(0, 51, 102, 0.1) !important;
+  
+  h4 { color: #003366 !important; }
+  ol, li { color: #475569 !important; }
+}
+
+.tarjeta-azul {
+  background: #ffffff !important;
+  border-radius: 12px;
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08) !important;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 15px;
+
+  .icono-blanco {
+    background: rgba(0, 51, 102, 0.1) !important;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 15px;
+    flex-shrink: 0;
+
+    ion-icon {
+      font-size: 1.6rem;
+      color: #003366 !important;
+    }
+  }
+
+  .info-texto {
+    flex: 1;
+
+    h3 {
+      color: #003366 !important;
+      font-weight: 800;
+      margin: 0 0 5px 0;
+    }
+    p, span {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #64748b !important;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+  }
+
+  /* 🌟 BOLITA GIGANTE Y CENTRADA */
+  /* 🌟 BOLITA GIGANTE Y CENTRADA (Ahora sí 100% clickeable) */
+  .punto-estado {
+    margin-left: auto; 
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 4px solid white !important;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3) !important;
+    flex-shrink: 0;
+    
+    /* 🌟 MAGIA PARA QUE RECIBA EL CLIC */
+    position: relative; 
+    z-index: 99; 
+    pointer-events: auto;
+    
+    transition: transform 0.2s ease, background 0.3s ease;
+    
+    &.interactivo {
+      cursor: pointer;
+      &:active {
+        transform: scale(0.85); 
+      }
+    }
+  }
+}
+
+.leyenda {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  font-size: 0.8rem;
+  color: #64748b !important;
+  font-weight: 600;
+
+  span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .punto {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+
+    &.verde { background: #34d399 !important; }
+    &.amarillo { background: #fde047 !important; }
+    &.rojo { background: #ef4444 !important; }
+  }
+}

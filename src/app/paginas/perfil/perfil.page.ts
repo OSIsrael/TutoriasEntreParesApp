@@ -54,7 +54,7 @@ export class PerfilPage implements OnInit {
   }
 
   ngOnInit() {}
-
+  
   async ionViewWillEnter() {
     this.menuAbierto = false; 
 
@@ -65,8 +65,15 @@ export class PerfilPage implements OnInit {
     }
 
     const nombreGuardado = localStorage.getItem('nombre') || 'SIN NOMBRE';
-    const rolGuardado = localStorage.getItem('rol') || 'ESTUDIANTE';
+    let rolGuardado = localStorage.getItem('rol') || 'ESTUDIANTE';
     const sedeGuardada = localStorage.getItem('sede') || 'CUENCA'; 
+
+    // 🌟 DOBLE VERIFICACIÓN EN TIEMPO REAL: Consultamos si realmente es tutor o admin en la BDD
+    const rolReal = await this.dbService.obtenerRolUsuario(correoGuardado);
+    if (rolReal === 'TUTOR' || rolReal === 'ADMIN' || rolReal === 'COORDINADOR') {
+      rolGuardado = rolReal;
+      localStorage.setItem('rol', rolReal); // Actualizamos la memoria del celular si hubo cambios
+    }
     
     this.usuario = {
       nombre: nombreGuardado.toUpperCase(),

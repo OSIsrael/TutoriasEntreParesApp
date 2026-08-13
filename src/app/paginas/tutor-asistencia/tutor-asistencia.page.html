@@ -1,13 +1,130 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>tutor-asistencia</ion-title>
+<ion-header class="ion-no-border">
+  <ion-toolbar class="header-blanco">
+    <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
+    <ion-buttons slot="end" style="margin-right: 10px;">
+      <ion-button (click)="irANotificaciones()" style="position: relative; --background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px;">
+        <ion-icon name="notifications-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
+        <div *ngIf="hayNotificacionesSinLeer" style="position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background-color: #EAB308; border-radius: 50%; border: 2px solid white;"></div>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
+  <div class="linea-separadora"></div>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">tutor-asistencia</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="fondo-app">
+  <div class="ion-padding">
+    <h2 class="titulo-azul">REPORTE DE ASISTENCIA:</h2>
+    <p style="color: #64748b; font-size: 0.9rem; margin-top: -10px; margin-bottom: 25px;">
+      Registra las tutorías grupales. Agrega a los alumnos y asigna su docente si es necesario.
+    </p>
+
+    <div *ngIf="cargando" style="text-align: center; color: #666; margin-top: 30px;">
+      Cargando base de datos de estudiantes y docentes...
+    </div>
+
+    <!-- 🌟 SECCIÓN 1: DATOS GENERALES -->
+    <div *ngIf="!cargando" class="tarjeta-formulario animate__animated animate__fadeIn mb-4">
+      <h3 class="subtitulo-seccion"><ion-icon name="book-outline"></ion-icon> Datos de la Clase</h3>
+      
+      <ion-item lines="none" class="input-moderno mb-3">
+        <ion-icon slot="start" name="book-outline" style="color: #003366;"></ion-icon>
+        <ion-select [(ngModel)]="form.materia" placeholder="Materia Impartida" interface="popover" [interfaceOptions]="{ cssClass: 'popover-premium-gietaes' }" style="width: 100%;">
+          <ion-select-option *ngFor="let mat of materiasTutor" [value]="mat">{{ mat }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item lines="none" class="input-moderno mb-3 textarea-moderno">
+        <ion-icon slot="start" name="document-text-outline" style="color: #003366; margin-top: 15px;"></ion-icon>
+        <ion-textarea [(ngModel)]="form.tema_tratado" rows="2" placeholder="Tema Impartido"></ion-textarea>
+      </ion-item>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <ion-item lines="none" class="input-moderno" style="flex: 1;">
+          <ion-icon slot="start" name="time-outline" style="color: #003366;"></ion-icon>
+          <ion-input type="number" [(ngModel)]="form.horas" placeholder="Horas"></ion-input>
+        </ion-item>
+        <ion-item lines="none" class="input-moderno" style="flex: 2;">
+          <ion-icon slot="start" name="barcode-outline" style="color: #003366;"></ion-icon>
+          <ion-input [(ngModel)]="form.codigo_tutoria" placeholder="Código (Opcional)"></ion-input>
+        </ion-item>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <ion-item lines="none" class="input-moderno" style="flex: 1;">
+          <ion-label position="stacked" class="label-flotante">¿Asistieron?</ion-label>
+          <ion-select [(ngModel)]="form.asistio" placeholder="Sí / No" interface="popover" [interfaceOptions]="{ cssClass: 'popover-premium-gietaes' }">
+            <ion-select-option value="SI">SÍ</ion-select-option>
+            <ion-select-option value="NO">NO</ion-select-option>
+          </ion-select>
+        </ion-item>
+        <ion-item lines="none" class="input-moderno" style="flex: 1;">
+          <ion-label position="stacked" class="label-flotante">¿Participaron?</ion-label>
+          <ion-select [(ngModel)]="form.participo" placeholder="Sí / No" interface="popover" [interfaceOptions]="{ cssClass: 'popover-premium-gietaes' }">
+            <ion-select-option value="SI">SÍ</ion-select-option>
+            <ion-select-option value="NO">NO</ion-select-option>
+          </ion-select>
+        </ion-item>
+      </div>
+    </div>
+
+    <!-- 🌟 SECCIÓN 2: ALUMNOS ASISTENTES -->
+    <div *ngIf="!cargando" class="tarjeta-formulario animate__animated animate__fadeIn">
+      <h3 class="subtitulo-seccion"><ion-icon name="people-outline"></ion-icon> Alumnos Asistentes</h3>
+      
+      <!-- Buscador Principal -->
+      <ion-item lines="none" class="input-moderno" [class.mb-3]="estudiantesFiltrados.length === 0">
+        <ion-icon slot="start" name="person-outline" style="color: #003366;"></ion-icon>
+        <ion-input type="text" [(ngModel)]="busquedaEstudiante" (ionInput)="filtrarEstudiantes()" placeholder="Buscar alumno y añadir..."></ion-input>
+      </ion-item>
+      
+      <ion-list *ngIf="estudiantesFiltrados.length > 0" class="lista-autocompletado">
+        <ion-item button *ngFor="let est of estudiantesFiltrados" (click)="seleccionarEstudiante(est)" lines="full">
+          <span style="font-size: 0.85rem; color: #333333; font-weight: 600;">{{ est.nombre_completo }} <br><small style="color: #64748b;">{{ est.cedula }}</small></span>
+        </ion-item>
+      </ion-list>
+
+      <!-- 🌟 LISTA DE ALUMNOS AÑADIDOS -->
+      <div *ngFor="let est of estudiantesSeleccionados; let i = index" class="alumno-card mt-3">
+        <div class="alumno-header">
+          <span class="nombre-est">{{ est.nombre }}</span>
+          <ion-icon name="trash-outline" class="btn-borrar" (click)="removerEstudiante(i)"></ion-icon>
+        </div>
+        
+        <div class="alumno-body">
+          
+          <!-- 🌟 NUEVO AUTOCOMPLETADO 100% IONIC PARA DOCENTES -->
+          <div class="contenedor-docente mb-2">
+            <ion-item lines="none" class="input-moderno minimalista">
+              <ion-icon slot="start" name="school-outline" style="color: #003366;"></ion-icon>
+              <ion-input type="text" [(ngModel)]="est.docente" (ionInput)="filtrarDocentesParaEstudiante(est)" placeholder="Docente que solicitó (Opcional)"></ion-input>
+            </ion-item>
+
+            <ion-list *ngIf="est.docentesFiltrados?.length > 0" class="lista-autocompletado-docentes">
+              <ion-item button *ngFor="let doc of est.docentesFiltrados" (click)="seleccionarDocenteParaEstudiante(est, doc)" lines="full">
+                <span style="font-size: 0.8rem; color: #333333; font-weight: 600;">{{ doc }}</span>
+              </ion-item>
+            </ion-list>
+          </div>
+
+          <!-- Derivación -->
+          <ion-item lines="none" class="input-moderno minimalista">
+            <ion-icon slot="start" name="git-network-outline" style="color: #003366;"></ion-icon>
+            <ion-select [(ngModel)]="est.derivacion" placeholder="Derivación" interface="popover" [interfaceOptions]="{ cssClass: 'popover-premium-gietaes' }" style="width: 100%;">
+              <ion-select-option value="DECISION PROPIA">Decisión Propia</ion-select-option>
+              <ion-select-option value="CONSEJERIA ACADEMICA">Consejería Académica</ion-select-option>
+              <ion-select-option value="DOCENTE DE LA CARRERA">Docente de la Carrera</ion-select-option>
+              <ion-select-option value="PROYECTO LALA">Proyecto LALA</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+      </div>
+
+      <!-- Botón Envío Masivo -->
+      <ion-button expand="block" class="btn-enviar mt-4" (click)="enviarRegistro()" [disabled]="enviando || estudiantesSeleccionados.length === 0">
+        <ion-icon slot="start" name="send-outline"></ion-icon>
+        {{ enviando ? 'Guardando grupo...' : 'Registrar Asistencia del Grupo' }}
+      </ion-button>
+
+    </div>
+  </div>
 </ion-content>

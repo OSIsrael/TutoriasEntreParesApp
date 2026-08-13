@@ -9,7 +9,7 @@ import {
 import { addIcons } from 'ionicons';
 import { searchOutline, closeOutline, logoWhatsapp, star, mailOutline, peopleOutline, checkmarkOutline, businessOutline, notificationsOutline } from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
-import { Router } from '@angular/router'; // 🌟 Router para la navegación
+import { Router } from '@angular/router'; 
 
 @Component({
   selector: 'app-horarios',
@@ -24,11 +24,9 @@ import { Router } from '@angular/router'; // 🌟 Router para la navegación
 export class HorariosPage implements OnInit {
   private dbService = inject(DatabaseService);
   private firestore = inject(Firestore);
-  private router = inject(Router); // 🌟 Inyectamos Router
+  private router = inject(Router); 
 
-  // 2. La variable que enciende o apaga el punto dorado
   hayNotificacionesSinLeer: boolean = false;
-
   textoBusqueda: string = '';
   cargando: boolean = false;
   mostrarModal: boolean = false;
@@ -64,6 +62,7 @@ export class HorariosPage implements OnInit {
     this.correoUsuario = localStorage.getItem('correo') || '';
     this.nombreUsuario = localStorage.getItem('nombre') || '';
   }
+  
   irANotificaciones() {
     this.router.navigate(['/notificaciones']);
   }
@@ -73,7 +72,6 @@ export class HorariosPage implements OnInit {
     const rol = localStorage.getItem('rol') || 'ESTUDIANTE';
     const sede = localStorage.getItem('sede') || 'CUENCA';
 
-    // 🌟 Disparamos la revisión de la campanita
     await this.verificarNotificaciones(correo, rol, sede);
     this.cargando = true;
     this.textoBusqueda = ''; 
@@ -84,7 +82,6 @@ export class HorariosPage implements OnInit {
     const sedeEstudiante = (localStorage.getItem('sede') || 'CUENCA').toUpperCase();
     const carreraEstudiante = (localStorage.getItem('carrera') || '').toUpperCase();
 
-    // 🌟 1. Obtenemos todos los tutores activos de Firebase
     const snapshot = await getDocs(collection(this.firestore, 'Tutores'));
     let todosLosTutores = snapshot.docs.map(doc => doc.data());
     todosLosTutores = todosLosTutores.filter(t => t['estado'] === 'ACTIVO');
@@ -92,7 +89,6 @@ export class HorariosPage implements OnInit {
     let tutoresBrutos: any[] = [];
 
     if (this.esCoordinadorPanel) {
-      // 🌟 VISTA ADMIN: Si es Global ve todo, si elige sede filtra tutores de esa sede
       if (this.filtroSedeAgenda === 'GLOBAL') {
         tutoresBrutos = todosLosTutores;
       } else {
@@ -101,8 +97,6 @@ export class HorariosPage implements OnInit {
       this.agruparPorMateria(tutoresBrutos, this.filtroSedeAgenda, true);
 
     } else {
-      // 🌟 VISTA ESTUDIANTE:
-      // Filtramos por la carrera del estudiante
       if (carreraEstudiante) {
         tutoresBrutos = todosLosTutores.filter(t => {
           const carreraTutor = (t['carrera'] || '').toUpperCase();
@@ -111,13 +105,12 @@ export class HorariosPage implements OnInit {
       } else {
         tutoresBrutos = todosLosTutores;
       }
-
-      // Procesamos agrupamiento pasando la sede del estudiante y bandera de estudiante (false)
       this.agruparPorMateria(tutoresBrutos, sedeEstudiante, false);
     }
 
     this.cargando = false;
   }
+  
   async verificarNotificaciones(correo: string, rol: string, sede: string) {
     try {
       const notifs = await this.dbService.obtenerNotificacionesUsuario(correo, rol, sede);
@@ -162,9 +155,6 @@ export class HorariosPage implements OnInit {
             let diaClave = diaCrudo.toLowerCase().replace('é', 'e').replace('á', 'a').trim();
             let modalidad = (tutor.horarios[clave] || '').toUpperCase();
             
-            // 🌟 REGLA CLAVE DE VIRTUAL VS PRESENCIAL:
-            // - Si es Admin o si el tutor es de la MISMA sede -> Acepta Presencial, Virtual y Ambas
-            // - Si el tutor es de OTRA sede -> SOLO acepta horarios Virtuales o Ambas (descarta Presencial)
             const esPermitido = esAdmin || esMismaSede || (modalidad === 'VIRTUAL' || modalidad === 'AMBAS');
 
             if (esPermitido) {
@@ -177,7 +167,6 @@ export class HorariosPage implements OnInit {
               }
             }
           } else {
-            // Compatibilidad con formato antiguo
             let diaClave = clave.toLowerCase().replace('é', 'e').replace('á', 'a').trim();
             if (esAdmin || esMismaSede) {
               if (hVisible[diaClave] !== undefined && typeof tutor.horarios[clave] === 'string') {
@@ -188,7 +177,6 @@ export class HorariosPage implements OnInit {
         }
       }
 
-      // Verificamos si al tutor le quedó al menos un horario visible permitido
       let tieneHorariosValidos = false;
       for (let d in hVisible) {
         hVisible[d] = hVisible[d].trim();
@@ -197,7 +185,6 @@ export class HorariosPage implements OnInit {
         }
       }
 
-      // 🌟 Solo mostramos al tutor si tiene al menos un horario válido para este alumno
       if (tieneHorariosValidos || esAdmin) {
         const tutorCopia = { ...tutor, horarioVisible: hVisible };
 
@@ -232,33 +219,29 @@ export class HorariosPage implements OnInit {
       return coincideMateria || coincideTutor;
     });
   }
-abrirConfirmacion(tutor: any, dia: string, horas: string, materia: string) { 
+
+  abrirConfirmacion(tutor: any, dia: string, horas: string, materia: string) { 
     if (!horas || horas.trim() === '') return; 
 
-    // 🌟 ESCUDO REFORZADO: Leemos la memoria del celular en este preciso instante
     const miCorreo = String(localStorage.getItem('correo') || '').toLowerCase().trim();
     const miNombre = String(localStorage.getItem('nombre') || '').toLowerCase().trim();
     
-    // Extraemos los datos del tutor previniendo que vengan nulos o vacíos
     const correoDelTutor = String(tutor.correo || tutor.correo_google || '').toLowerCase().trim();
     const nombreDelTutor = String(tutor.nombre || '').toLowerCase().trim();
 
-    // 🛡️ BLOQUEO 1: Comprobación por correo electrónico
     if (correoDelTutor !== '' && correoDelTutor === miCorreo) {
       alert('⚠️ No puedes agendar una tutoría contigo mismo.');
       return; 
     }
 
-    // 🛡️ BLOQUEO 2 (Respaldo): Comprobación por coincidencia de nombre
     if (nombreDelTutor !== '' && nombreDelTutor === miNombre) {
       alert('⚠️ Acción bloqueada: No puedes ser el estudiante y el tutor a la vez.');
       return;
     }
 
-    // Si pasa la seguridad, abrimos el modal normalmente
     this.reservaActual = { 
       tutorNombre: tutor.nombre, 
-      correoTutor: tutor.correo || tutor.correo_google, // Pasamos el correo que sí exista
+      correoTutor: tutor.correo || tutor.correo_google, 
       celularTutor: tutor.celular, 
       dia: dia, 
       horas: horas, 
@@ -287,7 +270,26 @@ abrirConfirmacion(tutor: any, dia: string, horas: string, materia: string) {
         hora_elegida: this.reservaActual.horas, 
         codigo: this.dbService.generarCodigoTutoria(this.reservaActual.materia)
       };
+      
+      // 1. Guardamos la reserva en Firestore
       await this.dbService.agendarTutoria(datosReserva);
+
+      // 🌟 2. NUEVO: ALERTA EXCLUSIVA PARA EL TUTOR
+      try {
+        if (this.dbService.crearNotificacion) {
+          await this.dbService.crearNotificacion({
+            titulo: 'Nueva Solicitud de Tutoría',
+            mensaje: `${this.nombreUsuario} ha solicitado una clase de ${this.reservaActual.materia} el día ${this.reservaActual.dia}.`,
+            tipo: 'TUTORIA',
+            correo_destino: this.reservaActual.correoTutor,
+            sede_destino: 'GLOBAL',
+            rol_destino: 'TUTOR' // 🌟 SE VA DIRECTO AL PANEL DE TUTOR
+          });
+        }
+      } catch (notiError) {
+        console.warn('Se guardó la clase, pero falló la notificación:', notiError);
+      }
+
       this.cerrarConfirmacion();
       alert('¡Tutoría agendada con éxito! Revisa la pestaña de Mis Tutorías.');
     } catch (error) {

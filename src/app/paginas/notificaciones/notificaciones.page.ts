@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router'; // 🌟 AGREGAMOS ActivatedRoute
 import { 
   IonContent, IonHeader, IonToolbar, IonButton, IonButtons, 
   IonIcon, IonBadge, IonList, IonItem 
@@ -27,12 +27,15 @@ import { DatabaseService } from '../../services/database';
 export class NotificacionesPage implements OnInit {
   private dbService = inject(DatabaseService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute); // 🌟 HERRAMIENTA PARA LEER LA URL
 
   notificaciones: any[] = [];
   cargando: boolean = true;
   correoUsuario: string = '';
   rolUsuario: string = '';
   sedeUsuario: string = '';
+  
+  contextoBandeja: string = 'ESTUDIANTE'; // 🌟 LA BANDEJA QUE SE MOSTRARÁ
 
   constructor() {
     addIcons({
@@ -46,6 +49,11 @@ export class NotificacionesPage implements OnInit {
     this.correoUsuario = localStorage.getItem('correo') || '';
     this.rolUsuario = localStorage.getItem('rol') || 'ESTUDIANTE';
     this.sedeUsuario = localStorage.getItem('sede') || 'CUENCA';
+
+    // 🌟 LEEMOS DE QUÉ PANEL VIENE EL USUARIO
+    this.route.queryParams.subscribe(params => {
+      this.contextoBandeja = params['panel'] || 'ESTUDIANTE';
+    });
   }
 
   async ionViewWillEnter() {
@@ -55,10 +63,12 @@ export class NotificacionesPage implements OnInit {
   }
 
   async cargarNotificaciones() {
+    // 🌟 AHORA SÍ LE DECIMOS A LA BDD QUÉ BANDEJA EXACTA QUEREMOS VER
     this.notificaciones = await this.dbService.obtenerNotificacionesUsuario(
       this.correoUsuario,
       this.rolUsuario,
-      this.sedeUsuario
+      this.sedeUsuario,
+      this.contextoBandeja
     );
   }
 
@@ -68,24 +78,34 @@ export class NotificacionesPage implements OnInit {
   }
 
   async seleccionarNotificacion(notif: any) {
-    // 1. Marca como leída
     if (!this.esLeida(notif)) {
       await this.dbService.marcarNotificacionLeida(notif.id, this.correoUsuario);
       notif.leida_por = [...(notif.leida_por || []), this.correoUsuario];
     }
 
-    // 2. Redirección inteligente según el tipo
-    if (notif.tipo === 'POSTULACION' && (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR')) {
+    const rolDestino = notif.rol_destino || 'ESTUDIANTE';
+    const tipo = notif.tipo || '';
+
+    if (rolDestino === 'TUTOR') {
+      this.router.navigate(['/tabs-tutor/tutorias']);
+    } else if (rolDestino === 'ADMIN' || rolDestino === 'COORDINADOR') {
       this.router.navigate(['/admin-postulaciones']);
-    } else if (notif.tipo === 'TUTORIA') {
-      this.router.navigate(['/tabs/mis-tutorias']);
-    } else if (notif.tipo === 'AVISO') {
-      this.router.navigate(['/tabs/avisos']);
+    } else {
+      if (tipo === 'TUTORIA' || tipo === 'RECORDATORIO') {
+        this.router.navigate(['/tabs/mis-tutorias']); 
+      } else {
+        this.router.navigate(['/tabs/avisos']);
+      }
     }
   }
 
+  // 🌟 BOTÓN DE REGRESAR INTELIGENTE
   regresar() {
-    this.router.navigate(['/tabs/horarios']);
+    if (this.contextoBandeja === 'TUTOR') {
+      this.router.navigate(['/tabs-tutor/tutorias']);
+    } else {
+      this.router.navigate(['/tabs/horarios']);
+    }
   }
 
   obtenerIcono(tipo: string): string {
