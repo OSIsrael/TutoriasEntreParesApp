@@ -314,3 +314,33 @@ ion-popover.popover-premium-gietaes {
   }
 }
 }
+/* 🌟 POPOVER PREMIUM GIETAES (Para Selects Simples y Múltiples) */
+ion-popover.popover-premium-gietaes {
+  --background: #ffffff !important;
+  color-scheme: light !important;
+
+  &::part(content) {
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 25px rgba(0, 51, 102, 0.15) !important;
+  }
+
+  ion-item {
+    --background: #ffffff !important;
+    --color: #334155 !important;
+    font-weight: 600;
+  }
+
+  /* Si es de selección única (Bolitas) */
+  ion-radio {
+    --color: #cbd5e1 !important;
+    --color-checked: #EAB308 !important;
+  }
+
+  /* Si es de selección múltiple (Cuadritos) */
+  ion-checkbox {
+    --checkbox-background-checked: #EAB308 !important;
+    --border-color-checked: #EAB308 !important;
+    --checkmark-color: #003366 !important;
+  }
+}

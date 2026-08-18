@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { 
-  IonContent, IonItem, IonLabel, IonInput, 
+  IonContent, IonItem,  IonInput, 
   IonSelect, IonSelectOption, IonButton, IonSpinner, IonList, IonIcon 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -19,7 +19,7 @@ import { Firestore, doc, getDoc, updateDoc } from '@angular/fire/firestore';
   standalone: true,
   imports: [
     CommonModule, FormsModule, IonContent, IonItem, 
-    IonLabel, IonInput, IonSelect, IonSelectOption, 
+     IonInput, IonSelect, IonSelectOption, 
     IonButton, IonSpinner, IonList, IonIcon
   ]
 })

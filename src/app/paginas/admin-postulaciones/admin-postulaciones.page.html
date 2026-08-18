@@ -14,7 +14,7 @@
   
   <h2 class="titulo-seccion">Bandeja de Postulaciones</h2>
 
-<ion-item lines="none" class="input-moderno" style="margin: 0 0 20px 0; --border-radius: 10px; border: 1px solid #cbd5e1; --background: white;">
+  <ion-item lines="none" class="input-moderno" style="margin: 0 0 20px 0; --border-radius: 10px; border: 1px solid #cbd5e1; --background: white;">
     <ion-label style="font-weight: bold; color: #003366;">Filtrar Sede:</ion-label>
     <ion-select [(ngModel)]="filtroSedePostulaciones" (ionChange)="cargarPostulaciones()" interface="popover" [interfaceOptions]="{ cssClass: 'popover-blanco' }">
       <ion-select-option value="GLOBAL">🌐 Ver de las 3 Sedes (Global)</ion-select-option>
@@ -24,48 +24,76 @@
     </ion-select>
   </ion-item>
 
-  <div *ngIf="postulaciones.length === 0" style="text-align: center; color: #666; margin-top: 30px; margin-bottom: 30px;">
+  <!-- ESTADO VACÍO -->
+  <div *ngIf="postulacionesAgrupadas.length === 0" style="text-align: center; color: #666; margin-top: 30px; margin-bottom: 30px;">
     <ion-icon name="checkmark-circle-outline" style="font-size: 4rem; color: #10b981;"></ion-icon>
     <p style="font-size: 1.1rem; font-weight: bold; color: #003366;">¡Bandeja vacía!</p>
     <p>No existen solicitudes pendientes para el filtro seleccionado.</p>
   </div>
 
-  <div *ngFor="let p of postulaciones" class="card-estudiante" style="border-left: 5px solid #d97706; background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-    <div class="contenido-card">
-      <h3 style="color: #003366; margin-top: 0; font-weight: 900; text-transform: uppercase;">{{ p.materia_postulada || 'Materia Desconocida' }}</h3>
-      
-      <p style="margin: 5px 0;"><strong>👤 Postulante:</strong> {{ p.nombre || p.correo }}</p>
-      <p style="margin: 5px 0;"><strong>🎓 Carrera:</strong> {{ p.carrera || 'No especificada' }} (Ciclo {{ p.ciclo }})</p>
-      <p style="margin: 5px 0;"><strong>📍 Sede de Origen:</strong> {{ p.sede || 'No especificada' }}</p>
-      
-      <div class="bloque-horarios" style="background: #f4f7f9; padding: 10px; border-radius: 8px; margin-top: 10px;">
-        <strong style="color: #003366; display: block; margin-bottom: 5px;">Disponibilidad Ofrecida:</strong>
-        <ul style="margin: 0; padding-left: 20px; font-size: 0.9rem; color: #333;">
-          <li *ngFor="let bloque of (p.disponibilidad_horaria | keyvalue)" style="margin-bottom: 3px;">
-            <strong>{{ obtenerDia(bloque.key) }}</strong> ({{ obtenerHora(bloque.key) }}) 
-            <span style="color: #d97706; font-size: 0.8rem; font-weight: bold;">[{{ bloque.value }}]</span>
-          </li>
-        </ul>
-      </div>
+  <!-- 🌟 BUCLE PRINCIPAL: Iteramos por estudiante -->
+  <div *ngFor="let estudiante of postulacionesAgrupadas" class="card-estudiante animate__animated animate__fadeIn" style="border-left: 5px solid #d97706; background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+    
+    <!-- 1. Cabecera del Estudiante -->
+    <div style="border-bottom: 1px dashed #cbd5e1; padding-bottom: 10px; margin-bottom: 10px;">
+      <h3 style="color: #003366; margin-top: 0; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; gap: 8px;">
+        <ion-icon name="person-outline"></ion-icon> {{ estudiante.nombre }}
+      </h3>
+      <p style="margin: 5px 0; font-size: 0.9rem;"><strong>🎓 Carrera:</strong> {{ estudiante.carrera }} (Ciclo {{ estudiante.ciclo }})</p>
+      <p style="margin: 5px 0; font-size: 0.9rem;"><strong>📍 Sede de Origen:</strong> {{ estudiante.sede }}</p>
+      <p style="margin: 5px 0; font-size: 0.85rem; color: #64748b;">📱 {{ estudiante.celular }} | 📧 {{ estudiante.correo }}</p>
+    </div>
 
-      <div style="display: flex; gap: 10px; margin-top: 15px;">
-        <ion-button expand="block" color="danger" fill="outline" (click)="rechazar(p)" style="flex: 1; --border-radius: 8px;">
-          <ion-icon name="close-circle-outline" slot="start"></ion-icon>
-          Rechazar
-        </ion-button>
-        <ion-button expand="block" color="success" (click)="aceptar(p)" style="flex: 1; --border-radius: 8px;">
-          <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
-          Aceptar
-        </ion-button>
+    <!-- 2. Horarios que el estudiante ofrece -->
+    <div class="bloque-horarios" style="background: #f4f7f9; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+      <strong style="color: #003366; display: flex; align-items: center; gap: 5px; margin-bottom: 5px;">
+        <ion-icon name="time-outline"></ion-icon> Disponibilidad Ofrecida:
+      </strong>
+      <ul style="margin: 0; padding-left: 20px; font-size: 0.85rem; color: #333;">
+        <li *ngFor="let hora of (estudiante.horarios | keyvalue)" style="margin-bottom: 3px;">
+          <strong>{{ obtenerDia(hora.key) }}</strong> ({{ obtenerHora(hora.key) }}) 
+          <span style="color: #d97706; font-weight: bold;">[{{ hora.value }}]</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- 🌟 SEGUNDO BUCLE: Las materias que este estudiante solicitó -->
+    <div>
+      <h4 style="font-size: 0.95rem; color: #d97706; font-weight: 900; margin-bottom: 10px; display: flex; align-items: center; gap: 5px;">
+        <ion-icon name="book-outline"></ion-icon> Materias Solicitadas:
+      </h4>
+      
+      <div *ngFor="let postMateria of estudiante.materias_postuladas" style="display: flex; justify-content: space-between; align-items: center; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+        
+        <span style="font-weight: bold; color: #1e293b; font-size: 0.85rem; flex: 1;">
+          {{ postMateria.materia_postulada }}
+        </span>
+        
+        <!-- Botones individuales por materia -->
+        <div style="display: flex; gap: 8px;">
+          <ion-button color="danger" fill="outline" size="small" (click)="rechazar(postMateria)" style="margin: 0; --padding-start: 10px; --padding-end: 10px;">
+            <ion-icon name="close-circle-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+          
+          <ion-button color="success" size="small" (click)="aceptar(postMateria)" style="margin: 0; --padding-start: 10px; --padding-end: 10px;">
+            <ion-icon name="checkmark-circle-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </div>
+
       </div>
     </div>
+
   </div>
 
   <hr class="separador">
 
+  <!-- ============================================= -->
+  <!-- MANTENEMOS TUS SECCIONES DE MÉTRICAS INTACTAS -->
+  <!-- ============================================= -->
+
   <h2 class="titulo-seccion">Métricas de Rendimiento</h2>
   
-<ion-item lines="none" class="input-moderno" style="margin: 0 0 15px 0; --border-radius: 10px; border: 1px solid #cbd5e1; --background: white;">
+  <ion-item lines="none" class="input-moderno" style="margin: 0 0 15px 0; --border-radius: 10px; border: 1px solid #cbd5e1; --background: white;">
     <ion-label style="font-weight: bold; color: #003366;">Filtrar Sede:</ion-label>
     <ion-select [(ngModel)]="filtroSedeGraficas" (ionChange)="cargarEstadisticas()" interface="popover" [interfaceOptions]="{ cssClass: 'popover-blanco' }">
       <ion-select-option value="GLOBAL">🌐 Rendimiento Global (Todas)</ion-select-option>

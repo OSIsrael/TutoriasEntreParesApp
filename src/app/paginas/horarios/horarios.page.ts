@@ -3,11 +3,15 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Firestore, collection, getDocs } from '@angular/fire/firestore';
 import { 
-  IonContent, IonHeader, IonTitle, IonToolbar, 
-  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption,IonButtons,IonButton 
+  IonContent, IonHeader,IonToolbar, 
+  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { searchOutline, closeOutline, logoWhatsapp, star, mailOutline, peopleOutline, checkmarkOutline, businessOutline, notificationsOutline } from 'ionicons/icons';
+import { 
+  searchOutline, closeOutline, logoWhatsapp, star, mailOutline, 
+  peopleOutline, checkmarkOutline, businessOutline, notificationsOutline, 
+  informationCircleOutline, locationOutline, calendarOutline 
+} from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
 import { Router } from '@angular/router'; 
 
@@ -17,8 +21,8 @@ import { Router } from '@angular/router';
   styleUrls: ['./horarios.page.scss'],
   standalone: true,
   imports: [
-    IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule, 
-    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption,IonButtons, IonButton
+    IonContent, IonHeader, IonToolbar, CommonModule, FormsModule, 
+    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton
   ]
 })
 export class HorariosPage implements OnInit {
@@ -42,20 +46,14 @@ export class HorariosPage implements OnInit {
   esCoordinadorPanel: boolean = false;
   filtroSedeAgenda: string = 'GLOBAL';
 
-  equipoCoordinacion = [
-    { nombre: 'GIETAES', correo: 'gietaes@ups.edu.ec', rol: 'Contacto GIETAES' },
-    { nombre: 'Israel Sebastián Orellana Solano', correo: 'iorellanas@ups.edu.ec', rol: 'Miembro GIETAES' },
-    { nombre: 'Samantha Daniela Quezada Segarra', correo: 'squezada@ups.edu.ec', rol: 'Miembro GIETAES' },
-    { nombre: 'Sarah Angeline Guzman Lopera', correo: 'sguzmanl@ups.edu.ec', rol: 'Miembro GIETAES' },
-    { nombre: 'Juan Pablo Vargas González', correo: 'jvargasg@ups.edu.ec', rol: 'Miembro GIETAES' },
-    { nombre: 'Veronica Estefanía Tobar Ortega', correo: 'vtobar@ups.edu.ec', rol: 'Miembro GIETAES' },
-    { nombre: 'Silvana Nayeli Guillén Nieto', correo: 'sguillen@ups.edu.ec', rol: 'Miembro GIETAES' },
-    { nombre: 'Jean Pierre Artega Figueroa', correo: 'jarteaga@ups.edu.ec', rol: 'Miembro GIETAES' },
-    { nombre: 'Alejandra Rithsavé Alvarado Pacheco', correo: 'aalvaradop@ups.edu.ec', rol: 'Miembro GIETAES' }
-  ];
+  equipoCoordinacion: any[] = [];
 
   constructor() {
-    addIcons({notificationsOutline,businessOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,searchOutline});
+    addIcons({
+      notificationsOutline,businessOutline,peopleOutline,mailOutline,star,
+      logoWhatsapp,checkmarkOutline,closeOutline,searchOutline, 
+      informationCircleOutline, locationOutline, calendarOutline
+    });
   }
 
   ngOnInit() {
@@ -82,32 +80,86 @@ export class HorariosPage implements OnInit {
     const sedeEstudiante = (localStorage.getItem('sede') || 'CUENCA').toUpperCase();
     const carreraEstudiante = (localStorage.getItem('carrera') || '').toUpperCase();
 
-    const snapshot = await getDocs(collection(this.firestore, 'Tutores'));
-    let todosLosTutores = snapshot.docs.map(doc => doc.data());
-    todosLosTutores = todosLosTutores.filter(t => t['estado'] === 'ACTIVO');
+    // 🌟 1. OBTENEMOS A LOS TUTORES
+    const snapshotTutores = await getDocs(collection(this.firestore, 'Tutores'));
+    let todosLosTutores = snapshotTutores.docs.map(doc => doc.data()).filter(t => t['estado'] === 'ACTIVO');
 
-    let tutoresBrutos: any[] = [];
+    // 🌟 2. OBTENEMOS A LOS ESTUDIANTES (PARA LEER SU ROL VERDADERO)
+    const snapshotEstudiantes = await getDocs(collection(this.firestore, 'Estudiantes'));
+    const todosLosEstudiantes = snapshotEstudiantes.docs.map(doc => doc.data());
 
-    if (this.esCoordinadorPanel) {
-      if (this.filtroSedeAgenda === 'GLOBAL') {
-        tutoresBrutos = todosLosTutores;
+    // 🌟 3. CRUZAMOS DATOS: Le inyectamos el rol de "Estudiantes" al "Tutor"
+    todosLosTutores.forEach(tutor => {
+      const correoTutor = (tutor['correo'] || tutor['correo_google'] || '').toLowerCase().trim();
+      const estudianteDB = todosLosEstudiantes.find(e => (e['correo'] || '').toLowerCase().trim() === correoTutor);
+      
+      if (estudianteDB && estudianteDB['rol']) {
+        tutor['rol'] = String(estudianteDB['rol']).toUpperCase();
       } else {
-        tutoresBrutos = todosLosTutores.filter(t => (t['sede'] || '').toUpperCase() === this.filtroSedeAgenda);
+        tutor['rol'] = 'TUTOR'; 
       }
-      this.agruparPorMateria(tutoresBrutos, this.filtroSedeAgenda, true);
+    });
 
-    } else {
-      if (carreraEstudiante) {
-        tutoresBrutos = todosLosTutores.filter(t => {
-          const carreraTutor = (t['carrera'] || '').toUpperCase();
-          return carreraTutor === carreraEstudiante || carreraTutor === '';
-        });
-      } else {
-        tutoresBrutos = todosLosTutores;
+    // 🌟 4. LLENAMOS LA COORDINACIÓN (CORREO FIJO + EQUIPO DINÁMICO)
+    const coordinadoresDinamicos = todosLosEstudiantes
+      .filter(e => {
+        const rolUsuarioDB = String(e['rol'] || '').toUpperCase();
+        return rolUsuarioDB === 'COORDINADOR' || rolUsuarioDB === 'ADMIN';
+      })
+      .map(c => ({
+        nombre: c['nombre_completo'] || c['nombre'] || 'Sin Nombre',
+        correo: c['correo'] || '',
+        rol: String(c['rol']).toUpperCase() === 'ADMIN' ? 'ADMINISTRADOR' : 'LÍDER GIETAES'
+      }));
+
+    this.equipoCoordinacion = [
+      { nombre: 'Proyecto GIETAES', correo: 'gietaes@ups.edu.ec', rol: 'Contacto Oficial' }, // <-- ESTE NUNCA CAMBIA
+      ...coordinadoresDinamicos // <-- ESTOS CAMBIAN SEGÚN FIREBASE
+    ];
+
+    let tutoresProcesados: any[] = [];
+    let materiasPermitidas: string[] = [];
+
+    // 5. Filtro de Malla para Estudiantes
+    if (!this.esCoordinadorPanel) {
+      try {
+        const catalogos = await this.dbService.obtenerCatalogosDesdeExcel();
+        if (catalogos && catalogos.materias) {
+          materiasPermitidas = catalogos.materias
+            .filter((m: any) => (m.carrera || '').toUpperCase() === carreraEstudiante)
+            .map((m: any) => (m.nombre || '').toUpperCase());
+        }
+      } catch (e) {
+        console.error("Error al cargar la malla del estudiante", e);
       }
-      this.agruparPorMateria(tutoresBrutos, sedeEstudiante, false);
     }
 
+    // 6. Procesamiento Inter-Carreras
+    for (let tutor of todosLosTutores) {
+      if (this.esCoordinadorPanel) {
+        if (this.filtroSedeAgenda !== 'GLOBAL' && (tutor['sede'] || '').toUpperCase() !== this.filtroSedeAgenda) {
+          continue; 
+        }
+      }
+
+      let materiasDelTutor: string[] = [];
+      if (Array.isArray(tutor['materias'])) {
+        materiasDelTutor = tutor['materias'].map((m: string) => m.toUpperCase());
+      } else if (typeof tutor['materias'] === 'string') {
+        materiasDelTutor = tutor['materias'].split(',').map((m: string) => m.trim().toUpperCase());
+      }
+
+      if (!this.esCoordinadorPanel) {
+        materiasDelTutor = materiasDelTutor.filter(m => materiasPermitidas.includes(m));
+      }
+
+      if (materiasDelTutor.length === 0 && !this.esCoordinadorPanel) continue;
+
+      tutor['materiasFiltradas'] = materiasDelTutor;
+      tutoresProcesados.push(tutor);
+    }
+
+    this.agruparPorMateria(tutoresProcesados, sedeEstudiante, this.esCoordinadorPanel);
     this.cargando = false;
   }
   
@@ -132,11 +184,13 @@ export class HorariosPage implements OnInit {
     const diccionario: { [materia: string]: any[] } = {};
 
     tutores.forEach(tutor => {
-      let materiasArray = [];
-      if (Array.isArray(tutor.materias)) {
-        materiasArray = tutor.materias;
-      } else if (typeof tutor.materias === 'string') {
-        materiasArray = tutor.materias.split(',').map((m: string) => m.trim());
+      let materiasArray = tutor.materiasFiltradas || [];
+      if (materiasArray.length === 0 && esAdmin) {
+        if (Array.isArray(tutor.materias)) {
+          materiasArray = tutor.materias;
+        } else if (typeof tutor.materias === 'string') {
+          materiasArray = tutor.materias.split(',').map((m: string) => m.trim());
+        }
       }
 
       const sedeTutor = (tutor.sede || '').toUpperCase();
@@ -199,10 +253,24 @@ export class HorariosPage implements OnInit {
       }
     });
 
-    this.asignaturasMaster = Object.keys(diccionario).sort().map(nombre => ({
-      asignatura: nombre,
-      tutores: diccionario[nombre]
-    }));
+    this.asignaturasMaster = Object.keys(diccionario).sort().map(nombre => {
+      let tutoresMateria = diccionario[nombre];
+
+      tutoresMateria.sort((a, b) => {
+        const esCoordA = a.rol === 'COORDINADOR';
+        const esCoordB = b.rol === 'COORDINADOR';
+        
+        if (esCoordA && !esCoordB) return -1;
+        if (!esCoordA && esCoordB) return 1;
+        
+        return (a.nombre || '').localeCompare(b.nombre || '');
+      });
+
+      return {
+        asignatura: nombre,
+        tutores: tutoresMateria
+      };
+    });
 
     this.asignaturasFiltradas = [...this.asignaturasMaster];
   }
@@ -271,10 +339,8 @@ export class HorariosPage implements OnInit {
         codigo: this.dbService.generarCodigoTutoria(this.reservaActual.materia)
       };
       
-      // 1. Guardamos la reserva en Firestore
       await this.dbService.agendarTutoria(datosReserva);
 
-      // 🌟 2. NUEVO: ALERTA EXCLUSIVA PARA EL TUTOR
       try {
         if (this.dbService.crearNotificacion) {
           await this.dbService.crearNotificacion({
@@ -283,7 +349,7 @@ export class HorariosPage implements OnInit {
             tipo: 'TUTORIA',
             correo_destino: this.reservaActual.correoTutor,
             sede_destino: 'GLOBAL',
-            rol_destino: 'TUTOR' // 🌟 SE VA DIRECTO AL PANEL DE TUTOR
+            rol_destino: 'TUTOR' 
           });
         }
       } catch (notiError) {

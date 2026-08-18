@@ -14,7 +14,6 @@
 
 <ion-content class="fondo-app">
   
-  <!-- 🌟 TU CABECERA DE PERFIL ORIGINAL -->
   <div class="ion-padding ion-text-center contenedor-perfil" style="margin-top: 30px;">
     <div class="usuario-fila">
       <ion-icon name="person-circle-outline" class="icono-avatar"></ion-icon>
@@ -34,9 +33,7 @@
     </div>
   </div>
 
-  <!-- 🌟 SECCIÓN EXCLUSIVA DE GRÁFICAS -->
   <div class="ion-padding animate__animated animate__fadeIn">
-    
     <h3 class="subtitulo-seccion"><ion-icon name="bar-chart-outline"></ion-icon> Mi Dashboard de Rendimiento</h3>
     
     <ion-grid class="ion-no-padding mt-3">
@@ -58,19 +55,21 @@
         <canvas #barCanvas style="max-height: 240px; width: 100%;"></canvas>
       </div>
     </div>
-
   </div>
 
-  <!-- 🌟 TU BOTÓN FLOTANTE ORIGINAL MODIFICADO -->
+  <!-- 🌟 MENÚ FLOTANTE ACTUALIZADO -->
   <div class="fab-container">
     <div class="fab-menu" *ngIf="menuAbierto">
       
-      <!-- Botón para Volver a Estudiante -->
+      <!-- 🌟 NUEVO BOTÓN PARA INCREMENTO -->
+      <button class="fab-item" (click)="abrirModalMaterias()">
+        AÑADIR MATERIAS <ion-icon name="add-circle-outline"></ion-icon>
+      </button>
+
       <button class="fab-item" (click)="irAPanelEstudiante()">
         PANEL ESTUDIANTE <ion-icon name="person-outline"></ion-icon>
       </button>
 
-      <!-- Cerrar Sesión -->
       <button class="fab-item" (click)="cerrarSesion()">
         CERRAR SESIÓN <ion-icon name="log-out-outline"></ion-icon>
       </button>
@@ -78,7 +77,62 @@
     </div>
     
     <button class="fab-amarillo" (click)="toggleMenu()">
-      <ion-icon name="people-outline"></ion-icon>
+      <ion-icon name="settings-outline"></ion-icon>
     </button>
   </div>
+
+ <!-- 🌟 MODAL DE INCREMENTO DE MATERIAS (DISEÑO NATIVO PREMIUM) -->
+  <div class="overlay-modal animate__animated animate__fadeIn" *ngIf="mostrarModalMaterias">
+    <div class="modal-premium animate__animated animate__zoomIn">
+      
+      <!-- Cabecera del Modal -->
+      <div class="modal-header">
+        <ion-icon name="book-outline"></ion-icon>
+        <h3>INCREMENTO DE MATERIAS</h3>
+      </div>
+
+      <!-- Cuerpo del Modal -->
+      <div class="modal-body">
+        <p class="modal-desc">
+          Selecciona qué materias nuevas de tu carrera deseas empezar a impartir.
+        </p>
+
+        <!-- Spinner de Carga -->
+        <div *ngIf="cargandoMaterias" class="cargando-box">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p style="margin-top: 5px;">Cargando catálogo...</p>
+        </div>
+
+        <!-- Selector de Materias -->
+        <!-- Selector de Materias (AHORA COMO POPOVER LIMPIO) -->
+        <div *ngIf="!cargandoMaterias && materiasDisponibles.length > 0" class="input-moderno mb-3">
+          <ion-select multiple="true" [(ngModel)]="materiasSeleccionadas" 
+                      placeholder="Selecciona materias..." 
+                      interface="popover" 
+                      [interfaceOptions]="{ cssClass: 'popover-premium-gietaes' }" 
+                      style="width: 100%;">
+            <ion-select-option *ngFor="let m of materiasDisponibles" [value]="m">{{m}}</ion-select-option>
+          </ion-select>
+        </div>
+
+        <!-- Mensaje si no hay materias -->
+        <div *ngIf="!cargandoMaterias && materiasDisponibles.length === 0" class="alerta-error">
+          <ion-icon name="warning-outline"></ion-icon>
+          No hay materias disponibles en ciclos inferiores a tu ciclo actual.
+        </div>
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="modal-footer">
+        <ion-button fill="outline" class="btn-cancelar" (click)="mostrarModalMaterias = false" [disabled]="cargandoMaterias">
+          CANCELAR
+        </ion-button>
+        <ion-button class="btn-enviar" (click)="enviarSolicitudMaterias()" [disabled]="cargandoMaterias || materiasSeleccionadas.length === 0">
+          ENVIAR SOLICITUD
+        </ion-button>
+      </div>
+
+    </div>
+  </div>
+
 </ion-content>

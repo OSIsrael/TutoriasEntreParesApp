@@ -10,9 +10,8 @@ import {
 } from 'ionicons/icons';
 import { Auth, signOut } from '@angular/fire/auth';
 import { 
-  IonContent, IonHeader, IonTitle, IonToolbar, 
-  IonButtons, IonButton, IonIcon, IonCard, IonCardHeader, 
-  IonCardTitle, IonCardContent, IonItem, IonLabel, IonAvatar,
+  IonContent, IonHeader, IonToolbar, 
+  IonButtons, IonButton, IonIcon,
   NavController 
 } from '@ionic/angular/standalone';
 
@@ -24,9 +23,8 @@ import { DatabaseService } from '../../services/database';
   styleUrls: ['./perfil.page.scss'],
   standalone: true,
   imports: [
-    IonContent, IonHeader, IonTitle, IonToolbar, CommonModule, FormsModule,
-    RouterModule, IonButtons, IonButton, IonIcon, IonCard, IonCardHeader, 
-    IonCardTitle, IonCardContent, IonItem, IonLabel, IonAvatar
+    IonContent, IonHeader, IonToolbar, CommonModule, FormsModule,
+    RouterModule, IonButtons, IonButton, IonIcon, 
   ]
 })
 export class PerfilPage implements OnInit {

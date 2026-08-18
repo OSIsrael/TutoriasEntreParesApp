@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonContent, IonHeader, IonToolbar, IonTitle, IonIcon, IonSpinner,IonButtons,IonButton } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonToolbar, IonIcon, IonSpinner,IonButtons,IonButton } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { megaphoneOutline, notificationsOffOutline, notificationsOutline } from 'ionicons/icons';
 import { Firestore, collection, query, orderBy, getDocs } from '@angular/fire/firestore';
@@ -12,7 +12,7 @@ import { DatabaseService } from '../../services/database';
   templateUrl: './avisos.page.html',
   styleUrls: ['./avisos.page.scss'],
   standalone: true,
-  imports: [IonContent, IonHeader, IonToolbar, IonTitle, IonIcon, IonSpinner, CommonModule,IonButtons,IonButton]
+  imports: [IonContent, IonHeader, IonToolbar, IonIcon, IonSpinner, CommonModule,IonButtons,IonButton]
 })
 export class AvisosPage {
   private firestore = inject(Firestore);
@@ -25,9 +25,6 @@ export class AvisosPage {
   constructor() {
     // Registramos los íconos necesarios para esta pantalla
     addIcons({notificationsOutline,notificationsOffOutline,megaphoneOutline});
-  }
-irANotificaciones() {
-    this.router.navigate(['/notificaciones']);
   }
   // Se ejecuta siempre que el usuario entra a esta pestaña
   async ionViewWillEnter() {
@@ -94,18 +91,36 @@ irANotificaciones() {
     }
     this.cargandoAnuncios = false;
   }
- 
-
   async verificarNotificaciones(correo: string, rol: string, sede: string) {
+    // 🌟 DETECTA AUTOMÁTICAMENTE EN QUÉ PANEL ESTÁ
+    const esPanelTutor = this.router.url.includes('tabs-tutor');
+    const panelContexto = esPanelTutor ? 'TUTOR' : 'ESTUDIANTE';
+
     try {
-      const notifs = await this.dbService.obtenerNotificacionesUsuario(correo, rol, sede);
+      // 🌟 USA LAS VARIABLES QUE RECIBE POR PARÁMETRO
+      const notifs = await this.dbService.obtenerNotificacionesUsuario(
+        correo, rol, sede, panelContexto
+      );
+      
       const sinLeer = notifs.filter((n: any) => {
         const leidas = n['leida_por'] || [];
         return !leidas.includes(correo);
       });
+      
       this.hayNotificacionesSinLeer = sinLeer.length > 0;
     } catch (error) {
       console.error("Error al verificar notificaciones:", error);
     }
+  }
+ 
+
+
+
+  irANotificaciones() {
+    // 🌟 ENVÍA AL USUARIO A LA BANDEJA CORRECTA
+    const esPanelTutor = this.router.url.includes('tabs-tutor');
+    const panelContexto = esPanelTutor ? 'TUTOR' : 'ESTUDIANTE';
+    
+    this.router.navigate(['/notificaciones'], { queryParams: { panel: panelContexto } });
   }
 }

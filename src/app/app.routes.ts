@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { AdminGuard } from './guards/admin.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'splash', pathMatch: 'full' },
@@ -53,7 +54,8 @@ export const routes: Routes = [
 
   {
     path: 'admin-postulaciones',
-    loadComponent: () => import('./paginas/admin-postulaciones/admin-postulaciones.page').then( m => m.AdminPostulacionesPage)
+    loadComponent: () => import('./paginas/admin-postulaciones/admin-postulaciones.page').then( m => m.AdminPostulacionesPage),
+    canActivate:[AdminGuard]
   },
   {
     path: 'avisos',

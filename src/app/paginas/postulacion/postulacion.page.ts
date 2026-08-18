@@ -6,7 +6,7 @@ import { IonContent, IonHeader, IonToolbar, IonButton, IonIcon, IonSpinner, IonS
 import { addIcons } from 'ionicons';
 import { arrowBackOutline, bookOutline, warningOutline, checkmarkCircleOutline, timeOutline, closeCircleOutline, calendarOutline } from 'ionicons/icons';
 import { DatabaseService, MateriaCatalogo } from '../../services/database'; 
-import { collection, query, where, getDocs } from '@angular/fire/firestore'; // 🌟 Importar para leer la DB
+import { collection, query, where, getDocs } from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-postulacion',
@@ -97,8 +97,10 @@ export class PostulacionPage {
 
     // 3. Cargamos el catálogo para el formulario
     const catalogos = await this.dbService.obtenerCatalogosDesdeExcel();
+    
+    // 🌟 AQUÍ ESTÁ EL AJUSTE: SOLO BUSCAMOS POR CARRERA Y CICLO
     this.materiasDisponibles = catalogos.materias.filter(m => 
-      m.carrera === this.carreraUsuario && m.sede === this.sedeUsuario && m.ciclo < this.cicloUsuario
+      m.carrera === this.carreraUsuario && m.ciclo < this.cicloUsuario
     );
 
     this.estadoVista = 'FORMULARIO';
@@ -148,7 +150,7 @@ export class PostulacionPage {
         // 1. Guarda la postulación en la base de datos
         await this.dbService.enviarPostulacion(documentoPostulacion); 
 
-        // 2. 🌟 ESCENARIO 2: Avisa a los Admins de la Sede
+        // 2. 🌟 ESCENARIO 2: Avisa a los Admins de la Sede (Aquí sí mantenemos la sede para que la alerta le llegue solo al admin de su ciudad)
         await this.dbService.crearNotificacion({
           titulo: '📝 Nueva Postulación de Tutor',
           mensaje: `${nombre} postuló para dictar ${nombreMateria}.`,

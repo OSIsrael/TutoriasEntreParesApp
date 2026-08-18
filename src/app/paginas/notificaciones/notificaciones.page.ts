@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router'; // 🌟 AGREGAMOS ActivatedRoute
 import { 
   IonContent, IonHeader, IonToolbar, IonButton, IonButtons, 
-  IonIcon, IonBadge, IonList, IonItem 
+  IonIcon 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
@@ -21,7 +21,7 @@ import { DatabaseService } from '../../services/database';
   standalone: true,
   imports: [
     CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, 
-    IonButton, IonButtons, IonIcon, IonBadge, IonList, IonItem
+    IonButton, IonButtons, IonIcon
   ]
 })
 export class NotificacionesPage implements OnInit {
