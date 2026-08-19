@@ -17,7 +17,7 @@
   <ion-item lines="none" class="input-moderno" style="margin: 0 0 20px 0; --border-radius: 10px; border: 1px solid #cbd5e1; --background: white;">
     <ion-label style="font-weight: bold; color: #003366;">Filtrar Sede:</ion-label>
     <ion-select [(ngModel)]="filtroSedePostulaciones" (ionChange)="cargarPostulaciones()" interface="popover" [interfaceOptions]="{ cssClass: 'popover-blanco' }">
-      <ion-select-option value="GLOBAL">🌐 Ver de las 3 Sedes (Global)</ion-select-option>
+      <ion-select-option value="GLOBAL">Ver de las 3 Sedes (Global)</ion-select-option>
       <ion-select-option value="CUENCA">Cuenca</ion-select-option>
       <ion-select-option value="QUITO">Quito</ion-select-option>
       <ion-select-option value="GUAYAQUIL">Guayaquil</ion-select-option>
@@ -39,9 +39,9 @@
       <h3 style="color: #003366; margin-top: 0; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; gap: 8px;">
         <ion-icon name="person-outline"></ion-icon> {{ estudiante.nombre }}
       </h3>
-      <p style="margin: 5px 0; font-size: 0.9rem;"><strong>🎓 Carrera:</strong> {{ estudiante.carrera }} (Ciclo {{ estudiante.ciclo }})</p>
-      <p style="margin: 5px 0; font-size: 0.9rem;"><strong>📍 Sede de Origen:</strong> {{ estudiante.sede }}</p>
-      <p style="margin: 5px 0; font-size: 0.85rem; color: #64748b;">📱 {{ estudiante.celular }} | 📧 {{ estudiante.correo }}</p>
+      <p style="margin: 5px 0; font-size: 0.9rem;"><strong>Carrera:</strong> {{ estudiante.carrera }} (Ciclo {{ estudiante.ciclo }})</p>
+      <p style="margin: 5px 0; font-size: 0.9rem;"><strong>Sede de Origen:</strong> {{ estudiante.sede }}</p>
+      <p style="margin: 5px 0; font-size: 0.85rem; color: #64748b;">{{ estudiante.celular }} | 📧 {{ estudiante.correo }}</p>
     </div>
 
     <!-- 2. Horarios que el estudiante ofrece -->
@@ -96,7 +96,7 @@
   <ion-item lines="none" class="input-moderno" style="margin: 0 0 15px 0; --border-radius: 10px; border: 1px solid #cbd5e1; --background: white;">
     <ion-label style="font-weight: bold; color: #003366;">Filtrar Sede:</ion-label>
     <ion-select [(ngModel)]="filtroSedeGraficas" (ionChange)="cargarEstadisticas()" interface="popover" [interfaceOptions]="{ cssClass: 'popover-blanco' }">
-      <ion-select-option value="GLOBAL">🌐 Rendimiento Global (Todas)</ion-select-option>
+      <ion-select-option value="GLOBAL">Rendimiento Global (Todas)</ion-select-option>
       <ion-select-option value="CUENCA">Sede Cuenca</ion-select-option>
       <ion-select-option value="QUITO">Sede Quito</ion-select-option>
       <ion-select-option value="GUAYAQUIL">Sede Guayaquil</ion-select-option>
