@@ -10,8 +10,7 @@ import { addIcons } from 'ionicons';
 import { 
   searchOutline, closeOutline, logoWhatsapp, star, mailOutline, 
   peopleOutline, checkmarkOutline, businessOutline, notificationsOutline, 
-  informationCircleOutline, locationOutline, calendarOutline 
-} from 'ionicons/icons';
+  informationCircleOutline, locationOutline, calendarOutline,helpCircleOutline, checkmarkCircleOutline } from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
 import { Router } from '@angular/router'; 
 
@@ -47,13 +46,10 @@ export class HorariosPage implements OnInit {
   filtroSedeAgenda: string = 'GLOBAL';
 
   equipoCoordinacion: any[] = [];
+  mostrarGuia: boolean = false;
 
   constructor() {
-    addIcons({
-      notificationsOutline,businessOutline,peopleOutline,mailOutline,star,
-      logoWhatsapp,checkmarkOutline,closeOutline,searchOutline, 
-      informationCircleOutline, locationOutline, calendarOutline
-    });
+    addIcons({helpCircleOutline,notificationsOutline,businessOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,searchOutline,calendarOutline,checkmarkCircleOutline,locationOutline});
   }
 
   ngOnInit() {
@@ -161,6 +157,11 @@ export class HorariosPage implements OnInit {
 
     this.agruparPorMateria(tutoresProcesados, sedeEstudiante, this.esCoordinadorPanel);
     this.cargando = false;
+    const guiaVista = localStorage.getItem('guia_horarios_vista');
+    if (!guiaVista) {
+      this.mostrarGuia = true;
+      localStorage.setItem('guia_horarios_vista', 'true'); // Marca que ya la vio
+    }
   }
   
   async verificarNotificaciones(correo: string, rol: string, sede: string) {
@@ -375,5 +376,12 @@ export class HorariosPage implements OnInit {
 
   toggleCoordinacion() {
     this.mostrarCoordinacion = !this.mostrarCoordinacion;
+  }
+  abrirGuia() {
+    this.mostrarGuia = true;
+  }
+
+  cerrarGuia() {
+    this.mostrarGuia = false;
   }
 }

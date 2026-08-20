@@ -16,7 +16,7 @@ import Chart from 'chart.js/auto';
 @Component({
   selector: 'app-admin-postulaciones',
   templateUrl: './admin-postulaciones.page.html',
-  styleUrls: ['./admin.postulaciones.page.scss'], // 🌟 CORREGIDO: Restaurado al nombre original con punto
+  styleUrls: ['./admin.postulaciones.page.scss'], 
   standalone: true,
   imports: [
     CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, IonButton,
@@ -88,7 +88,6 @@ export class AdminPostulacionesPage {
       
       const snapshot = await getDocs(q);
       
-      // 🌟 CORREGIDO: Le decimos a TypeScript explícitamente que los datos son de tipo "any"
       const rawPostulaciones = snapshot.docs.map((doc) => {
         const data = doc.data() as any; 
         return { id: doc.id, ...data };
@@ -96,7 +95,6 @@ export class AdminPostulacionesPage {
 
       const diccionarioEstudiantes: { [correo: string]: any } = {};
 
-      // 🌟 CORREGIDO: Declaramos a "post" como "any"
       rawPostulaciones.forEach((post: any) => {
         const correo = post['correo'];
         
@@ -125,11 +123,29 @@ export class AdminPostulacionesPage {
     }
   }
 
+  // ==========================================
+  // 🌟 ACEPTAR Y RECHAZAR (AHORA CON NOTIFICACIONES)
+  // ==========================================
   async aceptar(post: any) {
     try {
       await this.dbService.aceptarTutor(post.id, post);
+      
+      // 🌟 PUNTO 5: NOTIFICAR AL ESTUDIANTE QUE FUE ACEPTADO
+      try {
+        await this.dbService.crearNotificacion({
+          titulo: '🎉 ¡Postulación Aprobada!',
+          mensaje: `¡Felicidades! Tu solicitud para impartir "${post.materia_postulada}" ha sido aceptada. Ya puedes ver tu panel de tutor.`,
+          tipo: 'POSTULACION',
+          correo_destino: post.correo, // Dirigido exclusivamente al estudiante
+          sede_destino: post.sede,
+          rol_destino: 'TODOS' // Se pone "TODOS" porque en este momento el usuario está transicionando de rol
+        });
+      } catch (e) {
+        console.warn('Postulación aceptada, pero falló la notificación', e);
+      }
+
       alert(`✅ Tutor aceptado en ${post.materia_postulada}`);
-      await this.cargarPostulaciones(); 
+      await this.cargarPostulaciones(); // Recarga y re-agrupa automáticamente
       this.cargarEstadisticas();
     } catch (e) { 
       alert('Error al aceptar tutor'); 
@@ -142,6 +158,21 @@ export class AdminPostulacionesPage {
 
     try {
       await this.dbService.rechazarPostulacion(post.id);
+      
+      // 🌟 PUNTO 5: NOTIFICAR AL ESTUDIANTE QUE FUE RECHAZADO
+      try {
+        await this.dbService.crearNotificacion({
+          titulo: '❌ Postulación Rechazada',
+          mensaje: `Tu solicitud para ser tutor de "${post.materia_postulada}" no pudo ser aprobada en esta ocasión.`,
+          tipo: 'POSTULACION',
+          correo_destino: post.correo, // Dirigido exclusivamente al estudiante
+          sede_destino: post.sede,
+          rol_destino: 'ESTUDIANTE' 
+        });
+      } catch (e) {
+        console.warn('Postulación rechazada, pero falló la notificación', e);
+      }
+
       alert(`❌ Postulación para ${post.materia_postulada} rechazada.`);
       await this.cargarPostulaciones(); 
     } catch (error) {

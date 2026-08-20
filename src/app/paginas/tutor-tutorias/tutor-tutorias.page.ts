@@ -11,8 +11,7 @@ import { addIcons } from 'ionicons';
 import { 
   notificationsOutline, bookOutline, logoWhatsapp, 
   personOutline, timeOutline, calendarOutline, trashOutline,
-  checkmarkCircleOutline, closeCircleOutline, closeOutline
-} from 'ionicons/icons';
+  checkmarkCircleOutline, closeCircleOutline, closeOutline,helpCircleOutline, informationCircleOutline, documentTextOutline } from 'ionicons/icons';
 import { Firestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
 
@@ -37,6 +36,7 @@ export class TutorTutoriasPage implements OnInit {
   correoUsuario: string = '';
   rolUsuario: string = '';
   hayNotificacionesSinLeer: boolean = false;
+  mostrarGuiaTutor: boolean = false;
 
   // 🌟 VARIABLES PARA EL NUEVO MENÚ HERMOSO
   @ViewChild('popoverEstado') popoverEstado!: IonPopover;
@@ -44,11 +44,7 @@ export class TutorTutoriasPage implements OnInit {
   tutoriaSeleccionada: any = null;
 
   constructor() {
-    addIcons({ 
-      notificationsOutline, bookOutline, logoWhatsapp, 
-      personOutline, timeOutline, calendarOutline, trashOutline,
-      checkmarkCircleOutline, closeCircleOutline, closeOutline
-    });
+    addIcons({helpCircleOutline,notificationsOutline,calendarOutline,bookOutline,personOutline,timeOutline,logoWhatsapp,trashOutline,informationCircleOutline,checkmarkCircleOutline,documentTextOutline,closeCircleOutline,closeOutline});
   }
 
   ngOnInit() { }
@@ -60,6 +56,11 @@ export class TutorTutoriasPage implements OnInit {
     
     await this.verificarNotificaciones(this.correoUsuario, this.rolUsuario, sede);
     await this.cargarTutoriasPorImpartir();
+    const guiaTutorVista = localStorage.getItem('guia_tutor_vista');
+    if (!guiaTutorVista) {
+      this.mostrarGuiaTutor = true;
+      localStorage.setItem('guia_tutor_vista', 'true'); // Marca que ya la vio
+    }
   }
 
 async verificarNotificaciones(correo: string, rol: string, sede: string) {
@@ -197,5 +198,12 @@ async verificarNotificaciones(correo: string, rol: string, sede: string) {
     } catch (error) {
       alert('Error al eliminar la tutoría.');
     }
+  }
+  abrirGuia() {
+    this.mostrarGuiaTutor = true;
+  }
+
+  cerrarGuia() {
+    this.mostrarGuiaTutor = false;
   }
 }

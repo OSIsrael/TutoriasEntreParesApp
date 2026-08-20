@@ -2,7 +2,12 @@
   <ion-toolbar class="header-blanco">
     <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
 
-   <ion-buttons slot="end" style="margin-right: 10px;">
+    <ion-buttons slot="end" style="margin-right: 10px;">
+      
+      <ion-button (click)="abrirGuia()" style="--background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px; margin-right: 5px;">
+        <ion-icon name="help-circle-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
+      </ion-button>
+
       <ion-button (click)="irANotificaciones()" style="position: relative; --background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px;">
         <ion-icon name="notifications-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
         
@@ -19,6 +24,7 @@
   <div class="ion-padding ion-text-center">
     
     <h1 class="titulo-principal">AGENDA UNA TUTORÍA</h1>
+    
     <div *ngIf="esCoordinadorPanel" style="margin: 15px auto 25px auto; text-align: left; max-width: 500px;">
       <ion-item lines="none" style="--border-radius: 12px; border: 2px solid #EAB308; --background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
         <ion-icon name="business-outline" slot="start" style="color: #003366; font-size: 1.4rem;"></ion-icon>
@@ -31,6 +37,7 @@
         </ion-select>
       </ion-item>
     </div>
+    
     <div style="margin-bottom: 20px;">
       <button (click)="toggleCoordinacion()" style="background: #EAB308; color:#003366; border-style: solid;border-color: #003366; padding: 12px 20px; border-radius: 25px; font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
         <ion-icon name="people-outline" style="font-size: 1.2rem;"></ion-icon>
@@ -136,4 +143,50 @@
       </div>
     </div>
   </div>
+
+  <div class="overlay-modal animate__animated animate__fadeIn" *ngIf="mostrarGuia">
+    <div class="modal-premium animate__animated animate__zoomIn">
+      
+      <div class="modal-header">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        <h3>¿CÓMO AGENDAR?</h3>
+      </div>
+
+      <div class="modal-body text-left">
+        <p class="modal-desc" style="text-align: center;">Sigue estos rápidos pasos para encontrar a tu tutor ideal:</p>
+        
+        <div class="step-item">
+          <ion-icon name="search-outline"></ion-icon>
+          <div>
+            <strong>1. Busca tu Materia</strong>
+            <p>Usa la barra superior para filtrar la asignatura en la que necesitas refuerzo.</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <ion-icon name="calendar-outline"></ion-icon>
+          <div>
+            <strong>2. Elige el Horario</strong>
+            <p>Revisa la disponibilidad de los tutores. <b>(P)</b> significa Presencial y <b>(V)</b> Virtual.</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+          <div>
+            <strong>3. Confirma tu Cita</strong>
+            <p>Toca el horario que prefieras, confirma el envío y espera a que el tutor te contacte.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <ion-button class="btn-enviar" (click)="cerrarGuia()" style="width: 100%;">
+          ¡ENTENDIDO!
+        </ion-button>
+      </div>
+
+    </div>
+  </div>
+
 </ion-content>

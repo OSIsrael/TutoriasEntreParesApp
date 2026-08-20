@@ -19,7 +19,7 @@
 
           <div class="divisor"></div>
 
-          <p class="instruccion">Ingresa con tu correo institucional para acceder al sistema.</p>
+          <p class="instruccion">Ingresa con tu correo de Google para acceder al sistema.</p>
 
           <ion-button expand="block" class="btn-google-auth" (click)="ingresarConGoogle()" [disabled]="cargando">
             <ion-icon name="logo-google" slot="start"></ion-icon>
@@ -62,7 +62,7 @@
               <ion-select-option value="GUAYAQUIL">Guayaquil</ion-select-option>
             </ion-select>
 
-            <ion-input class="input-moderno mt-3" type="text" label="Nombres Completos" labelPlacement="stacked" fill="outline" [(ngModel)]="nombreCompleto"></ion-input>
+            <ion-input class="input-moderno mt-3" type="text" label="Nombres Completos Ej.('JUAN DIEGO PEREZ LOPEZ' )" labelPlacement="stacked" fill="outline" [(ngModel)]="nombreCompleto"></ion-input>
 
             <ion-input class="input-moderno mt-3" type="tel" maxlength="10" label="Cédula Ecuatoriana" labelPlacement="stacked" fill="outline" [(ngModel)]="cedula"></ion-input>
 

@@ -13,7 +13,7 @@ import {
   checkmarkCircleOutline, chatbubblesOutline, gitNetworkOutline, barcodeOutline,
   peopleOutline, trashOutline, closeCircle
 } from 'ionicons/icons';
-import { Firestore, doc, getDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, collection, getDocs } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
 
 @Component({
@@ -92,9 +92,9 @@ export class TutorAsistenciaPage implements OnInit {
         this.materiasTutor = tutorSnap.data()['materias'] || [];
       }
 
-      if (this.carreraTutor) {
-        this.estudiantes = await this.dbService.obtenerEstudiantesPorCarrera(this.carreraTutor);
-      }
+      // 🌟 SOLUCIÓN AL PUNTO 1: Traemos TODOS los estudiantes sin importar la carrera
+      const snapEstudiantes = await getDocs(collection(this.firestore, 'Estudiantes'));
+      this.estudiantes = snapEstudiantes.docs.map(doc => doc.data());
 
       // Cargamos la lista de docentes
       this.docentesExcel = await this.dbService.obtenerDocentesDesdeExcel();

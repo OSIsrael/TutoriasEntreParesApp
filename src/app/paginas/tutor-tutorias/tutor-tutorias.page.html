@@ -3,6 +3,10 @@
     <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
 
      <ion-buttons slot="end" style="margin-right: 10px;">
+      <ion-button (click)="abrirGuia()" style="--background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px; margin-right: 5px;">
+        <ion-icon name="help-circle-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
+      </ion-button>
+
       <ion-button (click)="irANotificaciones()" style="position: relative; --background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px;">
         <ion-icon name="notifications-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
         
@@ -55,7 +59,6 @@
               </p>
             </div>
             
-            <!-- 🌟 BOLITA DE ESTADO (Ahora activa el Popover) -->
             <div class="punto-estado interactivo" [style.background]="t.color" (click)="abrirMenuEstado($event, t)"></div>
           </div>
         </ion-item>
@@ -78,7 +81,6 @@
       <span><div class="punto rojo" style="background: #ef4444;"></div> Cancelada</span>
     </div>
 
-    <!-- 🌟 ESTE ES EL NUEVO MENÚ VISUAL (Popover) -->
     <ion-popover #popoverEstado [isOpen]="menuEstadoAbierto" (didDismiss)="menuEstadoAbierto = false" class="popover-estado-gietaes">
       <ng-template>
         <div class="menu-estado-header">
@@ -103,4 +105,50 @@
     </ion-popover>
 
   </div>
+
+  <div class="overlay-modal animate__animated animate__fadeIn" *ngIf="mostrarGuiaTutor">
+    <div class="modal-premium animate__animated animate__zoomIn">
+      
+      <div class="modal-header">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        <h3>PANEL DE TUTOR</h3>
+      </div>
+
+      <div class="modal-body text-left">
+        <p class="modal-desc" style="text-align: center;">¡Bienvenido a tu panel! Aquí gestionarás tus clases:</p>
+        
+        <div class="step-item">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+          <div>
+            <strong>1. Gestiona Solicitudes</strong>
+            <p>Revisa las tutorías pendientes. Toca la bolita de color para ACEPTARLAS o RECHAZARLAS.</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <ion-icon name="logo-whatsapp" style="color: #25D366;"></ion-icon>
+          <div>
+            <strong>2. Contacta al Alumno</strong>
+            <p>Desliza la tarjeta a la izquierda y usa WhatsApp para coordinar el aula física o enviarle el enlace de Zoom.</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <ion-icon name="document-text-outline"></ion-icon>
+          <div>
+            <strong>3. Registra Asistencia</strong>
+            <p>Al terminar la clase, ve a la pestaña "Asistencia" para registrar la sesión y sumar horas a tus estadísticas.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <ion-button class="btn-enviar" (click)="cerrarGuia()" style="width: 100%;">
+          ¡ENTENDIDO, A ENSEÑAR!
+        </ion-button>
+      </div>
+
+    </div>
+  </div>
+
 </ion-content>

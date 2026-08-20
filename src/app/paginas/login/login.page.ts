@@ -7,7 +7,7 @@ import {
   IonSelect, IonSelectOption, IonButton, IonSpinner, IonList, IonIcon 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { logoGoogle, arrowBackOutline } from 'ionicons/icons'; // 🌟 Agregado arrowBack
+import { logoGoogle, arrowBackOutline } from 'ionicons/icons'; 
 import { DatabaseService } from '../../services/database';
 import { Auth, GoogleAuthProvider, signInWithPopup } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, updateDoc } from '@angular/fire/firestore'; 
@@ -94,6 +94,36 @@ export class LoginPage implements OnInit {
     return celular.length === 10 && celular.startsWith('09');
   }
 
+  // 🌟 PUNTO 3: FILTRO ESTRICTO Y AUTOCORRECTOR DE NOMBRE
+  validarNombreCompleto(nombre: string): { valido: boolean, mensaje: string, nombreLimpio: string } {
+    if (!nombre) return { valido: false, mensaje: "El nombre está vacío.", nombreLimpio: "" };
+
+    // 1. Quitar espacios dobles o al inicio/final
+    const limpio = nombre.trim().replace(/\s+/g, ' ');
+
+    // 2. Validar que solo tenga letras y espacios (bloquea números y símbolos)
+    const regexSoloLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    if (!regexSoloLetras.test(limpio)) {
+      return { valido: false, mensaje: "El nombre solo debe contener letras y espacios (sin números ni símbolos).", nombreLimpio: limpio };
+    }
+
+    const palabras = limpio.split(' ');
+
+    // 3. Exigir al menos un nombre y un apellido (mínimo 2 palabras)
+    if (palabras.length < 2) {
+      return { valido: false, mensaje: "Debes ingresar al menos tu primer nombre y primer apellido.", nombreLimpio: limpio };
+    }
+
+    // 4. Bloquear palabras de una sola letra (ejemplo: "A B", "Juan P")
+    const palabraInvalida = palabras.find(p => p.length < 2);
+    if (palabraInvalida) {
+      return { valido: false, mensaje: `Has ingresado iniciales ("${palabraInvalida}"). Por favor, escribe tus nombres completos.`, nombreLimpio: limpio };
+    }
+
+    // 5. Retorna todo en MAYÚSCULAS tal como está configurada tu BD
+    return { valido: true, mensaje: "", nombreLimpio: limpio.toUpperCase() }; 
+  }
+
   filtrarCarreras() {
     const txt = this.busquedaCarrera.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
     if (!txt) { this.carrerasFiltradas = []; return; }
@@ -141,7 +171,7 @@ export class LoginPage implements OnInit {
     }
   }
 
-async procesarRegistroCompleto() {
+  async procesarRegistroCompleto() {
     if (!this.correoInstitucional || !this.nombreCompleto || !this.cedula || !this.carreraSeleccionada || !this.ciclo || !this.beca || !this.celular || !this.sede) {
       alert("Por favor llena todos los campos obligatorios.");
       return;
@@ -150,15 +180,25 @@ async procesarRegistroCompleto() {
     const correoLimpio = this.correoInstitucional.toLowerCase().trim();
 
     if (!correoLimpio.endsWith('@est.ups.edu.ec') && !correoLimpio.endsWith('@ups.edu.ec')) {
-      alert("❌ El correo ingresado no pertenece a la UPS.");
+      alert("El correo ingresado no pertenece a la UPS.");
       return;
     }
 
+    // 🌟 PUNTO 3: APLICAMOS LA VALIDACIÓN Y AUTO-CORRECCIÓN AL NOMBRE
+    const validacionNombre = this.validarNombreCompleto(this.nombreCompleto);
+    if (!validacionNombre.valido) {
+      alert(validacionNombre.mensaje);
+      return;
+    }
+    // Si es válido, reemplazamos la variable con la versión limpia y en MAYÚSCULAS
+    this.nombreCompleto = validacionNombre.nombreLimpio; 
+
+
     if (!this.validarCedula(this.cedula)) {
-      alert("❌ La cédula ingresada no es válida."); return;
+      alert("La cédula ingresada no es válida."); return;
     }
     if (!this.validarCelular(this.celular)) {
-      alert("📱 El número de celular debe empezar con 09 y tener 10 dígitos."); return;
+      alert("El número de celular debe empezar con 09 y tener 10 dígitos."); return;
     }
 
     this.cargando = true;
@@ -176,7 +216,7 @@ async procesarRegistroCompleto() {
       if (tutSnap.exists()) {
         const datosTutor = tutSnap.data();
         if (datosTutor['correo_google'] && datosTutor['correo_google'] !== this.correoGoogle) {
-          alert(`❌ Este correo ya fue vinculado a la cuenta: ${datosTutor['correo_google']}.`);
+          alert(`Este correo ya fue vinculado a la cuenta: ${datosTutor['correo_google']}.`);
           this.cargando = false; return;
         }
         await updateDoc(tutRef, { correo_google: this.correoGoogle });
@@ -208,9 +248,9 @@ async procesarRegistroCompleto() {
     }
 
     const nuevoEstudiante = {
-      correo_google: this.correoGoogle,     
-      correo: correoLimpio,                 
-      nombre_completo: this.nombreCompleto.toUpperCase(),
+      correo_google: this.correoGoogle,    
+      correo: correoLimpio,                
+      nombre_completo: this.nombreCompleto, // Ya fue puesto en MAYÚSCULAS por el validador
       cedula: this.cedula,
       sede: this.sede,               
       carrera: this.carreraSeleccionada, 
