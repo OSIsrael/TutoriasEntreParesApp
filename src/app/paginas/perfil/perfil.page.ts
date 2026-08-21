@@ -16,8 +16,9 @@ import {
 } from '@ionic/angular/standalone';
 
 import { DatabaseService } from '../../services/database';
-import { Firestore, collection, query, where, getDocs } from '@angular/fire/firestore';
-import Chart from 'chart.js/auto'; // 🌟 Importación de la librería de gráficas
+// 🌟 IMPORTAMOS doc y getDoc para buscar en múltiples colecciones
+import { Firestore, collection, query, where, getDocs, doc, getDoc } from '@angular/fire/firestore';
+import Chart from 'chart.js/auto'; 
 
 @Component({
   selector: 'app-perfil',
@@ -34,7 +35,7 @@ export class PerfilPage implements OnInit {
   private auth = inject(Auth);
   private navCtrl = inject(NavController); 
   private dbService = inject(DatabaseService); 
-  private firestore = inject(Firestore); // 🌟 Para consultar las reservas del estudiante
+  private firestore = inject(Firestore); 
 
   esTutor: boolean = false;
   usuario = {
@@ -46,8 +47,8 @@ export class PerfilPage implements OnInit {
   rolUsuario: string = '';
   esAdmin: boolean = false;
   hayNotificacionesSinLeer: boolean = false;
+  puedePostularse: boolean = true;
 
-  // 🌟 PUNTO 6: VARIABLES DEL DASHBOARD
   @ViewChild('barCanvas', { static: false }) private barCanvas!: ElementRef;
   graficoBarras: any;
   totalTutorias: number = 0;
@@ -70,49 +71,69 @@ export class PerfilPage implements OnInit {
       return;
     }
 
-    const nombreGuardado = localStorage.getItem('nombre') || 'SIN NOMBRE';
-    let rolGuardado = localStorage.getItem('rol') || 'ESTUDIANTE';
-    const sedeGuardada = localStorage.getItem('sede') || 'CUENCA'; 
+    let dataPerfil: any = null;
+    let coleccionOrigen = 'Estudiantes';
 
-    // DOBLE VERIFICACIÓN EN TIEMPO REAL
-    const rolReal = await this.dbService.obtenerRolUsuario(correoGuardado);
-    if (rolReal === 'TUTOR' || rolReal === 'ADMIN' || rolReal === 'COORDINADOR') {
-      rolGuardado = rolReal;
-      localStorage.setItem('rol', rolReal);
+    // 🌟 1. BUSCAMOS EN ADMINISTRADORES PUROS
+    const adminSnap = await getDoc(doc(this.firestore, 'Administradores', correoGuardado));
+    if (adminSnap.exists()) {
+      dataPerfil = adminSnap.data();
+      coleccionOrigen = 'Administradores';
+    } else {
+      // 🌟 2. BUSCAMOS EN TUTORES (Estudiantes ascendidos a Coordinador)
+      const tutorSnap = await getDoc(doc(this.firestore, 'Tutores', correoGuardado));
+      if (tutorSnap.exists()) {
+        dataPerfil = tutorSnap.data();
+        coleccionOrigen = 'Tutores';
+      } else {
+        // 🌟 3. BUSCAMOS EN ESTUDIANTES NORMALES
+        const estSnap = await getDoc(doc(this.firestore, 'Estudiantes', correoGuardado));
+        if (estSnap.exists()) {
+          dataPerfil = estSnap.data();
+          coleccionOrigen = 'Estudiantes';
+        }
+      }
     }
-    
-    this.usuario = {
-      nombre: nombreGuardado.toUpperCase(),
-      correo: correoGuardado,
-      sede: sedeGuardada.toUpperCase()
-    };
 
-    this.rolUsuario = rolGuardado;
+    // Si encontró los datos en alguna de las 3 tablas, los asigna
+    if (dataPerfil) {
+      this.usuario.nombre = (dataPerfil['nombre_completo'] || dataPerfil['nombre'] || 'USUARIO').toUpperCase();
+      this.usuario.sede = (dataPerfil['sede'] || 'CUENCA').toUpperCase();
+      this.rolUsuario = (dataPerfil['rol'] || 'ESTUDIANTE').toUpperCase();
+
+      localStorage.setItem('nombre', this.usuario.nombre);
+      localStorage.setItem('rol', this.rolUsuario);
+      localStorage.setItem('sede', this.usuario.sede);
+    }
+
     this.esAdmin = (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR');
-    this.esTutor = (rolGuardado === 'TUTOR' || rolGuardado === 'COORDINADOR' || rolGuardado === 'ADMIN');
-
-    await this.verificarNotificaciones(correoGuardado, rolGuardado, sedeGuardada);
     
-    // 🌟 PUNTO 6: DISPARAR CARGA DEL DASHBOARD
+    // 🌟 LÓGICA DE BOTONES: Si es Admin puro, no da clases ni se postula
+    if (coleccionOrigen === 'Administradores') {
+      this.esTutor = false;
+      this.puedePostularse = false;
+      localStorage.setItem('es_admin_puro', 'true'); // Guardamos esto por si lo necesitas
+    } else {
+      this.esTutor = (this.rolUsuario === 'TUTOR' || this.rolUsuario === 'COORDINADOR');
+      this.puedePostularse = true;
+      localStorage.setItem('es_admin_puro', 'false');
+    }
+
+    await this.verificarNotificaciones(correoGuardado, this.rolUsuario, this.usuario.sede);
     setTimeout(() => { this.cargarEstadisticasEstudiante(); }, 500);
   }
 
-  // ==========================================
-  // 🌟 LÓGICA DEL DASHBOARD ACADÉMICO
-  // ==========================================
+  // ... (El resto de tus funciones como cargarEstadisticasEstudiante, generarGraficoBarras, etc. se mantienen exactamente igual)
   async cargarEstadisticasEstudiante() {
     try {
-      // Consultamos cuántas citas ha agendado el estudiante
       const q = query(
         collection(this.firestore, 'Reservas'),
         where('correoEstudiante', '==', this.usuario.correo)
       );
-      
       const snapshot = await getDocs(q);
       this.totalTutorias = snapshot.size;
 
       const conteoMaterias: { [key: string]: number } = {};
-      
       snapshot.forEach(doc => {
         const data = doc.data();
         const materia = data['materia'] || 'Otra';
@@ -121,7 +142,6 @@ export class PerfilPage implements OnInit {
 
       const labels = Object.keys(conteoMaterias);
       const data = Object.values(conteoMaterias);
-
       this.generarGraficoBarras(labels, data);
     } catch (error) {
       console.error("Error cargando estadísticas del estudiante: ", error);
@@ -131,7 +151,6 @@ export class PerfilPage implements OnInit {
   generarGraficoBarras(labels: string[], data: number[]) {
     if (this.graficoBarras) this.graficoBarras.destroy();
     if (!this.barCanvas || labels.length === 0) return;
-
     this.graficoBarras = new Chart(this.barCanvas.nativeElement, {
       type: 'bar',
       data: {
@@ -139,16 +158,14 @@ export class PerfilPage implements OnInit {
         datasets: [{
           label: 'Tutorías Recibidas',
           data: data,
-          backgroundColor: '#003366', // Azul Corporativo GIETAES
+          backgroundColor: '#003366', 
           borderRadius: 6
         }]
       },
       options: {
         responsive: true,
         plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: true, ticks: { stepSize: 1 } }
-        }
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
       }
     });
   }
@@ -161,30 +178,14 @@ export class PerfilPage implements OnInit {
         return !leidas.includes(correo);
       });
       this.hayNotificacionesSinLeer = sinLeer.length > 0;
-    } catch (error) {
-      console.error("Error al verificar notificaciones:", error);
-    }
+    } catch (error) {}
   }
 
-  toggleMenu() {
-    this.menuAbierto = !this.menuAbierto;
-  }
-
-  irANotificaciones() {
-    this.router.navigate(['/notificaciones']);
-  }
-
-  irAPostulacion() {
-    this.router.navigate(['/tabs/postulacion']);
-  }
-
-  irAPanelTutor() {
-    this.router.navigate(['/tabs-tutor/tutorias']);
-  }
-
-  irAAdministracion() {
-    this.router.navigate(['/admin-postulaciones']);
-  }
+  toggleMenu() { this.menuAbierto = !this.menuAbierto; }
+  irANotificaciones() { this.router.navigate(['/notificaciones']); }
+  irAPostulacion() { this.router.navigate(['/tabs/postulacion']); }
+  irAPanelTutor() { this.router.navigate(['/tabs-tutor/tutorias']); }
+  irAAdministracion() { this.router.navigate(['/admin-postulaciones']); }
 
   async cerrarSesion() {
     try {

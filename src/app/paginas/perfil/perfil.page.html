@@ -58,7 +58,7 @@
   <div class="fab-container">
     <div class="fab-menu" *ngIf="menuAbierto">
       
-      <button class="fab-item" (click)="irAPostulacion()">
+      <button class="fab-item" *ngIf="puedePostularse" (click)="irAPostulacion()">
         POSTULARSE <ion-icon name="book-outline"></ion-icon>
       </button>
 

@@ -1,13 +1,20 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="header-blanco">
     <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
+    
+    <!-- 🌟 BOTÓN DE AYUDA (Solo visible si ya pasó los filtros y ve el formulario) -->
+    <ion-buttons slot="end" style="margin-right: 10px;" *ngIf="estadoVista === 'FORMULARIO'">
+      <ion-button (click)="abrirGuia()" style="--background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px;">
+        <ion-icon name="help-circle-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
   <div class="linea-separadora"></div>
 </ion-header>
 
 <ion-content class="fondo-app">
   <div class="layout-centrado">
-    <div class="contenedor-limitado" style="padding-bottom: 60px;"> <!-- 🌟 PARCHE CSS PARA LA TABLA CORTADA -->
+    <div class="contenedor-limitado" style="padding-bottom: 60px;">
       
       <div class="btn-atras-flotante" (click)="regresar()">
         <ion-icon name="arrow-back-outline"></ion-icon>
@@ -35,7 +42,7 @@
         <ion-button expand="block" class="btn-volver mt-4" (click)="regresar()">Volver al Perfil</ion-button>
       </div>
 
-      <!-- 🌟 NUEVA PANTALLA: RESULTADOS -->
+      <!-- RESULTADOS -->
       <div *ngIf="estadoVista === 'RESULTADOS'" class="animate__animated animate__zoomIn">
         <h2 class="titulo-seccion-postulacion" style="margin-bottom: 20px;">Resultados de Postulación</h2>
         
@@ -74,7 +81,6 @@
             </ion-select>
           </ion-item>
 
-          <!-- 🌟 NUEVA PREGUNTA DE ANTIGÜEDAD -->
           <ion-item class="input-moderno mt-3" lines="none">
             <ion-label position="stacked">¿Cuánto tiempo tienes como tutor?</ion-label>
             <ion-select [(ngModel)]="tiempoTutor" interface="popover" [interfaceOptions]="{ cssClass: 'popover-premium-gietaes' }">
@@ -125,11 +131,58 @@
           </div>
 
           <ion-button expand="block" class="btn-finalizar mt-4" (click)="enviarPostulaciones()">
-            <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon> Enviar
+            <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon> Enviar Solicitud
           </ion-button>
 
         </div>
       </div>
     </div>
   </div>
+
+  <!-- 🌟 MODAL DE GUÍA INTERACTIVA (POSTULACIÓN) -->
+  <div class="overlay-modal animate__animated animate__fadeIn" *ngIf="mostrarGuiaPostulacion">
+    <div class="modal-premium animate__animated animate__zoomIn">
+      
+      <div class="modal-header">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        <h3>¿CÓMO POSTULARSE?</h3>
+      </div>
+
+      <div class="modal-body text-left">
+        <p class="modal-desc" style="text-align: center;">Convertirte en tutor es fácil. Sigue estos 3 pasos:</p>
+        
+        <div class="step-item">
+          <ion-icon name="book-outline"></ion-icon>
+          <div>
+            <strong>1. Elige tu Materia</strong>
+            <p>Selecciona las asignaturas que deseas impartir. Solo verás las que corresponden a ciclos anteriores al tuyo.</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <ion-icon name="time-outline"></ion-icon>
+          <div>
+            <strong>2. Tu Experiencia</strong>
+            <p>Indica si eres nuevo o si ya has sido tutor en ciclos pasados. Esto ayuda a la coordinación.</p>
+          </div>
+        </div>
+
+        <div class="step-item">
+          <ion-icon name="calendar-outline"></ion-icon>
+          <div>
+            <strong>3. Pinta tu Horario</strong>
+            <p>Toca los cuadros en la tabla para marcar tus horas libres. ¡Tus alumnos agendarán basándose en esto!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <ion-button class="btn-enviar" (click)="cerrarGuia()" style="width: 100%;">
+          ¡ENTENDIDO!
+        </ion-button>
+      </div>
+
+    </div>
+  </div>
+
 </ion-content>

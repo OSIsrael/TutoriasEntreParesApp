@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { CanActivate, Router } from '@angular/router';
-import { Firestore, collection, query, where, getDocs } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 
 @Injectable({ providedIn: 'root' })
 export class AdminGuard implements CanActivate {
@@ -16,20 +16,32 @@ export class AdminGuard implements CanActivate {
     }
 
     try {
-      // 🌟 VALIDACIÓN INHACKEABLE: Consulta directo a la base de datos
-      const q = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
-      const snap = await getDocs(q);
-      
-      if (!snap.empty) {
-        const rolReal = snap.docs[0].data()['rol'];
-        
-        if (rolReal === 'ADMIN' || rolReal === 'COORDINADOR') {
-          return true; // ✅ Acceso concedido
+      let rolReal = 'ESTUDIANTE';
+
+      // 🌟 1. Busca en Administradores Puros
+      const adminSnap = await getDoc(doc(this.firestore, 'Administradores', correo));
+      if (adminSnap.exists()) {
+        rolReal = adminSnap.data()['rol'];
+      } else {
+        // 🌟 2. Busca en Tutores (Coordinadores que ascendieron)
+        const tutorSnap = await getDoc(doc(this.firestore, 'Tutores', correo));
+        if (tutorSnap.exists()) {
+          rolReal = tutorSnap.data()['rol'];
+        } else {
+          // 🌟 3. Busca en Estudiantes
+          const estSnap = await getDoc(doc(this.firestore, 'Estudiantes', correo));
+          if (estSnap.exists()) {
+            rolReal = estSnap.data()['rol'];
+          }
         }
       }
 
-      // 🚨 Si llega aquí, es un Estudiante intentando entrar al panel Admin
-      alert("Acceso denegado: No tienes permisos de Coordinación.");
+      // 🌟 Si el rolReal es ADMIN o COORDINADOR, abre la puerta
+      if (rolReal === 'ADMIN' || rolReal === 'COORDINADOR') {
+        return true; 
+      }
+
+      alert("Acceso denegado: No tienes permisos de Administración.");
       this.router.navigate(['/tabs/perfil']);
       return false;
 

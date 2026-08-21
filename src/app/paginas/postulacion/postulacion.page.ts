@@ -2,9 +2,9 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { IonContent, IonHeader, IonToolbar, IonButton, IonIcon, IonSpinner, IonSelect, IonSelectOption, IonItem, IonLabel, NavController } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonToolbar, IonButton, IonIcon, IonSpinner, IonSelect, IonSelectOption, IonItem, IonLabel, NavController, IonButtons } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { arrowBackOutline, bookOutline, warningOutline, checkmarkCircleOutline, timeOutline, closeCircleOutline, calendarOutline } from 'ionicons/icons';
+import { arrowBackOutline, bookOutline, warningOutline, checkmarkCircleOutline, timeOutline, closeCircleOutline, calendarOutline, helpCircleOutline, informationCircleOutline } from 'ionicons/icons';
 import { DatabaseService, MateriaCatalogo } from '../../services/database'; 
 import { collection, query, where, getDocs } from '@angular/fire/firestore';
 
@@ -13,37 +13,37 @@ import { collection, query, where, getDocs } from '@angular/fire/firestore';
   templateUrl: './postulacion.page.html',
   styleUrls: ['./postulacion.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, IonButton, IonIcon, IonSpinner, IonSelect, IonSelectOption, IonItem, IonLabel]
+  imports: [CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, IonButton, IonIcon, IonSpinner, IonSelect, IonSelectOption, IonItem, IonLabel, IonButtons]
 })
 export class PostulacionPage {
   public dbService = inject(DatabaseService);
   private router = inject(Router);
   private navCtrl = inject(NavController);
 
-  // 🌟 Máquina de estados para la pantalla
   estadoVista: 'CARGANDO' | 'BLOQUEADO' | 'REVISION' | 'RESULTADOS' | 'FORMULARIO' = 'CARGANDO';
   
-  // Variables de perfil
   cicloUsuario: number = 1;
   carreraUsuario: string = '';
   sedeUsuario: string = '';
 
-  // Variables de resultados
   materiasAceptadas: string[] = [];
   materiasRechazadas: string[] = [];
 
-  // Variables del formulario
   materiasDisponibles: MateriaCatalogo[] = [];
   materiasSeleccionadas: string[] = [];
-  tiempoTutor: string = 'Soy nuevo'; // 🌟 Nueva pregunta
+  tiempoTutor: string = 'Soy nuevo'; 
 
   diassemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
   franjasHorarias = ['07:00 - 09:00', '09:00 - 11:00', '11:00 - 13:00', '14:00 - 16:00', '16:00 - 18:00', '18:00 - 20:00', '20:00 - 22:00'];
   horarioSeleccionado: { [key: string]: string } = {}; 
   modalidadGlobal: string = 'PRESENCIAL';
 
+  // 🌟 VARIABLE PARA LA GUÍA INTERACTIVA
+  mostrarGuiaPostulacion: boolean = false;
+
   constructor() {
-    addIcons({arrowBackOutline,warningOutline,timeOutline,checkmarkCircleOutline,closeCircleOutline,bookOutline,calendarOutline});
+    // 🌟 Añadidos los iconos de ayuda
+    addIcons({arrowBackOutline,warningOutline,timeOutline,checkmarkCircleOutline,closeCircleOutline,bookOutline,calendarOutline, helpCircleOutline, informationCircleOutline});
   }
 
   async ionViewWillEnter() {
@@ -54,7 +54,6 @@ export class PostulacionPage {
     
     const correoGuardado = localStorage.getItem('correo') || '';
 
-    // 1. 🌟 REVISAMOS EL HISTORIAL DE POSTULACIONES DEL ALUMNO
     const q = query(collection(this.dbService.firestore, 'Postulaciones'), where('correo', '==', correoGuardado));
     const snap = await getDocs(q);
 
@@ -81,7 +80,6 @@ export class PostulacionPage {
       return;
     }
 
-    // 2. Si no tiene historial, validamos el ciclo para el Formulario
     const cicloGuardado = localStorage.getItem('ciclo');
     const cicloLimpio = (cicloGuardado || '1').replace(/\D/g, '');
     this.cicloUsuario = parseInt(cicloLimpio, 10);
@@ -95,15 +93,31 @@ export class PostulacionPage {
       return;
     }
 
-    // 3. Cargamos el catálogo para el formulario
     const catalogos = await this.dbService.obtenerCatalogosDesdeExcel();
     
-    // 🌟 AQUÍ ESTÁ EL AJUSTE: SOLO BUSCAMOS POR CARRERA Y CICLO
     this.materiasDisponibles = catalogos.materias.filter(m => 
       m.carrera === this.carreraUsuario && m.ciclo < this.cicloUsuario
     );
 
     this.estadoVista = 'FORMULARIO';
+
+    // 🌟 LÓGICA DE GUÍA: Solo aparece si logró acceder al formulario y es su primera vez
+    setTimeout(() => {
+      const guiaVista = localStorage.getItem('guia_postulacion_vista');
+      if (!guiaVista) {
+        this.mostrarGuiaPostulacion = true;
+        localStorage.setItem('guia_postulacion_vista', 'true');
+      }
+    }, 400); // Pequeño retraso para que la animación de entrada se vea elegante
+  }
+
+  // 🌟 FUNCIONES PARA ABRIR Y CERRAR LA GUÍA
+  abrirGuia() {
+    this.mostrarGuiaPostulacion = true;
+  }
+
+  cerrarGuia() {
+    this.mostrarGuiaPostulacion = false;
   }
 
   seleccionarBloque(dia: string, franja: string) {
@@ -147,16 +161,14 @@ export class PostulacionPage {
       for (const nombreMateria of this.materiasSeleccionadas) {
         const documentoPostulacion = { ...datosBasePostulacion, materia_postulada: nombreMateria };
         
-        // 1. Guarda la postulación en la base de datos
         await this.dbService.enviarPostulacion(documentoPostulacion); 
 
-        // 2. 🌟 ESCENARIO 2: Avisa a los Admins de la Sede (Aquí sí mantenemos la sede para que la alerta le llegue solo al admin de su ciudad)
         await this.dbService.crearNotificacion({
           titulo: '📝 Nueva Postulación de Tutor',
           mensaje: `${nombre} postuló para dictar ${nombreMateria}.`,
           tipo: 'POSTULACION',
-          rol_destino: 'ADMIN', // Solo la ven los Admins/Coordinadores
-          sede_destino: this.sedeUsuario // Solo los de la misma sede de la solicitud
+          rol_destino: 'ADMIN', 
+          sede_destino: this.sedeUsuario 
         });
       }
 
