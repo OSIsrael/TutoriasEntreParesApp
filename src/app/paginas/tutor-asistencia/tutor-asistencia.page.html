@@ -1,12 +1,16 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="header-blanco">
     <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
+    
     <ion-buttons slot="end" style="margin-right: 10px;">
+      <!-- Solo dejamos el botón de notificaciones -->
       <ion-button (click)="irANotificaciones()" style="position: relative; --background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px;">
         <ion-icon name="notifications-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
+        
         <div *ngIf="hayNotificacionesSinLeer" style="position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background-color: #EAB308; border-radius: 50%; border: 2px solid white;"></div>
       </ion-button>
     </ion-buttons>
+
   </ion-toolbar>
   <div class="linea-separadora"></div>
 </ion-header>
@@ -38,12 +42,18 @@
         <ion-textarea [(ngModel)]="form.tema_tratado" rows="2" placeholder="Tema Impartido"></ion-textarea>
       </ion-item>
 
-      <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-        <ion-item lines="none" class="input-moderno" style="flex: 1;">
-          <ion-icon slot="start" name="time-outline" style="color: #003366;"></ion-icon>
-          <ion-input type="number" [(ngModel)]="form.horas" placeholder="Horas"></ion-input>
+      <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: center;">
+        
+        <!-- 🌟 NUEVO SLIDER DE HORAS (1 a 8) -->
+        <ion-item lines="none" class="input-moderno" style="flex: 1; padding-top: 8px;">
+          <ion-label position="stacked" style="color: #003366; font-weight: 700; font-size: 0.85rem; margin-bottom: 5px;">
+            <ion-icon name="time-outline" style="vertical-align: text-bottom; font-size: 1.1rem; color: #EAB308;"></ion-icon> 
+            Duración: {{ form.horas }} hr(s)
+          </ion-label>
+          <ion-range min="1" max="8" step="1" snaps="true" ticks="true" [(ngModel)]="form.horas" style="padding: 0; --knob-background: #EAB308; --bar-background-active: #003366; --bar-background: #e2e8f0;"></ion-range>
         </ion-item>
-        <ion-item lines="none" class="input-moderno" style="flex: 2;">
+
+        <ion-item lines="none" class="input-moderno" style="flex: 1; height: 100%;">
           <ion-icon slot="start" name="barcode-outline" style="color: #003366;"></ion-icon>
           <ion-input [(ngModel)]="form.codigo_tutoria" placeholder="Código (Opcional)"></ion-input>
         </ion-item>
@@ -92,11 +102,10 @@
         
         <div class="alumno-body">
           
-          <!-- 🌟 NUEVO AUTOCOMPLETADO 100% IONIC PARA DOCENTES -->
           <div class="contenedor-docente mb-2">
             <ion-item lines="none" class="input-moderno minimalista">
               <ion-icon slot="start" name="school-outline" style="color: #003366;"></ion-icon>
-              <ion-input type="text" [(ngModel)]="est.docente" (ionInput)="filtrarDocentesParaEstudiante(est)" placeholder="Docente que solicitó (Opcional)"></ion-input>
+              <ion-input type="text" [(ngModel)]="est.docente" (ionInput)="filtrarDocentesParaEstudiante(est)" placeholder="Docente de la materia"></ion-input>
             </ion-item>
 
             <ion-list *ngIf="est.docentesFiltrados?.length > 0" class="lista-autocompletado-docentes">

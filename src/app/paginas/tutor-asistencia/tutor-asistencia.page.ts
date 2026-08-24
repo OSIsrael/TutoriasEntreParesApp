@@ -4,15 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { 
   IonContent, IonHeader, IonToolbar, IonIcon, IonButton, IonButtons,
-  IonItem, IonLabel, IonSelect, IonSelectOption, IonTextarea, IonInput, IonList
+  IonItem, IonLabel, IonSelect, IonSelectOption, IonTextarea, IonInput, IonList,IonRange
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   documentTextOutline, sendOutline, notificationsOutline, 
   personOutline, bookOutline, timeOutline, schoolOutline,
   checkmarkCircleOutline, chatbubblesOutline, gitNetworkOutline, barcodeOutline,
-  peopleOutline, trashOutline, closeCircle
-} from 'ionicons/icons';
+  peopleOutline, trashOutline, closeCircle, helpCircleOutline } from 'ionicons/icons';
 import { Firestore, doc, getDoc, collection, getDocs } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
 
@@ -24,7 +23,7 @@ import { DatabaseService } from '../../services/database';
   imports: [
     CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, 
     IonIcon, IonButton, IonButtons, IonItem, IonLabel, 
-    IonSelect, IonSelectOption, IonTextarea, IonInput, IonList
+    IonSelect, IonSelectOption, IonTextarea, IonInput, IonList,IonRange
   ]
 })
 export class TutorAsistenciaPage implements OnInit {
@@ -57,18 +56,14 @@ export class TutorAsistenciaPage implements OnInit {
   form = {
     materia: '',
     tema_tratado: '',
-    horas: '',
+    horas: 1,
     asistio: '',
     participo: '',
     codigo_tutoria: ''
   };
 
   constructor() {
-    addIcons({
-      documentTextOutline, sendOutline, notificationsOutline, personOutline, 
-      bookOutline, timeOutline, schoolOutline, checkmarkCircleOutline, 
-      chatbubblesOutline, gitNetworkOutline, barcodeOutline, peopleOutline, trashOutline, closeCircle
-    });
+    addIcons({helpCircleOutline,notificationsOutline,bookOutline,documentTextOutline,timeOutline,barcodeOutline,peopleOutline,personOutline,trashOutline,schoolOutline,gitNetworkOutline,sendOutline,checkmarkCircleOutline,chatbubblesOutline,closeCircle});
   }
 
   ngOnInit() { }
@@ -205,7 +200,7 @@ export class TutorAsistenciaPage implements OnInit {
 
       alert(`Se registraron exitosamente las asistencias de ${this.estudiantesSeleccionados.length} estudiante(s).`);
       
-      this.form = { materia: '', tema_tratado: '', horas: '', asistio: '', participo: '', codigo_tutoria: '' };
+      this.form = { materia: '', tema_tratado: '', horas: 1, asistio: '', participo: '', codigo_tutoria: '' };
       this.estudiantesSeleccionados = [];
       this.busquedaEstudiante = '';
 

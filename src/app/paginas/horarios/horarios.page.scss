@@ -303,3 +303,43 @@ th { background: #f1f5f9; color: #003366; font-weight: 800; font-size: 0.7rem; }
     }
   }
 }
+
+/* ==============================================
+   🌟 ESTILOS DE LA EVALUACIÓN DE TUTORES
+   ============================================== */
+.pregunta-evaluacion {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+  text-align: center;
+
+  p {
+    margin: 0 0 10px 0;
+    font-size: 0.85rem;
+    color: #003366;
+    font-weight: 700;
+  }
+
+  .estrellas-contenedor {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+
+    ion-icon {
+      font-size: 2.2rem;
+      color: #cbd5e1; /* Gris inactivo */
+      cursor: pointer;
+      transition: transform 0.2s, color 0.2s;
+
+      &:active {
+        transform: scale(0.8);
+      }
+
+      &.activa {
+        color: #EAB308; /* Dorado Premium */
+      }
+    }
+  }
+}

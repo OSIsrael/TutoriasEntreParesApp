@@ -1,16 +1,18 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Firestore, collection, getDocs } from '@angular/fire/firestore';
+// 🌟 IMPORTACIONES CORREGIDAS PARA QUE NO FALLE LA CONSULTA NI LA ACTUALIZACIÓN
+import { Firestore, collection, getDocs, query, where, updateDoc, doc } from '@angular/fire/firestore';
 import { 
   IonContent, IonHeader,IonToolbar, 
-  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton 
+  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton,IonSpinner 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   searchOutline, closeOutline, logoWhatsapp, star, mailOutline, 
   peopleOutline, checkmarkOutline, businessOutline, notificationsOutline, 
-  informationCircleOutline, locationOutline, calendarOutline,helpCircleOutline, checkmarkCircleOutline } from 'ionicons/icons';
+  informationCircleOutline, locationOutline, calendarOutline,helpCircleOutline, checkmarkCircleOutline,starOutline 
+} from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
 import { Router } from '@angular/router'; 
 
@@ -21,7 +23,7 @@ import { Router } from '@angular/router';
   standalone: true,
   imports: [
     IonContent, IonHeader, IonToolbar, CommonModule, FormsModule, 
-    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton
+    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton,IonSpinner
   ]
 })
 export class HorariosPage implements OnInit {
@@ -47,9 +49,22 @@ export class HorariosPage implements OnInit {
 
   equipoCoordinacion: any[] = [];
   mostrarGuia: boolean = false;
+  
+  // 🌟 VARIABLES PARA LA EVALUACIÓN OBLIGATORIA
+  mostrarModalEvaluacion: boolean = false;
+  reservaAEvaluar: any = null;
+  enviandoEvaluacion: boolean = false;
+  preguntasEvaluacion = [
+    "1. ¿El tutor dominaba el tema de la tutoría?",
+    "2. ¿Resolvió tus dudas con claridad?",
+    "3. ¿El tutor fue puntual y respetuoso?",
+    "4. ¿El ambiente te generó confianza para preguntar?",
+    "5. ¿Qué tan preparado te sientes después de la tutoría?"
+  ];
+  respuestasEvaluacion = [0, 0, 0, 0, 0];
 
   constructor() {
-    addIcons({helpCircleOutline,notificationsOutline,businessOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,searchOutline,calendarOutline,checkmarkCircleOutline,locationOutline});
+    addIcons({helpCircleOutline,notificationsOutline,businessOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,searchOutline,calendarOutline,checkmarkCircleOutline,locationOutline,starOutline});
   }
 
   ngOnInit() {
@@ -76,15 +91,15 @@ export class HorariosPage implements OnInit {
     const sedeEstudiante = (localStorage.getItem('sede') || 'CUENCA').toUpperCase();
     const carreraEstudiante = (localStorage.getItem('carrera') || '').toUpperCase();
 
-    // 🌟 1. OBTENEMOS A LOS TUTORES
+    // 1. OBTENEMOS A LOS TUTORES
     const snapshotTutores = await getDocs(collection(this.firestore, 'Tutores'));
     let todosLosTutores = snapshotTutores.docs.map(doc => doc.data()).filter(t => t['estado'] === 'ACTIVO');
 
-    // 🌟 2. OBTENEMOS A LOS ESTUDIANTES (PARA LEER SU ROL VERDADERO)
+    // 2. OBTENEMOS A LOS ESTUDIANTES 
     const snapshotEstudiantes = await getDocs(collection(this.firestore, 'Estudiantes'));
     const todosLosEstudiantes = snapshotEstudiantes.docs.map(doc => doc.data());
 
-    // 🌟 3. CRUZAMOS DATOS: Le inyectamos el rol de "Estudiantes" al "Tutor"
+    // 3. CRUZAMOS DATOS
     todosLosTutores.forEach(tutor => {
       const correoTutor = (tutor['correo'] || tutor['correo_google'] || '').toLowerCase().trim();
       const estudianteDB = todosLosEstudiantes.find(e => (e['correo'] || '').toLowerCase().trim() === correoTutor);
@@ -96,7 +111,7 @@ export class HorariosPage implements OnInit {
       }
     });
 
-    // 🌟 4. LLENAMOS LA COORDINACIÓN (CORREO FIJO + EQUIPO DINÁMICO)
+    // 4. LLENAMOS LA COORDINACIÓN
     const coordinadoresDinamicos = todosLosEstudiantes
       .filter(e => {
         const rolUsuarioDB = String(e['rol'] || '').toUpperCase();
@@ -109,8 +124,8 @@ export class HorariosPage implements OnInit {
       }));
 
     this.equipoCoordinacion = [
-      { nombre: 'Proyecto GIETAES', correo: 'gietaes@ups.edu.ec', rol: 'Contacto Oficial' }, // <-- ESTE NUNCA CAMBIA
-      ...coordinadoresDinamicos // <-- ESTOS CAMBIAN SEGÚN FIREBASE
+      { nombre: 'Proyecto GIETAES', correo: 'gietaes@ups.edu.ec', rol: 'Contacto Oficial' },
+      ...coordinadoresDinamicos
     ];
 
     let tutoresProcesados: any[] = [];
@@ -157,11 +172,15 @@ export class HorariosPage implements OnInit {
 
     this.agruparPorMateria(tutoresProcesados, sedeEstudiante, this.esCoordinadorPanel);
     this.cargando = false;
+    
     const guiaVista = localStorage.getItem('guia_horarios_vista');
     if (!guiaVista) {
       this.mostrarGuia = true;
-      localStorage.setItem('guia_horarios_vista', 'true'); // Marca que ya la vio
+      localStorage.setItem('guia_horarios_vista', 'true'); 
     }
+    
+    // 🌟 Disparamos la búsqueda de evaluaciones pendientes
+    await this.verificarEvaluacionesPendientes();
   }
   
   async verificarNotificaciones(correo: string, rol: string, sede: string) {
@@ -377,11 +396,92 @@ export class HorariosPage implements OnInit {
   toggleCoordinacion() {
     this.mostrarCoordinacion = !this.mostrarCoordinacion;
   }
+  
   abrirGuia() {
     this.mostrarGuia = true;
   }
 
   cerrarGuia() {
     this.mostrarGuia = false;
+  }
+
+  // ==========================================
+  // 🌟 SISTEMA DE EVALUACIÓN OBLIGATORIA
+  // ==========================================
+  async verificarEvaluacionesPendientes() {
+    const nombre = localStorage.getItem('nombre');
+    const cedula = localStorage.getItem('cedula');
+    if(!nombre || !cedula) return;
+
+    // Buscamos cómo el tutor guardó al estudiante en Asistencias
+    const miInfo = `${nombre} - ${cedula}`;
+
+    try {
+      const q = query(
+        collection(this.firestore, 'Asistencias'),
+        where('estudiante_info', '==', miInfo)
+      );
+      const snap = await getDocs(q);
+      
+      // Filtramos las que NO han sido evaluadas
+      const pendientes = snap.docs
+        .map(d => ({ id: d.id, ...d.data() as any }))
+        .filter(r => !r.evaluado);
+
+      if (pendientes.length > 0) {
+        this.reservaAEvaluar = pendientes[0]; 
+        this.mostrarModalEvaluacion = true;   
+      }
+    } catch (error) {
+      console.error("Error al buscar evaluaciones pendientes", error);
+    }
+  }
+
+  seleccionarEstrella(indexPregunta: number, valor: number) {
+    this.respuestasEvaluacion[indexPregunta] = valor;
+  }
+
+  async enviarEvaluacion() {
+    if (this.respuestasEvaluacion.includes(0)) {
+      alert("Por favor, responde las 5 preguntas tocando las estrellas.");
+      return;
+    }
+
+    this.enviandoEvaluacion = true;
+
+    try {
+      const urlScript = 'https://script.google.com/macros/s/AKfycbxZU9rwtMPcWsqNrwMaGPXFEjD2vEj-Tyhby5EYMtk__5_yrk7EELUn3ZqOEr1EOEZO/exec';
+      
+      const payload = {
+        opcion: 'guardarEvaluacion', 
+        estudiante: localStorage.getItem('nombre') || 'Desconocido',
+        tutor: this.reservaAEvaluar.nombreTutor,
+        materia: this.reservaAEvaluar.materia,
+        p1: this.respuestasEvaluacion[0],
+        p2: this.respuestasEvaluacion[1],
+        p3: this.respuestasEvaluacion[2],
+        p4: this.respuestasEvaluacion[3],
+        p5: this.respuestasEvaluacion[4]
+      };
+
+      await fetch(urlScript, { 
+        method: 'POST', 
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      // 2. Marcar en Firestore que ya fue evaluada para que no vuelva a salir
+      await updateDoc(doc(this.firestore, 'Asistencias', this.reservaAEvaluar.id), { evaluado: true });
+
+      alert("¡Gracias por tu retroalimentación! Ya puedes seguir agendando.");
+      this.mostrarModalEvaluacion = false;
+      this.respuestasEvaluacion = [0, 0, 0, 0, 0]; 
+
+    } catch (error) {
+      alert("Hubo un error de conexión al enviar la evaluación.");
+    } finally {
+      this.enviandoEvaluacion = false;
+    }
   }
 }

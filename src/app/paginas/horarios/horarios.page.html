@@ -189,4 +189,41 @@
     </div>
   </div>
 
+  <!-- 🌟 MODAL OBLIGATORIO DE EVALUACIÓN DEL TUTOR -->
+  <div class="overlay-modal animate__animated animate__fadeIn" *ngIf="mostrarModalEvaluacion" style="z-index: 9999;">
+    <div class="modal-premium animate__animated animate__zoomIn" style="max-height: 90vh; overflow-y: auto;">
+      
+      <div class="modal-header" style="background: #003366;">
+        <ion-icon name="star" style="color: #EAB308;"></ion-icon>
+        <h3 style="color: white;">¡CALIFICA TU TUTORÍA!</h3>
+      </div>
+
+      <div class="modal-body text-left">
+        <p class="modal-desc" style="text-align: center; margin-bottom: 15px;">
+          Ayúdanos a mejorar. ¿Qué tal te fue en tu última clase de <strong>{{ reservaAEvaluar?.materia }}</strong> con el tutor <strong>{{ reservaAEvaluar?.nombreTutor }}</strong>?
+        </p>
+        
+        <div class="pregunta-evaluacion" *ngFor="let pregunta of preguntasEvaluacion; let i = index">
+          <p>{{ pregunta }}</p>
+          <div class="estrellas-contenedor">
+            <ion-icon 
+              *ngFor="let valor of [1, 2, 3, 4, 5]" 
+              [name]="respuestasEvaluacion[i] >= valor ? 'star' : 'star-outline'"
+              [class.activa]="respuestasEvaluacion[i] >= valor"
+              (click)="seleccionarEstrella(i, valor)">
+            </ion-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <ion-button expand="block" class="btn-enviar" (click)="enviarEvaluacion()" [disabled]="enviandoEvaluacion" style="width: 100%;">
+          <span *ngIf="!enviandoEvaluacion">ENVIAR EVALUACIÓN</span>
+          <ion-spinner *ngIf="enviandoEvaluacion" name="crescent"></ion-spinner>
+        </ion-button>
+      </div>
+
+    </div>
+  </div>
+
 </ion-content>
