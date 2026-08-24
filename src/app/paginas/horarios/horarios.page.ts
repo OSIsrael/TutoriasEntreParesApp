@@ -299,12 +299,12 @@ export class HorariosPage implements OnInit {
     const nombreDelTutor = String(tutor.nombre || '').toLowerCase().trim();
 
     if (correoDelTutor !== '' && correoDelTutor === miCorreo) {
-      alert('⚠️ No puedes agendar una tutoría contigo mismo.');
+      alert('No puedes agendar una tutoría contigo mismo.');
       return; 
     }
 
     if (nombreDelTutor !== '' && nombreDelTutor === miNombre) {
-      alert('⚠️ Acción bloqueada: No puedes ser el estudiante y el tutor a la vez.');
+      alert('Acción bloqueada: No puedes ser el estudiante y el tutor a la vez.');
       return;
     }
 

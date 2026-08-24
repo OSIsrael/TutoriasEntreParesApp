@@ -245,7 +245,7 @@ export class TutorEstadisticasPage implements OnInit {
         
         // Notificamos a la administración de su sede
         await this.dbService.crearNotificacion({
-          titulo: '📈 Solicitud de Incremento de Materias',
+          titulo: 'Solicitud de Incremento de Materias',
           mensaje: `${this.usuario.nombre} solicitó impartir ${materia}.`,
           tipo: 'POSTULACION',
           rol_destino: 'ADMIN',
@@ -253,7 +253,7 @@ export class TutorEstadisticasPage implements OnInit {
         });
       }
 
-      alert("✅ Solicitud enviada correctamente. El administrador la revisará pronto.");
+      alert("Solicitud enviada correctamente. El administrador la revisará pronto.");
       this.mostrarModalMaterias = false;
 
     } catch (error) {

@@ -18,17 +18,17 @@ export class AdminGuard implements CanActivate {
     try {
       let rolReal = 'ESTUDIANTE';
 
-      // 🌟 1. Busca en Administradores Puros
+      // Busca en Administradores Puros
       const adminSnap = await getDoc(doc(this.firestore, 'Administradores', correo));
       if (adminSnap.exists()) {
         rolReal = adminSnap.data()['rol'];
       } else {
-        // 🌟 2. Busca en Tutores (Coordinadores que ascendieron)
+        // Busca en Tutores (Coordinadores que ascendieron)
         const tutorSnap = await getDoc(doc(this.firestore, 'Tutores', correo));
         if (tutorSnap.exists()) {
           rolReal = tutorSnap.data()['rol'];
         } else {
-          // 🌟 3. Busca en Estudiantes
+          // Busca en Estudiantes
           const estSnap = await getDoc(doc(this.firestore, 'Estudiantes', correo));
           if (estSnap.exists()) {
             rolReal = estSnap.data()['rol'];

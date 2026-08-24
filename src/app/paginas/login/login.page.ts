@@ -207,7 +207,7 @@ export class LoginPage implements OnInit {
       const estRef = doc(this.firestore, 'Estudiantes', correoLimpio);
       const estSnap = await getDoc(estRef);
       if (estSnap.exists()) {
-        alert(`❌ El correo ${correoLimpio} ya está vinculado a otra cuenta de Google.`);
+        alert(`El correo ${correoLimpio} ya está vinculado a otra cuenta de Google.`);
         this.cargando = false; return;
       }
 
@@ -231,7 +231,7 @@ export class LoginPage implements OnInit {
       if (adminSnap.exists()) {
         const datosAdmin = adminSnap.data();
         if (datosAdmin['correo_google'] && datosAdmin['correo_google'] !== this.correoGoogle) {
-          alert(`❌ Este correo ya fue vinculado a la cuenta: ${datosAdmin['correo_google']}.`);
+          alert(`Este correo ya fue vinculado a la cuenta: ${datosAdmin['correo_google']}.`);
           this.cargando = false; return;
         }
         await updateDoc(adminRef, { correo_google: this.correoGoogle });

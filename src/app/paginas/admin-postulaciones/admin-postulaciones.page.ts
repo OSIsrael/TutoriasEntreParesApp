@@ -133,7 +133,7 @@ export class AdminPostulacionesPage {
       // 🌟 PUNTO 5: NOTIFICAR AL ESTUDIANTE QUE FUE ACEPTADO
       try {
         await this.dbService.crearNotificacion({
-          titulo: '🎉 ¡Postulación Aprobada!',
+          titulo: '¡Postulación Aprobada!',
           mensaje: `¡Felicidades! Tu solicitud para impartir "${post.materia_postulada}" ha sido aceptada. Ya puedes ver tu panel de tutor.`,
           tipo: 'POSTULACION',
           correo_destino: post.correo, // Dirigido exclusivamente al estudiante
@@ -144,7 +144,7 @@ export class AdminPostulacionesPage {
         console.warn('Postulación aceptada, pero falló la notificación', e);
       }
 
-      alert(`✅ Tutor aceptado en ${post.materia_postulada}`);
+      alert(`Tutor aceptado en ${post.materia_postulada}`);
       await this.cargarPostulaciones(); // Recarga y re-agrupa automáticamente
       this.cargarEstadisticas();
     } catch (e) { 
@@ -162,7 +162,7 @@ export class AdminPostulacionesPage {
       // 🌟 PUNTO 5: NOTIFICAR AL ESTUDIANTE QUE FUE RECHAZADO
       try {
         await this.dbService.crearNotificacion({
-          titulo: '❌ Postulación Rechazada',
+          titulo: 'Postulación Rechazada',
           mensaje: `Tu solicitud para ser tutor de "${post.materia_postulada}" no pudo ser aprobada en esta ocasión.`,
           tipo: 'POSTULACION',
           correo_destino: post.correo, // Dirigido exclusivamente al estudiante
@@ -173,7 +173,7 @@ export class AdminPostulacionesPage {
         console.warn('Postulación rechazada, pero falló la notificación', e);
       }
 
-      alert(`❌ Postulación para ${post.materia_postulada} rechazada.`);
+      alert(`Postulación para ${post.materia_postulada} rechazada.`);
       await this.cargarPostulaciones(); 
     } catch (error) {
       alert('Error al rechazar la postulación.');
@@ -259,7 +259,7 @@ export class AdminPostulacionesPage {
       await addDoc(collection(this.firestore, 'Anuncios'), payload);
       
       await this.dbService.crearNotificacion({
-        titulo: '📢 Nuevo Comunicado Oficial',
+        titulo: 'Nuevo Comunicado Oficial',
         mensaje: this.nuevoAnuncio.titulo.toUpperCase(),
         tipo: 'AVISO',
         rol_destino: 'TODOS',
@@ -300,7 +300,7 @@ export class AdminPostulacionesPage {
 
             if (fechaDelAviso.getTime() < hoy.getTime()) {
               await deleteDoc(doc(this.firestore, 'Anuncios', documento.id));
-              console.log(`🗑️ Aviso expirado eliminado: ${data['titulo']}`);
+              console.log(`Aviso expirado eliminado: ${data['titulo']}`);
             }
           }
         }

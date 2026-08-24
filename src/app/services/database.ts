@@ -5,7 +5,6 @@ import {
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 
-// 🌟 Agrega esto en la parte superior de tu database.ts
 export interface MateriaCatalogo {
   sede: string;
   carrera: string;
@@ -23,70 +22,58 @@ export class DatabaseService {
 
   private scriptURL = 'https://script.google.com/macros/s/AKfycbyi4Vqs-mTz4Tu0_sD2yQulFb_K2_yWTnuQZPRQO2Zwn0iQ1eUIUKkaiP28T5xqWoFh/exec';
 
-  // ==========================================
-  // CATÁLOGOS Y MALLAS
-  // ==========================================
-  // 🌟 3. LA FUNCIÓN ACTUALIZADA
+ 
   async obtenerCatalogosDesdeExcel(): Promise<{carreras: string[], materias: MateriaCatalogo[]}> {
     try {
       let urlLimpia = this.scriptURL.split('?')[0]; 
       const url = `${urlLimpia}?api=true`;
       
-      console.log("🔗 [DEBUG GIETAES] Consultando URL final:", url);
+      console.log("[DEBUG GIETAES] Consultando URL final:", url);
       const response = await fetch(url);
       const data = await response.json();
       
-      console.log("📡 [DEBUG GIETAES] Respuesta bruta recibida del Excel:", data);
+      console.log("[DEBUG GIETAES] Respuesta bruta recibida del Excel:", data);
       
-      this.materiasMaster = []; // Limpiamos caché previo
+      this.materiasMaster = []; 
       let carrerasUnicas: Set<string> = new Set();
 
-      // 🌟 ASUMIMOS QUE APPS SCRIPT AHORA DEVUELVE data.mallas COMO UN ARRAY DE FILAS
       if (data.mallas && Array.isArray(data.mallas)) {
         data.mallas.forEach((fila: any) => {
-          
-          // Validamos que la fila no esté vacía en columnas clave
+
           if (fila.SEDE && fila.CARRERA && fila.MATERIA && fila.CICLO) {
             
             const nuevaMateria: MateriaCatalogo = {
               sede: fila.SEDE.toString().trim().toUpperCase(),
               carrera: fila.CARRERA.toString().trim().toUpperCase(),
-              ciclo: parseInt(fila.CICLO, 10), // Forzamos que sea un número
+              ciclo: parseInt(fila.CICLO, 10), 
               nombre: fila.MATERIA.toString().trim().toUpperCase()
             };
 
             this.materiasMaster.push(nuevaMateria);
-            carrerasUnicas.add(nuevaMateria.carrera); // Guardamos la carrera para el registro
+            carrerasUnicas.add(nuevaMateria.carrera); 
           }
         });
       }
       
       return {
-        // Convertimos el Set (que evita duplicados) de nuevo a un Array normal y lo ordenamos
         carreras: Array.from(carrerasUnicas).sort(), 
         materias: this.materiasMaster 
       };
 
     } catch (error) {
-      console.error("❌ [DEBUG GIETAES] Error crítico al obtener catálogos:", error);
+      console.error("[DEBUG GIETAES] Error crítico al obtener catálogos:", error);
       return { carreras: [], materias: [] };
     }
   }
 
-  // 🌟 4. FUNCIÓN AUXILIAR PARA LA POSTULACIÓN
   obtenerMateriasMaestras(): MateriaCatalogo[] {
     return this.materiasMaster;
   }
 
   async guardarPostulacion(datosPostulacion: any): Promise<boolean> {
     try {
-      // 1. Guardar en Firebase Firestore (Colección 'Postulaciones')
-      // Esto hace que aparezca de inmediato en tu panel de Administración
       const postulacionesRef = collection(this.firestore, 'Postulaciones');
       await addDoc(postulacionesRef, datosPostulacion);
-
-      // 2. Guardar respaldo en tu Google Excel (Apps Script)
-      // Usamos el modo 'no-cors' y 'text/plain' para que Google no bloquee la petición de seguridad
       let urlLimpia = this.scriptURL.split('?')[0];
       await fetch(urlLimpia, {
         method: 'POST',
@@ -99,14 +86,11 @@ export class DatabaseService {
 
       return true;
     } catch (error) {
-      console.error("❌ Error al guardar la postulación:", error);
+      console.error("Error al guardar la postulación:", error);
       throw error;
     }
   }
 
-  // ==========================================
-  // MOTOR DE DATOS: FILTROS NACIONALES
-  // ==========================================
   async obtenerTutoresFiltrados(sede: string, carrera: string) {
     try {
       const q = query(
@@ -135,24 +119,19 @@ export class DatabaseService {
   async verificarSiEsAdmin(correo: string): Promise<boolean> {
     try {
       const correoLimpio = correo.toLowerCase().trim();
-      
-      // 🌟 SOLUCIÓN: Buscamos en la colección el campo 'correo_google' que coincida con el login
       const q = query(
         collection(this.firestore, 'Administradores'), 
         where('correo_google', '==', correoLimpio)
       );
       
       const snapshot = await getDocs(q);
-      return !snapshot.empty; // Devuelve true si encuentra al menos un admin con ese Gmail
+      return !snapshot.empty; 
     } catch (error) {
       console.error("Error al verificar Admin:", error);
       return false;
     }
   }
 
-  // ==========================================
-  // FUNCIONES DEL LOGIN ACTUALIZADAS (FUSIÓN DE PERFILES)
-  // ==========================================
   async verificarUsuarioExistente(correoGoogle: string) {
     const correoLimpio = correoGoogle.toLowerCase().trim();
     
@@ -161,7 +140,6 @@ export class DatabaseService {
       let superPerfil: any = {};
       let rolMaximo = 'ESTUDIANTE';
 
-      // 🌟 1. Recopilamos datos base de Estudiante (si existen)
       const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo_google', '==', correoLimpio));
       const estSnap = await getDocs(qEst);
       if (!estSnap.empty) {
@@ -170,7 +148,6 @@ export class DatabaseService {
         rolMaximo = superPerfil['rol'] || 'ESTUDIANTE';
       }
 
-      // 🌟 2. Recopilamos datos operativos de Tutor/Coordinador (Sede, Carrera, Materias)
       const qTut = query(collection(this.firestore, 'Tutores'), where('correo_google', '==', correoLimpio));
       const tutSnap = await getDocs(qTut);
       if (!tutSnap.empty) {
@@ -178,18 +155,15 @@ export class DatabaseService {
         superPerfil = { ...superPerfil, ...tutSnap.docs[0].data() };
         rolMaximo = tutSnap.docs[0].data()['rol'] || 'TUTOR'; 
       }
-
-      // 🌟 3. Recopilamos el Poder Supremo de Administrador
       const qAdmin = query(collection(this.firestore, 'Administradores'), where('correo_google', '==', correoLimpio));
       const adminSnap = await getDocs(qAdmin);
       if (!adminSnap.empty) {
         existe = true;
         superPerfil = { ...superPerfil, ...adminSnap.docs[0].data() };
-        rolMaximo = 'ADMIN'; // El rol ADMIN pisa a todos los demás para darte acceso al panel
+        rolMaximo = 'ADMIN'; 
       }
 
       if (existe) {
-        // Retornamos el rol supremo, pero con TODOS tus datos de Tutor intactos
         return { existe: true, rol: rolMaximo, datos: superPerfil };
       }
 
@@ -201,7 +175,7 @@ export class DatabaseService {
     }
   }
 
-  // 🌟 Asegúrate de que registrarNuevoEstudiante mande los nuevos datos al Excel
+
   async registrarNuevoEstudiante(datos: any) {
     try {
       // Guarda en Firebase
@@ -438,7 +412,7 @@ export class DatabaseService {
       
       // 🌟 ESCENARIO 1: Notificar SOLO al Tutor específico
       await this.crearNotificacion({
-        titulo: '📅 ¡Nueva Tutoría Agendada!',
+        titulo: '¡Nueva Tutoría Agendada!',
         mensaje: `${datosReserva.nombreEstudiante} ha agendado una tutoría de ${datosReserva.materia} el ${datosReserva.dia_elegido} a las ${datosReserva.hora_elegida}.`,
         tipo: 'TUTORIA',
         correo_destino: datosReserva.correoTutor // Va directo a su correo
@@ -455,7 +429,7 @@ export class DatabaseService {
   async obtenerMisTutorias(correo: string, rol: string) {
     try {
       const correoLimpio = correo.toLowerCase().trim();
-      console.log(`🔎 DB_SERVICE: Buscando TODAS las reservas (Dadas y Recibidas) para: [${correoLimpio}]`);
+      console.log(`DB_SERVICE: Buscando TODAS las reservas (Dadas y Recibidas) para: [${correoLimpio}]`);
 
       // 1. Buscamos las clases donde este correo va a enseñar (Tutor)
       const qTutor = query(collection(this.firestore, 'Reservas'), where('correoTutor', '==', correoLimpio));
@@ -469,11 +443,11 @@ export class DatabaseService {
       // Unimos los resultados
       const todosLosDocs = [...snapTutor.docs, ...snapEstudiante.docs];
       
-      console.log(`✅ DB_SERVICE: Encontradas ${todosLosDocs.length} reservas en total.`);
+      console.log(`DB_SERVICE: Encontradas ${todosLosDocs.length} reservas en total.`);
       
       return todosLosDocs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (e) {
-      console.error("❌ DB_SERVICE: Error crítico trayendo tutorías", e);
+      console.error("DB_SERVICE: Error crítico trayendo tutorías", e);
       return [];
     }
   }
@@ -587,7 +561,7 @@ export class DatabaseService {
       // Si el resultado NO está vacío, significa que tiene postulaciones pendientes (Retorna TRUE)
       return !querySnapshot.empty; 
     } catch (error) {
-      console.error("❌ Error al verificar postulaciones pendientes:", error);
+      console.error("Error al verificar postulaciones pendientes:", error);
       return false;
     }
   }

@@ -174,7 +174,7 @@ export class TutorAsistenciaPage implements OnInit {
   // ==========================================
   async enviarRegistro() {
     if (this.estudiantesSeleccionados.length === 0 || !this.form.materia || !this.form.asistio) {
-      alert("⚠️ Debes añadir al menos un estudiante y completar la Materia y la Asistencia global.");
+      alert("Debes añadir al menos un estudiante y completar la Materia y la Asistencia global.");
       return;
     }
 
@@ -203,14 +203,14 @@ export class TutorAsistenciaPage implements OnInit {
 
       await Promise.all(promesas);
 
-      alert(`✅ Se registraron exitosamente las asistencias de ${this.estudiantesSeleccionados.length} estudiante(s) en el Consolidado Final.`);
+      alert(`Se registraron exitosamente las asistencias de ${this.estudiantesSeleccionados.length} estudiante(s).`);
       
       this.form = { materia: '', tema_tratado: '', horas: '', asistio: '', participo: '', codigo_tutoria: '' };
       this.estudiantesSeleccionados = [];
       this.busquedaEstudiante = '';
 
     } catch (error) {
-      alert("❌ Hubo un error al guardar. Revisa tu conexión a internet.");
+      alert("Hubo un error al guardar. Revisa tu conexión a internet.");
     } finally {
       this.enviando = false;
     }

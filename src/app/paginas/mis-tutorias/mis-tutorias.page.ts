@@ -111,7 +111,7 @@ export class MisTutoriasPage implements OnInit {
           // Si el día de la tutoría ya pasó, la destruimos de Firebase
           if (fechaExactaDeLaClase.getTime() < hoy.getTime()) {
             await deleteDoc(doc(this.firestore, 'Reservas', documento.id));
-            console.log(`🗑️ Tutoría expirada eliminada automáticamente: ${res['materia']}`);
+            console.log(`Tutoría expirada eliminada automáticamente: ${res['materia']}`);
             continue; // Saltamos a la siguiente sin mostrarla en pantalla
           }
         }
@@ -180,7 +180,7 @@ export class MisTutoriasPage implements OnInit {
       celFormateado = '593' + celFormateado.substring(1);
     }
     
-    const mensaje = encodeURIComponent(`Hola ${nombre}, te escribo por la tutoría de ${materia} agendada en GIETAES.`);
+    const mensaje = encodeURIComponent(`Hola ${nombre}, te escribo por la tutoría de ${materia} agendada en la app de las Tutorías entre Pares.`);
     const urlWa = `https://wa.me/${celFormateado}?text=${mensaje}`;
     window.open(urlWa, '_blank');
   }
@@ -195,7 +195,7 @@ export class MisTutoriasPage implements OnInit {
 
       await this.dbService.crearNotificacion({
         correo_destino: tutoria.correoDestino, 
-        titulo: 'Tutoría Cancelada ❌',
+        titulo: 'Tutoría Cancelada ',
         mensaje: `El estudiante ${this.nombreUsuario} ha cancelado su solicitud para ${tutoria.materia} el ${tutoria.dia}.`,
         tipo: 'CANCELACION',
         sede_destino: localStorage.getItem('sede') || 'GLOBAL'
@@ -220,7 +220,7 @@ export class MisTutoriasPage implements OnInit {
     if (tiempo1Hora > ahora) {
       notificaciones.push({
         id: Math.floor(Math.random() * 10000),
-        title: '¡Tu tutoría es en 1 hora! ⏳',
+        title: '¡Tu tutoría es en 1 hora! ',
         body: `Prepárate para ${tutoria.materia} con ${tutoria.nombreContacto}.`,
         schedule: { at: new Date(tiempo1Hora) }
       });
@@ -241,7 +241,7 @@ export class MisTutoriasPage implements OnInit {
     while (tiempoPeriodico < tiempo1Hora) {
       notificaciones.push({
         id: Math.floor(Math.random() * 10000) + contador,
-        title: 'Recordatorio GIETAES 📚',
+        title: 'Recordatorio Tutorías entre Pares App',
         body: `Tienes una tutoría confirmada de ${tutoria.materia} el ${tutoria.dia}.`,
         schedule: { at: new Date(tiempoPeriodico) }
       });

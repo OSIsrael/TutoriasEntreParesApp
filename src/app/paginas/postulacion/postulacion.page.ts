@@ -132,7 +132,7 @@ export class PostulacionPage {
 
   async enviarPostulaciones() {
     if (this.materiasSeleccionadas.length === 0 || Object.keys(this.horarioSeleccionado).length === 0) {
-      alert("⚠️ Debes seleccionar al menos una materia y un bloque de horario.");
+      alert("Debes seleccionar al menos una materia y un bloque de horario.");
       return;
     }
 
@@ -164,7 +164,7 @@ export class PostulacionPage {
         await this.dbService.enviarPostulacion(documentoPostulacion); 
 
         await this.dbService.crearNotificacion({
-          titulo: '📝 Nueva Postulación de Tutor',
+          titulo: 'Nueva Postulación de Tutor',
           mensaje: `${nombre} postuló para dictar ${nombreMateria}.`,
           tipo: 'POSTULACION',
           rol_destino: 'ADMIN', 
@@ -172,7 +172,7 @@ export class PostulacionPage {
         });
       }
 
-      alert("🎉 Postulaciones enviadas con éxito.");
+      alert("Postulaciones enviadas con éxito.");
       this.navCtrl.navigateBack('/tabs/perfil');
 
     } catch (error) {

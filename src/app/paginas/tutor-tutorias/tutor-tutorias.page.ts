@@ -132,7 +132,7 @@ async verificarNotificaciones(correo: string, rol: string, sede: string) {
       celFormateado = '593' + celFormateado.substring(1);
     }
     
-    const mensaje = encodeURIComponent(`Hola ${nombre}, soy tu tutor de GIETAES para la materia de ${materia}. Te escribo para coordinar nuestra sesión.`);
+    const mensaje = encodeURIComponent(`Hola ${nombre}, soy tu tutor para la materia de ${materia}. Te escribo para coordinar nuestra sesión.`);
     const urlWa = `https://wa.me/${celFormateado}?text=${mensaje}`;
     window.open(urlWa, '_blank');
   }
@@ -182,7 +182,7 @@ async verificarNotificaciones(correo: string, rol: string, sede: string) {
         });
       }
     } catch (notiError) {
-      console.warn("⚠️ Notificación fallida, pero estado guardado.");
+      console.warn("Notificación fallida, pero estado guardado.");
     }
   }
 
