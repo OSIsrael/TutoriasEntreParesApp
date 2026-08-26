@@ -1,18 +1,18 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject,ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { 
   IonContent, IonHeader, IonToolbar, IonIcon, IonButton, IonButtons,
-  IonItem, IonLabel, IonSelect, IonSelectOption, IonTextarea, IonInput, IonList,IonRange
+  IonItem, IonLabel, IonSelect, IonSelectOption, IonTextarea, IonInput, IonList,IonRange,IonModal
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   documentTextOutline, sendOutline, notificationsOutline, 
   personOutline, bookOutline, timeOutline, schoolOutline,
   checkmarkCircleOutline, chatbubblesOutline, gitNetworkOutline, barcodeOutline,
-  peopleOutline, trashOutline, closeCircle, helpCircleOutline } from 'ionicons/icons';
-import { Firestore, doc, getDoc, collection, getDocs } from '@angular/fire/firestore';
+  peopleOutline, trashOutline, closeCircle, helpCircleOutline, swapHorizontalOutline, closeOutline, briefcaseOutline, shieldCheckmarkOutline } from 'ionicons/icons';
+import { Firestore, doc, getDoc, collection, getDocs,where,query } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
 
 @Component({
@@ -23,13 +23,19 @@ import { DatabaseService } from '../../services/database';
   imports: [
     CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, 
     IonIcon, IonButton, IonButtons, IonItem, IonLabel, 
-    IonSelect, IonSelectOption, IonTextarea, IonInput, IonList,IonRange
+    IonSelect, IonSelectOption, IonTextarea, IonInput, IonList,IonRange,IonModal
   ]
 })
 export class TutorAsistenciaPage implements OnInit {
   private dbService = inject(DatabaseService);
   private firestore = inject(Firestore);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
+  // 🌟 VARIABLES PARA EL MENÚ DE ROLES
+  mostrarMenuRol: boolean = false;
+  tienePanelTutor: boolean = false;
+  tienePanelAdmin: boolean = false;
 
   correoTutor: string = '';
   nombreTutor: string = '';
@@ -63,7 +69,7 @@ export class TutorAsistenciaPage implements OnInit {
   };
 
   constructor() {
-    addIcons({helpCircleOutline,notificationsOutline,bookOutline,documentTextOutline,timeOutline,barcodeOutline,peopleOutline,personOutline,trashOutline,schoolOutline,gitNetworkOutline,sendOutline,checkmarkCircleOutline,chatbubblesOutline,closeCircle});
+    addIcons({swapHorizontalOutline,notificationsOutline,bookOutline,documentTextOutline,timeOutline,barcodeOutline,peopleOutline,personOutline,trashOutline,schoolOutline,gitNetworkOutline,sendOutline,closeOutline,briefcaseOutline,shieldCheckmarkOutline,helpCircleOutline,checkmarkCircleOutline,chatbubblesOutline,closeCircle});
   }
 
   ngOnInit() { }
@@ -209,5 +215,55 @@ export class TutorAsistenciaPage implements OnInit {
     } finally {
       this.enviando = false;
     }
+  }
+  // ==========================================
+  // 🌟 CAMBIO DE PANELES (MULTI-COLECCIÓN)
+  // ==========================================
+  async cambiarPanel() {
+    const correo = localStorage.getItem('correo') || '';
+    this.tienePanelTutor = false;
+    this.tienePanelAdmin = false;
+
+    if (correo) {
+      try {
+        // 1. BUSCAMOS EN ESTUDIANTES
+        const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
+        const snapEst = await getDocs(qEst);
+        
+        if (!snapEst.empty) {
+          const rolDB = (snapEst.docs[0].data()['rol'] || snapEst.docs[0].data()['Rol'] || '').toUpperCase().trim();
+          
+          if (rolDB === 'TUTOR') this.tienePanelTutor = true;
+          if (rolDB === 'COORDINADOR' || rolDB === 'ADMIN') {
+            this.tienePanelTutor = true;
+            this.tienePanelAdmin = true;
+          }
+        }
+
+        // 2. BUSCAMOS EN TUTORES SI AÚN NO LO ES
+        if (!this.tienePanelTutor) {
+          const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
+          const snapTut = await getDocs(qTut);
+          
+          if (!snapTut.empty) {
+            this.tienePanelTutor = true; 
+          }
+        }
+      } catch (error) {
+        console.error("❌ Error consultando permisos:", error);
+      }
+    }
+
+    this.mostrarMenuRol = true;
+    if (this.cdr) this.cdr.detectChanges();
+  }
+
+  irAPanel(ruta: string, rolDestino: string) {
+    this.mostrarMenuRol = false; 
+    localStorage.setItem('rol', rolDestino); 
+    
+    setTimeout(() => {
+      this.router.navigate([ruta]); 
+    }, 150); 
   }
 }

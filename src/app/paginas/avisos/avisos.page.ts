@@ -1,9 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject,ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonContent, IonHeader, IonToolbar, IonIcon, IonSpinner,IonButtons,IonButton } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonToolbar, IonIcon, IonSpinner,IonButtons,IonButton,IonModal,IonList,IonItem,IonLabel } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { megaphoneOutline, notificationsOffOutline, notificationsOutline } from 'ionicons/icons';
-import { Firestore, collection, query, orderBy, getDocs } from '@angular/fire/firestore';
+import { megaphoneOutline, notificationsOffOutline, notificationsOutline, closeOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, swapHorizontalOutline } from 'ionicons/icons';
+import { Firestore, collection, query, orderBy, getDocs,where } from '@angular/fire/firestore';
 import { Router } from '@angular/router'; 
 import { DatabaseService } from '../../services/database';
 
@@ -12,7 +12,7 @@ import { DatabaseService } from '../../services/database';
   templateUrl: './avisos.page.html',
   styleUrls: ['./avisos.page.scss'],
   standalone: true,
-  imports: [IonContent, IonHeader, IonToolbar, IonIcon, IonSpinner, CommonModule,IonButtons,IonButton]
+  imports: [IonContent, IonHeader, IonToolbar, IonIcon, IonSpinner, CommonModule,IonButtons,IonButton,IonModal,IonList,IonItem,IonLabel]
 })
 export class AvisosPage {
   private firestore = inject(Firestore);
@@ -21,10 +21,16 @@ export class AvisosPage {
   private dbService = inject(DatabaseService);
   private router = inject(Router); // 🌟 Inyectamos Router
   hayNotificacionesSinLeer: boolean = false;
+  private cdr = inject(ChangeDetectorRef);
+
+  // 🌟 VARIABLES PARA EL MENÚ DE ROLES
+  mostrarMenuRol: boolean = false;
+  tienePanelTutor: boolean = false;
+  tienePanelAdmin: boolean = false;
 
   constructor() {
     // Registramos los íconos necesarios para esta pantalla
-    addIcons({notificationsOutline,notificationsOffOutline,megaphoneOutline});
+    addIcons({swapHorizontalOutline,notificationsOutline,notificationsOffOutline,megaphoneOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline});
   }
   // Se ejecuta siempre que el usuario entra a esta pestaña
   async ionViewWillEnter() {
@@ -122,5 +128,55 @@ export class AvisosPage {
     const panelContexto = esPanelTutor ? 'TUTOR' : 'ESTUDIANTE';
     
     this.router.navigate(['/notificaciones'], { queryParams: { panel: panelContexto } });
+  }
+  // ==========================================
+  // 🌟 CAMBIO DE PANELES (MULTI-COLECCIÓN)
+  // ==========================================
+  async cambiarPanel() {
+    const correo = localStorage.getItem('correo') || '';
+    this.tienePanelTutor = false;
+    this.tienePanelAdmin = false;
+
+    if (correo) {
+      try {
+        // 1. BUSCAMOS EN ESTUDIANTES
+        const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
+        const snapEst = await getDocs(qEst);
+        
+        if (!snapEst.empty) {
+          const rolDB = (snapEst.docs[0].data()['rol'] || snapEst.docs[0].data()['Rol'] || '').toUpperCase().trim();
+          
+          if (rolDB === 'TUTOR') this.tienePanelTutor = true;
+          if (rolDB === 'COORDINADOR' || rolDB === 'ADMIN') {
+            this.tienePanelTutor = true;
+            this.tienePanelAdmin = true;
+          }
+        }
+
+        // 2. BUSCAMOS EN TUTORES SI AÚN NO LO ES
+        if (!this.tienePanelTutor) {
+          const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
+          const snapTut = await getDocs(qTut);
+          
+          if (!snapTut.empty) {
+            this.tienePanelTutor = true; 
+          }
+        }
+      } catch (error) {
+        console.error("❌ Error consultando permisos:", error);
+      }
+    }
+
+    this.mostrarMenuRol = true;
+    if (this.cdr) this.cdr.detectChanges();
+  }
+
+  irAPanel(ruta: string, rolDestino: string) {
+    this.mostrarMenuRol = false; 
+    localStorage.setItem('rol', rolDestino); 
+    
+    setTimeout(() => {
+      this.router.navigate([ruta]); 
+    }, 150); 
   }
 }

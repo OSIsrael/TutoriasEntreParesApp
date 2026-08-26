@@ -1,18 +1,16 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject,ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-// 🌟 IMPORTACIONES CORREGIDAS PARA QUE NO FALLE LA CONSULTA NI LA ACTUALIZACIÓN
 import { Firestore, collection, getDocs, query, where, updateDoc, doc } from '@angular/fire/firestore';
 import { 
   IonContent, IonHeader,IonToolbar, 
-  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton,IonSpinner 
+  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton,IonSpinner,IonCheckbox,IonList 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   searchOutline, closeOutline, logoWhatsapp, star, mailOutline, 
   peopleOutline, checkmarkOutline, businessOutline, notificationsOutline, 
-  informationCircleOutline, locationOutline, calendarOutline,helpCircleOutline, checkmarkCircleOutline,starOutline 
-} from 'ionicons/icons';
+  informationCircleOutline, locationOutline, calendarOutline,helpCircleOutline, checkmarkCircleOutline,starOutline, swapHorizontalOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline, closeCircleOutline } from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
 import { Router } from '@angular/router'; 
 
@@ -23,13 +21,21 @@ import { Router } from '@angular/router';
   standalone: true,
   imports: [
     IonContent, IonHeader, IonToolbar, CommonModule, FormsModule, 
-    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton,IonSpinner
+    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton,IonSpinner,IonCheckbox,IonList
   ]
 })
 export class HorariosPage implements OnInit {
   private dbService = inject(DatabaseService);
   private firestore = inject(Firestore);
   private router = inject(Router); 
+  private cdr = inject(ChangeDetectorRef);
+
+
+  // 🌟 VARIABLES PARA EL MENÚ DE ROLES
+  mostrarMenuRol: boolean = false;
+  tienePanelTutor: boolean = false;
+  tienePanelAdmin: boolean = false;
+
 
   hayNotificacionesSinLeer: boolean = false;
   textoBusqueda: string = '';
@@ -50,7 +56,6 @@ export class HorariosPage implements OnInit {
   equipoCoordinacion: any[] = [];
   mostrarGuia: boolean = false;
   
-  // 🌟 VARIABLES PARA LA EVALUACIÓN OBLIGATORIA
   mostrarModalEvaluacion: boolean = false;
   reservaAEvaluar: any = null;
   enviandoEvaluacion: boolean = false;
@@ -63,8 +68,13 @@ export class HorariosPage implements OnInit {
   ];
   respuestasEvaluacion = [0, 0, 0, 0, 0];
 
+  mostrarModalTerminos: boolean = false;
+  aceptaTerminosCheckbox: boolean = false;
+  guardandoTerminos: boolean = false;
+  usuarioDocId: string = '';
+
   constructor() {
-    addIcons({helpCircleOutline,notificationsOutline,businessOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,searchOutline,calendarOutline,checkmarkCircleOutline,locationOutline,starOutline});
+    addIcons({helpCircleOutline,swapHorizontalOutline,notificationsOutline,businessOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,searchOutline,calendarOutline,checkmarkCircleOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,closeCircleOutline,locationOutline,starOutline});
   }
 
   ngOnInit() {
@@ -77,7 +87,23 @@ export class HorariosPage implements OnInit {
   }
 
   async ionViewWillEnter() {
-    const correo = localStorage.getItem('correo') || '';
+  const correo = localStorage.getItem('correo') || '';
+    if (correo) {
+      try {
+        const qUsuario = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
+        const snapUsuario = await getDocs(qUsuario);
+        if (!snapUsuario.empty) {
+          const datosUsr = snapUsuario.docs[0].data();
+          this.usuarioDocId = snapUsuario.docs[0].id; 
+          
+          if (!datosUsr['terminos_aceptados']) {
+            this.mostrarModalTerminos = true;
+          }
+        }
+      } catch (e) {
+        console.error("Error al verificar Firebase:", e);
+      }
+    }
     const rol = localStorage.getItem('rol') || 'ESTUDIANTE';
     const sede = localStorage.getItem('sede') || 'CUENCA';
 
@@ -181,6 +207,7 @@ export class HorariosPage implements OnInit {
     
     // 🌟 Disparamos la búsqueda de evaluaciones pendientes
     await this.verificarEvaluacionesPendientes();
+    
   }
   
   async verificarNotificaciones(correo: string, rol: string, sede: string) {
@@ -484,4 +511,81 @@ export class HorariosPage implements OnInit {
       this.enviandoEvaluacion = false;
     }
   }
+  // ==========================================
+  // 🌟 ACEPTACIÓN DE TÉRMINOS Y CONDICIONES
+  // ==========================================
+  async aceptarTerminos() {
+    if (!this.aceptaTerminosCheckbox) return;
+    
+    this.guardandoTerminos = true;
+    try {
+      // Guardamos en Firebase que este usuario ya aceptó los términos
+      await updateDoc(doc(this.firestore, 'Estudiantes', this.usuarioDocId), { 
+        terminos_aceptados: true 
+      });
+      
+      this.mostrarModalTerminos = false;
+    } catch (error) {
+      console.error("Error al guardar términos:", error);
+      alert("❌ Hubo un problema de conexión. Inténtalo de nuevo.");
+    } finally {
+      this.guardandoTerminos = false;
+    }
+  }
+// ==========================================
+  // 🌟 CAMBIO DE PANELES (MULTI-COLECCIÓN)
+  // ==========================================
+  async cambiarPanel() {
+    const correo = localStorage.getItem('correo') || '';
+
+    // Reiniciamos los permisos
+    this.tienePanelTutor = false;
+    this.tienePanelAdmin = false;
+
+    if (correo) {
+      try {
+        // 1. BUSCAMOS EN LA COLECCIÓN DE ESTUDIANTES
+        const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
+        const snapEst = await getDocs(qEst);
+        
+        if (!snapEst.empty) {
+          const rolDB = (snapEst.docs[0].data()['rol'] || snapEst.docs[0].data()['Rol'] || '').toUpperCase().trim();
+          
+          if (rolDB === 'TUTOR') this.tienePanelTutor = true;
+          if (rolDB === 'COORDINADOR' || rolDB === 'ADMIN') {
+            this.tienePanelTutor = true;
+            this.tienePanelAdmin = true;
+          }
+        }
+
+        // 🌟 2. LA MAGIA: SI NO ES TUTOR AÚN, BUSCAMOS EN LA COLECCIÓN DE TUTORES
+        if (!this.tienePanelTutor) {
+          const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
+          const snapTut = await getDocs(qTut);
+          
+          if (!snapTut.empty) {
+            // ¡Si existe en la colección de Tutores, le damos el poder!
+            this.tienePanelTutor = true; 
+          }
+        }
+
+      } catch (error) {
+        console.error("❌ Error consultando permisos:", error);
+      }
+    }
+
+    // Abrimos el menú y despertamos a Angular
+    this.mostrarMenuRol = true;
+    if (this.cdr) this.cdr.detectChanges();
+  }
+
+  irAPanel(ruta: string, rolDestino: string) {
+    this.mostrarMenuRol = false; 
+    localStorage.setItem('rol', rolDestino); // Cambiamos de pestaña
+    
+    setTimeout(() => {
+      this.router.navigate([ruta]); 
+    }, 150); 
+  }
+ 
 }

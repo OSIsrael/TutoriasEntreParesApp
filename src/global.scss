@@ -343,4 +343,24 @@ ion-popover.popover-premium-gietaes {
     --border-color-checked: #EAB308 !important;
     --checkmark-color: #003366 !important;
   }
+  
+   }
+/* ==============================================
+   🌟 MODAL GIETAES CENTRADO (GLOBAL)
+   ============================================== */
+ion-modal.modal-gietaes-centrado {
+  /* Forzamos el tamaño de tu tarjeta */
+  --width: 90%;
+  --max-width: 350px;
+  --height: auto;
+  --border-radius: 15px;
+  
+  /* Sombra elegante */
+  --box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Redondeamos las esquinas del contenedor interno */
+ion-modal.modal-gietaes-centrado::part(content) {
+  border-radius: 15px;
+  overflow: hidden;
 }

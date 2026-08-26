@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit,ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
@@ -6,15 +6,14 @@ import {
   bookOutline, logoWhatsapp, addOutline, checkmarkOutline, closeOutline, 
   personCircleOutline, mailOutline, businessOutline, settingsOutline, 
   logOutOutline, peopleOutline, filterOutline, notificationsOutline, trashOutline,
-  chatbubblesOutline, informationCircle
-} from 'ionicons/icons';
+  chatbubblesOutline, informationCircle, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline } from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
 import { Router } from '@angular/router'; 
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Firestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { 
   IonContent, IonIcon, IonHeader, IonToolbar, IonButtons, IonButton,
-  IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonList
+  IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonList,IonModal,IonLabel
 } from '@ionic/angular/standalone';
 
 @Component({
@@ -24,13 +23,19 @@ import {
   standalone: true,
   imports: [
     IonContent, IonIcon, CommonModule, FormsModule, IonHeader, IonToolbar,
-    IonButtons, IonButton, IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonList
+    IonButtons, IonButton, IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonList,IonModal,IonLabel
   ]
 })
 export class MisTutoriasPage implements OnInit {
   private dbService = inject(DatabaseService);
   private router = inject(Router); 
   private firestore = inject(Firestore);
+  private cdr = inject(ChangeDetectorRef);
+
+  // 🌟 VARIABLES PARA EL MENÚ DE ROLES
+  mostrarMenuRol: boolean = false;
+  tienePanelTutor: boolean = false;
+  tienePanelAdmin: boolean = false;
 
   mostrarModalCodigo: boolean = false;
   codigoIngresado: string = '';
@@ -45,11 +50,7 @@ export class MisTutoriasPage implements OnInit {
 
   constructor() {
     // 🌟 Añadimos los iconos para nuestras guías visuales
-    addIcons({
-      notificationsOutline, bookOutline, logoWhatsapp, addOutline, checkmarkOutline, 
-      closeOutline, personCircleOutline, mailOutline, businessOutline, settingsOutline, 
-      logOutOutline, peopleOutline, filterOutline, trashOutline, chatbubblesOutline, informationCircle
-    });
+    addIcons({notificationsOutline,swapHorizontalOutline,chatbubblesOutline,bookOutline,logoWhatsapp,trashOutline,addOutline,informationCircle,checkmarkOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,personCircleOutline,mailOutline,businessOutline,settingsOutline,logOutOutline,peopleOutline,filterOutline});
   }
 
   ngOnInit() {
@@ -299,5 +300,55 @@ export class MisTutoriasPage implements OnInit {
     } else {
       this.cargando = false; 
     }
+  }
+  // ==========================================
+  // 🌟 CAMBIO DE PANELES (MULTI-COLECCIÓN)
+  // ==========================================
+  async cambiarPanel() {
+    const correo = localStorage.getItem('correo') || '';
+    this.tienePanelTutor = false;
+    this.tienePanelAdmin = false;
+
+    if (correo) {
+      try {
+        // 1. BUSCAMOS EN ESTUDIANTES
+        const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
+        const snapEst = await getDocs(qEst);
+        
+        if (!snapEst.empty) {
+          const rolDB = (snapEst.docs[0].data()['rol'] || snapEst.docs[0].data()['Rol'] || '').toUpperCase().trim();
+          
+          if (rolDB === 'TUTOR') this.tienePanelTutor = true;
+          if (rolDB === 'COORDINADOR' || rolDB === 'ADMIN') {
+            this.tienePanelTutor = true;
+            this.tienePanelAdmin = true;
+          }
+        }
+
+        // 2. BUSCAMOS EN TUTORES SI AÚN NO LO ES
+        if (!this.tienePanelTutor) {
+          const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
+          const snapTut = await getDocs(qTut);
+          
+          if (!snapTut.empty) {
+            this.tienePanelTutor = true; 
+          }
+        }
+      } catch (error) {
+        console.error("❌ Error consultando permisos:", error);
+      }
+    }
+
+    this.mostrarMenuRol = true;
+    if (this.cdr) this.cdr.detectChanges();
+  }
+
+  irAPanel(ruta: string, rolDestino: string) {
+    this.mostrarMenuRol = false; 
+    localStorage.setItem('rol', rolDestino); 
+    
+    setTimeout(() => {
+      this.router.navigate([ruta]); 
+    }, 150); 
   }
 }
