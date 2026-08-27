@@ -652,12 +652,26 @@ export class DatabaseService {
     }
   }
 
-  // 🌟 ACTUALIZADA: Solo guarda el registro silenciosamente en Firebase y Excel
-  async guardarAsistencia(datosAsistencia: any) {
+async guardarAsistencia(datosAsistencia: any) {
     try {
-      const nuevaRef = doc(collection(this.firestore, 'Asistencias'));
+      // 1. Extraemos el nombre del estudiante del string 'estudiante_info' (Ej: "JUAN PEREZ - 0102030405")
+      let nombreLimpio = 'ESTUDIANTE_DESCONOCIDO';
+      
+      if (datosAsistencia.estudiante_info) {
+        // Cortamos el string antes del guion y reemplazamos los espacios con guiones bajos
+        const nombreCrudo = datosAsistencia.estudiante_info.split(' - ')[0].trim();
+        nombreLimpio = nombreCrudo.replace(/\s+/g, '_'); 
+      }
+
+      // 2. Creamos el ID Compuesto: Nombre + Milisegundos exactos de este instante
+      // Ejemplo resultante: "JUAN_PIERRE_ARTEAGA_1714582938475"
+      const idUnico = `${nombreLimpio}_${new Date().getTime()}`;
+
+      // 3. Guardamos en Firebase usando este nuevo ID perfecto y legible
+      const nuevaRef = doc(this.firestore, 'Asistencias', idUnico);
       await setDoc(nuevaRef, datosAsistencia);
 
+      // 4. Guardamos en Excel (Tu código intacto)
       const payloadExcel = {
         opcion: 'registrarAsistencia',
         ...datosAsistencia

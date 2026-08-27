@@ -62,7 +62,19 @@
               </p>
             </div>
             
-            <div class="punto-estado interactivo" [style.background]="t.color" (click)="abrirMenuEstado($event, t)"></div>
+            <!-- 🌟 CONTENEDOR DERECHO: ESTADO (PÍLDORA) Y DESLIZAMIENTO -->
+<div class="acciones-derecha">
+  
+  <div class="boton-estado-pill" (click)="abrirMenuEstado($event, t)">
+    <div class="punto-color" [style.background]="t.color"></div>
+    <ion-icon name="chevron-down-outline"></ion-icon>
+  </div>
+
+  <div class="indicador-deslizamiento">
+    <ion-icon name="chevron-back-outline"></ion-icon>
+  </div>
+  
+</div>
           </div>
         </ion-item>
 

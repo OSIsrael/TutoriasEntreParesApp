@@ -1,16 +1,16 @@
-import { Component, OnInit, inject,ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Firestore, collection, getDocs, query, where, updateDoc, doc } from '@angular/fire/firestore';
 import { 
-  IonContent, IonHeader,IonToolbar, 
-  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton,IonSpinner,IonCheckbox,IonList 
+  IonContent, IonHeader, IonToolbar, 
+  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   searchOutline, closeOutline, logoWhatsapp, star, mailOutline, 
   peopleOutline, checkmarkOutline, businessOutline, notificationsOutline, 
-  informationCircleOutline, locationOutline, calendarOutline,helpCircleOutline, checkmarkCircleOutline,starOutline, swapHorizontalOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline, closeCircleOutline } from 'ionicons/icons';
+  informationCircleOutline, locationOutline, calendarOutline, helpCircleOutline, checkmarkCircleOutline, starOutline, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, closeCircleOutline, sendOutline } from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
 import { Router } from '@angular/router'; 
 
@@ -21,7 +21,7 @@ import { Router } from '@angular/router';
   standalone: true,
   imports: [
     IonContent, IonHeader, IonToolbar, CommonModule, FormsModule, 
-    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton,IonSpinner,IonCheckbox,IonList
+    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal
   ]
 })
 export class HorariosPage implements OnInit {
@@ -30,12 +30,10 @@ export class HorariosPage implements OnInit {
   private router = inject(Router); 
   private cdr = inject(ChangeDetectorRef);
 
-
   // 🌟 VARIABLES PARA EL MENÚ DE ROLES
   mostrarMenuRol: boolean = false;
   tienePanelTutor: boolean = false;
   tienePanelAdmin: boolean = false;
-
 
   hayNotificacionesSinLeer: boolean = false;
   textoBusqueda: string = '';
@@ -56,17 +54,17 @@ export class HorariosPage implements OnInit {
   equipoCoordinacion: any[] = [];
   mostrarGuia: boolean = false;
   
+  // 🌟 VARIABLES DE EVALUACIÓN (Ajustadas a 3)
   mostrarModalEvaluacion: boolean = false;
   reservaAEvaluar: any = null;
   enviandoEvaluacion: boolean = false;
   preguntasEvaluacion = [
-    "1. ¿El tutor dominaba el tema de la tutoría?",
-    "2. ¿Resolvió tus dudas con claridad?",
-    "3. ¿El tutor fue puntual y respetuoso?",
-    "4. ¿El ambiente te generó confianza para preguntar?",
-    "5. ¿Qué tan preparado te sientes después de la tutoría?"
+    "1. ¿Comprendiste mejor el tema después de esta sesión tutorial?",
+    "2. ¿La sesión tutorial aclaró tus dudas de forma clara y comprensible?",
+    "3. Considero que este tipo de apoyo me ayudará a alcanzar mis metas académicas",
   ];
-  respuestasEvaluacion = [0, 0, 0, 0, 0];
+  // Arreglo de exactamente 3 posiciones (0 significa no respondida)
+  respuestasEvaluacion: number[] = [0, 0, 0];
 
   mostrarModalTerminos: boolean = false;
   aceptaTerminosCheckbox: boolean = false;
@@ -74,7 +72,7 @@ export class HorariosPage implements OnInit {
   usuarioDocId: string = '';
 
   constructor() {
-    addIcons({helpCircleOutline,swapHorizontalOutline,notificationsOutline,businessOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,searchOutline,calendarOutline,checkmarkCircleOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,closeCircleOutline,locationOutline,starOutline});
+    addIcons({helpCircleOutline,swapHorizontalOutline,notificationsOutline,businessOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,searchOutline,calendarOutline,checkmarkCircleOutline,sendOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,closeCircleOutline,locationOutline,starOutline});
   }
 
   ngOnInit() {
@@ -87,7 +85,7 @@ export class HorariosPage implements OnInit {
   }
 
   async ionViewWillEnter() {
-  const correo = localStorage.getItem('correo') || '';
+    const correo = localStorage.getItem('correo') || '';
     if (correo) {
       try {
         const qUsuario = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
@@ -117,15 +115,12 @@ export class HorariosPage implements OnInit {
     const sedeEstudiante = (localStorage.getItem('sede') || 'CUENCA').toUpperCase();
     const carreraEstudiante = (localStorage.getItem('carrera') || '').toUpperCase();
 
-    // 1. OBTENEMOS A LOS TUTORES
     const snapshotTutores = await getDocs(collection(this.firestore, 'Tutores'));
     let todosLosTutores = snapshotTutores.docs.map(doc => doc.data()).filter(t => t['estado'] === 'ACTIVO');
 
-    // 2. OBTENEMOS A LOS ESTUDIANTES 
     const snapshotEstudiantes = await getDocs(collection(this.firestore, 'Estudiantes'));
     const todosLosEstudiantes = snapshotEstudiantes.docs.map(doc => doc.data());
 
-    // 3. CRUZAMOS DATOS
     todosLosTutores.forEach(tutor => {
       const correoTutor = (tutor['correo'] || tutor['correo_google'] || '').toLowerCase().trim();
       const estudianteDB = todosLosEstudiantes.find(e => (e['correo'] || '').toLowerCase().trim() === correoTutor);
@@ -137,7 +132,6 @@ export class HorariosPage implements OnInit {
       }
     });
 
-    // 4. LLENAMOS LA COORDINACIÓN
     const coordinadoresDinamicos = todosLosEstudiantes
       .filter(e => {
         const rolUsuarioDB = String(e['rol'] || '').toUpperCase();
@@ -157,7 +151,6 @@ export class HorariosPage implements OnInit {
     let tutoresProcesados: any[] = [];
     let materiasPermitidas: string[] = [];
 
-    // 5. Filtro de Malla para Estudiantes
     if (!this.esCoordinadorPanel) {
       try {
         const catalogos = await this.dbService.obtenerCatalogosDesdeExcel();
@@ -171,7 +164,6 @@ export class HorariosPage implements OnInit {
       }
     }
 
-    // 6. Procesamiento Inter-Carreras
     for (let tutor of todosLosTutores) {
       if (this.esCoordinadorPanel) {
         if (this.filtroSedeAgenda !== 'GLOBAL' && (tutor['sede'] || '').toUpperCase() !== this.filtroSedeAgenda) {
@@ -205,9 +197,7 @@ export class HorariosPage implements OnInit {
       localStorage.setItem('guia_horarios_vista', 'true'); 
     }
     
-    // 🌟 Disparamos la búsqueda de evaluaciones pendientes
     await this.verificarEvaluacionesPendientes();
-    
   }
   
   async verificarNotificaciones(correo: string, rol: string, sede: string) {
@@ -433,14 +423,13 @@ export class HorariosPage implements OnInit {
   }
 
   // ==========================================
-  // 🌟 SISTEMA DE EVALUACIÓN OBLIGATORIA
+  // 🌟 SISTEMA DE EVALUACIÓN (3 PREGUNTAS + ESCALA NUMÉRICA)
   // ==========================================
   async verificarEvaluacionesPendientes() {
     const nombre = localStorage.getItem('nombre');
     const cedula = localStorage.getItem('cedula');
     if(!nombre || !cedula) return;
 
-    // Buscamos cómo el tutor guardó al estudiante en Asistencias
     const miInfo = `${nombre} - ${cedula}`;
 
     try {
@@ -450,7 +439,6 @@ export class HorariosPage implements OnInit {
       );
       const snap = await getDocs(q);
       
-      // Filtramos las que NO han sido evaluadas
       const pendientes = snap.docs
         .map(d => ({ id: d.id, ...d.data() as any }))
         .filter(r => !r.evaluado);
@@ -464,13 +452,20 @@ export class HorariosPage implements OnInit {
     }
   }
 
-  seleccionarEstrella(indexPregunta: number, valor: number) {
+  // 🌟 VALIDAMOS QUE LAS 3 PREGUNTAS TENGAN RESPUESTA
+  get evaluacionValida(): boolean {
+    return this.respuestasEvaluacion[0] > 0 && 
+           this.respuestasEvaluacion[1] > 0 && 
+           this.respuestasEvaluacion[2] > 0;
+  }
+
+  seleccionarCalificacion(indexPregunta: number, valor: number) {
     this.respuestasEvaluacion[indexPregunta] = valor;
   }
 
   async enviarEvaluacion() {
-    if (this.respuestasEvaluacion.includes(0)) {
-      alert("Por favor, responde las 5 preguntas tocando las estrellas.");
+    if (!this.evaluacionValida) {
+      alert("Por favor, califica las 3 preguntas antes de enviar.");
       return;
     }
 
@@ -487,8 +482,8 @@ export class HorariosPage implements OnInit {
         p1: this.respuestasEvaluacion[0],
         p2: this.respuestasEvaluacion[1],
         p3: this.respuestasEvaluacion[2],
-        p4: this.respuestasEvaluacion[3],
-        p5: this.respuestasEvaluacion[4]
+        p4: 'N/A', // Rellenamos para no descuadrar tu Google Sheet
+        p5: 'N/A'  // Rellenamos para no descuadrar tu Google Sheet
       };
 
       await fetch(urlScript, { 
@@ -498,12 +493,11 @@ export class HorariosPage implements OnInit {
         body: JSON.stringify(payload)
       });
 
-      // 2. Marcar en Firestore que ya fue evaluada para que no vuelva a salir
       await updateDoc(doc(this.firestore, 'Asistencias', this.reservaAEvaluar.id), { evaluado: true });
 
       alert("¡Gracias por tu retroalimentación! Ya puedes seguir agendando.");
       this.mostrarModalEvaluacion = false;
-      this.respuestasEvaluacion = [0, 0, 0, 0, 0]; 
+      this.respuestasEvaluacion = [0, 0, 0]; // Reiniciar
 
     } catch (error) {
       alert("Hubo un error de conexión al enviar la evaluación.");
@@ -511,6 +505,7 @@ export class HorariosPage implements OnInit {
       this.enviandoEvaluacion = false;
     }
   }
+
   // ==========================================
   // 🌟 ACEPTACIÓN DE TÉRMINOS Y CONDICIONES
   // ==========================================
@@ -519,7 +514,6 @@ export class HorariosPage implements OnInit {
     
     this.guardandoTerminos = true;
     try {
-      // Guardamos en Firebase que este usuario ya aceptó los términos
       await updateDoc(doc(this.firestore, 'Estudiantes', this.usuarioDocId), { 
         terminos_aceptados: true 
       });
@@ -532,19 +526,18 @@ export class HorariosPage implements OnInit {
       this.guardandoTerminos = false;
     }
   }
-// ==========================================
+
+  // ==========================================
   // 🌟 CAMBIO DE PANELES (MULTI-COLECCIÓN)
   // ==========================================
   async cambiarPanel() {
     const correo = localStorage.getItem('correo') || '';
 
-    // Reiniciamos los permisos
     this.tienePanelTutor = false;
     this.tienePanelAdmin = false;
 
     if (correo) {
       try {
-        // 1. BUSCAMOS EN LA COLECCIÓN DE ESTUDIANTES
         const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
         const snapEst = await getDocs(qEst);
         
@@ -558,13 +551,11 @@ export class HorariosPage implements OnInit {
           }
         }
 
-        // 🌟 2. LA MAGIA: SI NO ES TUTOR AÚN, BUSCAMOS EN LA COLECCIÓN DE TUTORES
         if (!this.tienePanelTutor) {
           const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
           const snapTut = await getDocs(qTut);
           
           if (!snapTut.empty) {
-            // ¡Si existe en la colección de Tutores, le damos el poder!
             this.tienePanelTutor = true; 
           }
         }
@@ -574,18 +565,16 @@ export class HorariosPage implements OnInit {
       }
     }
 
-    // Abrimos el menú y despertamos a Angular
     this.mostrarMenuRol = true;
     if (this.cdr) this.cdr.detectChanges();
   }
 
   irAPanel(ruta: string, rolDestino: string) {
     this.mostrarMenuRol = false; 
-    localStorage.setItem('rol', rolDestino); // Cambiamos de pestaña
+    localStorage.setItem('rol', rolDestino); 
     
     setTimeout(() => {
       this.router.navigate([ruta]); 
     }, 150); 
   }
- 
 }
