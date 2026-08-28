@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { IonContent, IonHeader, IonToolbar, IonButton, IonIcon, IonSpinner, IonSelect, IonSelectOption, IonItem, IonLabel, NavController, IonButtons } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonToolbar, IonButton, IonIcon, IonSpinner, IonSelect, IonSelectOption, IonItem, IonLabel, NavController, IonButtons,ToastController,AlertController } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { arrowBackOutline, bookOutline, warningOutline, checkmarkCircleOutline, timeOutline, closeCircleOutline, calendarOutline, helpCircleOutline, informationCircleOutline } from 'ionicons/icons';
 import { DatabaseService, MateriaCatalogo } from '../../services/database'; 
@@ -19,6 +19,8 @@ export class PostulacionPage {
   public dbService = inject(DatabaseService);
   private router = inject(Router);
   private navCtrl = inject(NavController);
+  private toastController = inject(ToastController);
+  private alertController = inject(AlertController);
 
   estadoVista: 'CARGANDO' | 'BLOQUEADO' | 'REVISION' | 'RESULTADOS' | 'FORMULARIO' = 'CARGANDO';
   
@@ -132,7 +134,7 @@ export class PostulacionPage {
 
   async enviarPostulaciones() {
     if (this.materiasSeleccionadas.length === 0 || Object.keys(this.horarioSeleccionado).length === 0) {
-      alert("Debes seleccionar al menos una materia y un bloque de horario.");
+      this.mostrarAviso("Debes seleccionar al menos una materia y un bloque de horario.",'advertencia');
       return;
     }
 
@@ -172,14 +174,68 @@ export class PostulacionPage {
         });
       }
 
-      alert("Postulaciones enviadas con éxito.");
+      this.mostrarAviso("Postulaciones enviadas con éxito.",'exito');
       this.navCtrl.navigateBack('/tabs/perfil');
 
     } catch (error) {
-      alert("Hubo un fallo al procesar la solicitud.");
+      this.mostrarAviso("Hubo un fallo al procesar la solicitud.",'error');
       this.estadoVista = 'FORMULARIO';
     }
   }
 
   regresar() { this.navCtrl.navigateBack('/tabs/perfil'); }
+  // ==========================================
+  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
+  // ==========================================
+  
+  async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
+    let icono = 'checkmark-circle-outline';
+    let claseCss = 'toast-exito';
+
+    if (tipo === 'error') {
+      icono = 'close-circle-outline';
+      claseCss = 'toast-error';
+    } else if (tipo === 'advertencia') {
+      icono = 'warning-outline';
+      claseCss = 'toast-advertencia';
+    } else if (tipo === 'info') {
+      icono = 'information-circle-outline';
+      claseCss = 'toast-info';
+    }
+
+    const toast = await this.toastController.create({
+      message: mensaje,
+      duration: 3000,
+      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      icon: icono,
+      cssClass: `toast-premium-gietaes ${claseCss}`,
+      mode: 'ios' 
+    });
+    await toast.present();
+  }
+
+  async confirmarAccion(cabecera: string, mensaje: string): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: cabecera,
+        message: mensaje,
+        cssClass: 'alerta-premium-gietaes',
+        mode: 'md', 
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel',
+            cssClass: 'btn-alerta-cancelar',
+            handler: () => resolve(false)
+          },
+          {
+            text: 'Sí, Continuar',
+            cssClass: 'btn-alerta-confirmar',
+            handler: () => resolve(true)
+          }
+        ]
+      });
+      await alert.present();
+    });
+  }
 }

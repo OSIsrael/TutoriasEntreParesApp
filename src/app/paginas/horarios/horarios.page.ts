@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Firestore, collection, getDocs, query, where, updateDoc, doc } from '@angular/fire/firestore';
 import { 
   IonContent, IonHeader, IonToolbar, 
-  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal 
+  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal,ToastController,AlertController 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
@@ -29,6 +29,9 @@ export class HorariosPage implements OnInit {
   private firestore = inject(Firestore);
   private router = inject(Router); 
   private cdr = inject(ChangeDetectorRef);
+
+  private toastController = inject(ToastController);
+  private alertController = inject(AlertController);
 
   // 🌟 VARIABLES PARA EL MENÚ DE ROLES
   mostrarMenuRol: boolean = false;
@@ -335,12 +338,12 @@ export class HorariosPage implements OnInit {
     const nombreDelTutor = String(tutor.nombre || '').toLowerCase().trim();
 
     if (correoDelTutor !== '' && correoDelTutor === miCorreo) {
-      alert('No puedes agendar una tutoría contigo mismo.');
+      this.mostrarAviso('No puedes agendar una tutoría contigo mismo.','error');
       return; 
     }
 
     if (nombreDelTutor !== '' && nombreDelTutor === miNombre) {
-      alert('Acción bloqueada: No puedes ser el estudiante y el tutor a la vez.');
+      this.mostrarAviso('Acción bloqueada: No puedes ser el estudiante y el tutor a la vez.','advertencia');
       return;
     }
 
@@ -394,10 +397,10 @@ export class HorariosPage implements OnInit {
       }
 
       this.cerrarConfirmacion();
-      alert('¡Tutoría agendada con éxito! Revisa la pestaña de Mis Tutorías.');
+      this.mostrarAviso('¡Tutoría agendada con éxito! Revisa la pestaña de Mis Tutorías.','exito');
     } catch (error) {
       console.error("Error al agendar:", error);
-      alert('Hubo un problema al enviar tu solicitud.');
+      this.mostrarAviso('Hubo un problema al enviar tu solicitud.','error');
     }
   }
 
@@ -465,7 +468,7 @@ export class HorariosPage implements OnInit {
 
   async enviarEvaluacion() {
     if (!this.evaluacionValida) {
-      alert("Por favor, califica las 3 preguntas antes de enviar.");
+      this.mostrarAviso("Por favor, califica las 3 preguntas antes de enviar.",'info');
       return;
     }
 
@@ -495,12 +498,12 @@ export class HorariosPage implements OnInit {
 
       await updateDoc(doc(this.firestore, 'Asistencias', this.reservaAEvaluar.id), { evaluado: true });
 
-      alert("¡Gracias por tu retroalimentación! Ya puedes seguir agendando.");
+      this.mostrarAviso("¡Gracias por tu retroalimentación! Ya puedes seguir agendando.",'exito');
       this.mostrarModalEvaluacion = false;
       this.respuestasEvaluacion = [0, 0, 0]; // Reiniciar
 
     } catch (error) {
-      alert("Hubo un error de conexión al enviar la evaluación.");
+      this.mostrarAviso("Hubo un error de conexión al enviar la evaluación.",'error');
     } finally {
       this.enviandoEvaluacion = false;
     }
@@ -521,7 +524,7 @@ export class HorariosPage implements OnInit {
       this.mostrarModalTerminos = false;
     } catch (error) {
       console.error("Error al guardar términos:", error);
-      alert("❌ Hubo un problema de conexión. Inténtalo de nuevo.");
+      this.mostrarAviso("Hubo un problema de conexión. Inténtalo de nuevo.",'info');
     } finally {
       this.guardandoTerminos = false;
     }
@@ -576,5 +579,59 @@ export class HorariosPage implements OnInit {
     setTimeout(() => {
       this.router.navigate([ruta]); 
     }, 150); 
+  }
+ // ==========================================
+  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
+  // ==========================================
+  
+  async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
+    let icono = 'checkmark-circle-outline';
+    let claseCss = 'toast-exito';
+
+    if (tipo === 'error') {
+      icono = 'close-circle-outline';
+      claseCss = 'toast-error';
+    } else if (tipo === 'advertencia') {
+      icono = 'warning-outline';
+      claseCss = 'toast-advertencia';
+    } else if (tipo === 'info') {
+      icono = 'information-circle-outline';
+      claseCss = 'toast-info';
+    }
+
+    const toast = await this.toastController.create({
+      message: mensaje,
+      duration: 3000,
+      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      icon: icono,
+      cssClass: `toast-premium-gietaes ${claseCss}`,
+      mode: 'ios' 
+    });
+    await toast.present();
+  }
+
+  async confirmarAccion(cabecera: string, mensaje: string): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: cabecera,
+        message: mensaje,
+        cssClass: 'alerta-premium-gietaes',
+        mode: 'md', 
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel',
+            cssClass: 'btn-alerta-cancelar',
+            handler: () => resolve(false)
+          },
+          {
+            text: 'Sí, Continuar',
+            cssClass: 'btn-alerta-confirmar',
+            handler: () => resolve(true)
+          }
+        ]
+      });
+      await alert.present();
+    });
   }
 }

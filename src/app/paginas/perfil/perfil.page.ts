@@ -12,7 +12,7 @@ import { Auth, signOut } from '@angular/fire/auth';
 import { 
   IonContent, IonHeader, IonToolbar, 
   IonButtons, IonButton, IonIcon,
-  NavController 
+  NavController,ToastController,AlertController 
 } from '@ionic/angular/standalone';
 
 import { DatabaseService } from '../../services/database';
@@ -36,6 +36,9 @@ export class PerfilPage implements OnInit {
   private navCtrl = inject(NavController); 
   private dbService = inject(DatabaseService); 
   private firestore = inject(Firestore); 
+
+  private toastController = inject(ToastController);
+  private alertController = inject(AlertController);
 
   esTutor: boolean = false;
   usuario = {
@@ -196,5 +199,59 @@ export class PerfilPage implements OnInit {
       localStorage.clear();
       this.navCtrl.navigateRoot('/login');
     }
+  }
+  // ==========================================
+  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
+  // ==========================================
+  
+  async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
+    let icono = 'checkmark-circle-outline';
+    let claseCss = 'toast-exito';
+
+    if (tipo === 'error') {
+      icono = 'close-circle-outline';
+      claseCss = 'toast-error';
+    } else if (tipo === 'advertencia') {
+      icono = 'warning-outline';
+      claseCss = 'toast-advertencia';
+    } else if (tipo === 'info') {
+      icono = 'information-circle-outline';
+      claseCss = 'toast-info';
+    }
+
+    const toast = await this.toastController.create({
+      message: mensaje,
+      duration: 3000,
+      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      icon: icono,
+      cssClass: `toast-premium-gietaes ${claseCss}`,
+      mode: 'ios' 
+    });
+    await toast.present();
+  }
+
+  async confirmarAccion(cabecera: string, mensaje: string): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: cabecera,
+        message: mensaje,
+        cssClass: 'alerta-premium-gietaes',
+        mode: 'md', 
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel',
+            cssClass: 'btn-alerta-cancelar',
+            handler: () => resolve(false)
+          },
+          {
+            text: 'Sí, Continuar',
+            cssClass: 'btn-alerta-confirmar',
+            handler: () => resolve(true)
+          }
+        ]
+      });
+      await alert.present();
+    });
   }
 }

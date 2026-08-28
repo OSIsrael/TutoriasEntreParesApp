@@ -364,3 +364,107 @@ ion-modal.modal-gietaes-centrado::part(content) {
   border-radius: 15px;
   overflow: hidden;
 }
+/* ==============================================
+   🌟 TOAST PREMIUM GIETAES (AVISOS)
+   ============================================== */
+ion-toast.toast-premium-gietaes {
+  --border-radius: 12px;
+  --box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  font-family: inherit;
+}
+
+ion-toast.toast-premium-gietaes::part(message) {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  padding-left: 5px;
+}
+
+ion-toast.toast-premium-gietaes::part(icon) {
+  font-size: 1.6rem;
+  margin-right: 10px;
+}
+
+/* 🌟 VARIACIONES DE COLOR Y BORDES CORREGIDOS */
+ion-toast.toast-exito {
+  --background: #ffffff;
+  --color: #0f172a;
+  --icon-color: #10b981; 
+}
+ion-toast.toast-exito::part(container) {
+  border-left: 6px solid #10b981;
+}
+
+ion-toast.toast-error {
+  --background: #ffffff;
+  --color: #0f172a;
+  --icon-color: #ef4444; 
+}
+ion-toast.toast-error::part(container) {
+  border-left: 6px solid #ef4444;
+}
+
+ion-toast.toast-advertencia {
+  --background: #003366; 
+  --color: #ffffff;
+  --icon-color: #EAB308; 
+}
+ion-toast.toast-advertencia::part(container) {
+  border-left: 6px solid #EAB308;
+}
+
+ion-toast.toast-info {
+  --background: #ffffff;
+  --color: #0f172a;
+  --icon-color: #3b82f6; 
+}
+ion-toast.toast-info::part(container) {
+  border-left: 6px solid #3b82f6;
+}
+
+/* ==============================================
+   🌟 ALERTA PREMIUM GIETAES (CONFIRMACIONES)
+   ============================================== */
+.alerta-premium-gietaes {
+  --background: #ffffff;
+  --backdrop-opacity: 0.6;
+  
+  /* Borde superior amarillo característico de tu diseño */
+  .alert-wrapper {
+    border-radius: 16px;
+    border-top: 5px solid #EAB308;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+  }
+
+  .alert-title {
+    color: #003366;
+    font-weight: 900;
+    font-size: 1.25rem;
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  .alert-message {
+    color: #475569;
+    font-size: 0.95rem;
+    text-align: center;
+    line-height: 1.4;
+    margin-top: 15px;
+  }
+
+  /* Estilos de botones */
+  .alert-button-group {
+    padding: 10px;
+  }
+
+  .btn-alerta-cancelar {
+    color: #94a3b8 !important; /* Gris discreto para cancelar */
+    font-weight: 700;
+  }
+
+  .btn-alerta-confirmar {
+    color: #003366 !important; /* Azul pesado para la acción principal */
+    font-weight: 900;
+  }
+}

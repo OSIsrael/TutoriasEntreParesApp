@@ -13,7 +13,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { Firestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { 
   IonContent, IonIcon, IonHeader, IonToolbar, IonButtons, IonButton,
-  IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonList,IonModal,IonLabel
+  IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonList,IonModal,IonLabel,ToastController,AlertController
 } from '@ionic/angular/standalone';
 
 @Component({
@@ -31,6 +31,9 @@ export class MisTutoriasPage implements OnInit {
   private router = inject(Router); 
   private firestore = inject(Firestore);
   private cdr = inject(ChangeDetectorRef);
+
+  private toastController = inject(ToastController);
+  private alertController = inject(AlertController);
 
   // 🌟 VARIABLES PARA EL MENÚ DE ROLES
   mostrarMenuRol: boolean = false;
@@ -172,7 +175,7 @@ export class MisTutoriasPage implements OnInit {
 
   contactarWhatsApp(celular: string, nombre: string, materia: string) {
     if (!celular || celular === 'No registrado') {
-      alert("No hay número de contacto disponible.");
+      this.mostrarAviso("No hay número de contacto disponible.",'error');
       return;
     }
     
@@ -187,7 +190,7 @@ export class MisTutoriasPage implements OnInit {
   }
 
   async cancelarTutoria(tutoria: any) {
-    const confirmar = confirm(`¿Estás seguro de cancelar tu solicitud de tutoría para ${tutoria.materia}?`);
+    const confirmar = await this.confirmarAccion(`¿Estás seguro de cancelar tu solicitud de tutoría para ${tutoria.materia}?`,'');
     if (!confirmar) return;
 
     try {
@@ -202,59 +205,71 @@ export class MisTutoriasPage implements OnInit {
         sede_destino: localStorage.getItem('sede') || 'GLOBAL'
       });
 
-      alert('Tutoría cancelada. El tutor ha sido notificado.');
+      this.mostrarAviso('Tutoría cancelada. El tutor ha sido notificado.','info');
       await this.cargarMisTutorias(); 
     } catch (error) {
-      alert('Error al cancelar la tutoría.');
+      this.mostrarAviso('Error al cancelar la tutoría.','error');
     }
   }
 
+// 🌟 CONVIERTE EL ID DE FIREBASE EN NÚMERO PARA LAS ALARMAS
+  generarIdNumerico(idString: string): number {
+    let hash = 0;
+    if (!idString) return Math.floor(Math.random() * 100000);
+    for (let i = 0; i < idString.length; i++) {
+      hash = (hash << 5) - hash + idString.charCodeAt(i);
+      hash |= 0; 
+    }
+    return Math.abs(hash);
+  }
+
+  // 🌟 LAS 2 ALARMAS EXACTAS PARA EL ESTUDIANTE
   async programarRecordatorios(tutoria: any) {
     if(tutoria.dia === 'Por definir' || tutoria.hora === 'Por definir') return;
 
-    // A diferencia de la limpieza, aquí si calculamos desde "Hoy" para las alarmas futuras
     const fechaTutoria = this.calcularProximaFechaDesdeHoy(tutoria.dia, tutoria.hora);
     const ahora = new Date().getTime();
     const notificaciones = [];
+    const idBase = this.generarIdNumerico(tutoria.id);
 
+    // 1. Alarma: Exactamente 1 hora antes de la clase
     const tiempo1Hora = fechaTutoria.getTime() - (60 * 60 * 1000);
     if (tiempo1Hora > ahora) {
       notificaciones.push({
-        id: Math.floor(Math.random() * 10000),
-        title: '¡Tu tutoría es en 1 hora! ',
-        body: `Prepárate para ${tutoria.materia} con ${tutoria.nombreContacto}.`,
+        id: idBase, 
+        title: '¡Tu tutoría es en 1 hora! ⏰',
+        body: `Prepárate para ${tutoria.materia} con ${tutoria.nombreContacto || 'tu tutor'}.`,
         schedule: { at: new Date(tiempo1Hora) }
       });
     }
 
-    const tiempo30Min = fechaTutoria.getTime() - (30 * 60 * 1000);
-    if (tiempo30Min > ahora) {
+    // 2. Alarma: A las 08:00 AM del mismo día de la clase
+    const fechaMismoDia = new Date(fechaTutoria);
+    fechaMismoDia.setHours(8, 0, 0, 0);
+    const tiempoMismoDia = fechaMismoDia.getTime();
+
+    // Solo la programa si aún no son las 8 AM de ese día y si no choca con la de 1 hora
+    if (tiempoMismoDia > ahora && tiempoMismoDia < tiempo1Hora) {
       notificaciones.push({
-        id: Math.floor(Math.random() * 10000),
-        title: '¡Tutoría a punto de empezar! 🚀',
-        body: `Faltan 30 minutos para tu tutoría de ${tutoria.materia}.`,
-        schedule: { at: new Date(tiempo30Min) }
+        id: idBase + 1, 
+        title: 'Tienes una tutoría hoy 📅',
+        body: `Recuerda que hoy tienes clase de ${tutoria.materia}. ¡Revisa la app!`,
+        schedule: { at: new Date(tiempoMismoDia) }
       });
     }
 
-    let tiempoPeriodico = ahora + (5 * 60 * 60 * 1000);
-    let contador = 1;
-    while (tiempoPeriodico < tiempo1Hora) {
-      notificaciones.push({
-        id: Math.floor(Math.random() * 10000) + contador,
-        title: 'Recordatorio Tutorías entre Pares App',
-        body: `Tienes una tutoría confirmada de ${tutoria.materia} el ${tutoria.dia}.`,
-        schedule: { at: new Date(tiempoPeriodico) }
-      });
-      tiempoPeriodico += (5 * 60 * 60 * 1000);
-      contador++;
-    }
-
+    // Programar en el dispositivo
     if (notificaciones.length > 0) {
-      await LocalNotifications.schedule({ notifications: notificaciones });
+      const { LocalNotifications } = await import('@capacitor/local-notifications');
+      let permStatus = await LocalNotifications.checkPermissions();
+      if (permStatus.display !== 'granted') {
+        permStatus = await LocalNotifications.requestPermissions();
+      }
+      if (permStatus.display === 'granted') {
+        await LocalNotifications.schedule({ notifications: notificaciones });
+      }
     }
   }
-
   calcularProximaFechaDesdeHoy(diaSemana: string, horaRango: string): Date {
     const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const diaBuscado = diaSemana.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
@@ -281,7 +296,7 @@ export class MisTutoriasPage implements OnInit {
 
   async unirsePorCodigo() {
     if (!this.codigoIngresado || this.codigoIngresado.trim() === '') {
-      alert('Por favor, ingresa un código válido.');
+      this.mostrarAviso('Por favor, ingresa un código válido.','advertencia');
       return;
     }
 
@@ -292,7 +307,7 @@ export class MisTutoriasPage implements OnInit {
       this.nombreUsuario || 'Estudiante'
     );
 
-    alert(resultado.mensaje);
+    this.mostrarAviso(resultado.mensaje,'info');
 
     if (resultado.exito) {
       this.cerrarModalCodigo();
@@ -350,5 +365,59 @@ export class MisTutoriasPage implements OnInit {
     setTimeout(() => {
       this.router.navigate([ruta]); 
     }, 150); 
+  }
+  // ==========================================
+  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
+  // ==========================================
+  
+  async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
+    let icono = 'checkmark-circle-outline';
+    let claseCss = 'toast-exito';
+
+    if (tipo === 'error') {
+      icono = 'close-circle-outline';
+      claseCss = 'toast-error';
+    } else if (tipo === 'advertencia') {
+      icono = 'warning-outline';
+      claseCss = 'toast-advertencia';
+    } else if (tipo === 'info') {
+      icono = 'information-circle-outline';
+      claseCss = 'toast-info';
+    }
+
+    const toast = await this.toastController.create({
+      message: mensaje,
+      duration: 3000,
+      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      icon: icono,
+      cssClass: `toast-premium-gietaes ${claseCss}`,
+      mode: 'ios' 
+    });
+    await toast.present();
+  }
+
+  async confirmarAccion(cabecera: string, mensaje: string): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: cabecera,
+        message: mensaje,
+        cssClass: 'alerta-premium-gietaes',
+        mode: 'md', 
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel',
+            cssClass: 'btn-alerta-cancelar',
+            handler: () => resolve(false)
+          },
+          {
+            text: 'Sí, Continuar',
+            cssClass: 'btn-alerta-confirmar',
+            handler: () => resolve(true)
+          }
+        ]
+      });
+      await alert.present();
+    });
   }
 }

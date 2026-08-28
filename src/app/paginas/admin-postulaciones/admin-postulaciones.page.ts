@@ -7,7 +7,7 @@ import { Router } from '@angular/router';
 import {
   IonContent, IonHeader, IonToolbar, IonButton, IonButtons, IonIcon,
   IonItem, IonLabel, IonInput, IonTextarea, IonSelect, IonSelectOption,
-  IonDatetime, IonDatetimeButton, IonModal 
+  IonDatetime, IonDatetimeButton, IonModal,ToastController,AlertController 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { arrowBackOutline, megaphoneOutline, checkmarkCircleOutline, closeCircleOutline, personOutline, timeOutline, bookOutline } from 'ionicons/icons';
@@ -22,13 +22,16 @@ import Chart from 'chart.js/auto';
     CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, IonButton,
     KeyValuePipe, IonButtons, IonIcon, IonItem, IonLabel, IonInput,
     IonTextarea, IonSelect, IonSelectOption,
-    IonDatetime, IonDatetimeButton, IonModal 
+    IonDatetime, IonDatetimeButton, IonModal
   ],
 })
 export class AdminPostulacionesPage {
   private firestore = inject(Firestore);
   private dbService = inject(DatabaseService);
   private router = inject(Router);
+
+  private toastController = inject(ToastController);
+  private alertController = inject(AlertController);
 
   postulacionesAgrupadas: any[] = [];
   
@@ -144,16 +147,16 @@ export class AdminPostulacionesPage {
         console.warn('Postulación aceptada, pero falló la notificación', e);
       }
 
-      alert(`Tutor aceptado en ${post.materia_postulada}`);
+      this.mostrarAviso(`Tutor aceptado en ${post.materia_postulada}`,'info');
       await this.cargarPostulaciones(); // Recarga y re-agrupa automáticamente
       this.cargarEstadisticas();
     } catch (e) { 
-      alert('Error al aceptar tutor'); 
+      this.mostrarAviso('Error al aceptar tutor','error'); 
     }
   }
 
   async rechazar(post: any) {
-    const confirmar = confirm(`¿Estás seguro de RECHAZAR a ${post.nombre} para dictar ${post.materia_postulada}?`);
+    const confirmar = await this.confirmarAccion(`¿Estás seguro de RECHAZAR a ${post.nombre} para dictar ${post.materia_postulada}?`,'');
     if (!confirmar) return;
 
     try {
@@ -173,10 +176,10 @@ export class AdminPostulacionesPage {
         console.warn('Postulación rechazada, pero falló la notificación', e);
       }
 
-      alert(`Postulación para ${post.materia_postulada} rechazada.`);
+      this.mostrarAviso(`Postulación para ${post.materia_postulada} rechazada.`,'info');
       await this.cargarPostulaciones(); 
     } catch (error) {
-      alert('Error al rechazar la postulación.');
+      this.mostrarAviso('Error al rechazar la postulación.','error');
     }
   }
 
@@ -242,7 +245,7 @@ export class AdminPostulacionesPage {
 
   async publicarAnuncio() {
     if (!this.nuevoAnuncio.titulo || !this.nuevoAnuncio.descripcion) {
-      alert('Por favor, llena el título y la descripción del comunicado.');
+      this.mostrarAviso('Por favor, llena el título y la descripción del comunicado.','advertencia');
       return;
     }
 
@@ -266,12 +269,12 @@ export class AdminPostulacionesPage {
         sede_destino: this.nuevoAnuncio.sede_destino.toUpperCase() 
       });
 
-      alert('¡Comunicado oficial publicado con éxito!');
+      this.mostrarAviso('¡Comunicado oficial publicado con éxito!','exito');
       
       this.nuevoAnuncio = { titulo: '', descripcion: '', fecha_evento: new Date().toISOString(), sede_destino: 'GLOBAL' };
     } catch (error) {
       console.error('Error al publicar:', error);
-      alert('Error al publicar el comunicado.');
+      this.mostrarAviso('Error al publicar el comunicado.','error');
     }
   }
 
@@ -308,5 +311,59 @@ export class AdminPostulacionesPage {
     } catch (error) {
       console.error("Error al limpiar anuncios:", error);
     }
+  }
+  // ==========================================
+  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
+  // ==========================================
+  
+  async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
+    let icono = 'checkmark-circle-outline';
+    let claseCss = 'toast-exito';
+
+    if (tipo === 'error') {
+      icono = 'close-circle-outline';
+      claseCss = 'toast-error';
+    } else if (tipo === 'advertencia') {
+      icono = 'warning-outline';
+      claseCss = 'toast-advertencia';
+    } else if (tipo === 'info') {
+      icono = 'information-circle-outline';
+      claseCss = 'toast-info';
+    }
+
+    const toast = await this.toastController.create({
+      message: mensaje,
+      duration: 3000,
+      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      icon: icono,
+      cssClass: `toast-premium-gietaes ${claseCss}`,
+      mode: 'ios' 
+    });
+    await toast.present();
+  }
+
+  async confirmarAccion(cabecera: string, mensaje: string): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: cabecera,
+        message: mensaje,
+        cssClass: 'alerta-premium-gietaes',
+        mode: 'md', 
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel',
+            cssClass: 'btn-alerta-cancelar',
+            handler: () => resolve(false)
+          },
+          {
+            text: 'Sí, Continuar',
+            cssClass: 'btn-alerta-confirmar',
+            handler: () => resolve(true)
+          }
+        ]
+      });
+      await alert.present();
+    });
   }
 }

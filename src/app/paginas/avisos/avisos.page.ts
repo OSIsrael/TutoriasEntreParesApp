@@ -163,7 +163,7 @@ export class AvisosPage {
           }
         }
       } catch (error) {
-        console.error("❌ Error consultando permisos:", error);
+        console.error("Error consultando permisos:", error);
       }
     }
 

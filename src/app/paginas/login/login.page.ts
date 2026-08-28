@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { 
   IonContent, IonItem,  IonInput, 
-  IonSelect, IonSelectOption, IonButton, IonSpinner, IonList, IonIcon 
+  IonSelect, IonSelectOption, IonButton, IonSpinner, IonList, IonIcon,ToastController,AlertController 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { logoGoogle, arrowBackOutline } from 'ionicons/icons'; 
@@ -28,6 +28,8 @@ export class LoginPage implements OnInit {
   private router = inject(Router);
   private auth = inject(Auth);
   private firestore = inject(Firestore); 
+  private toastController = inject(ToastController);
+  private alertController = inject(AlertController);
 
   modoRegistro = false;
   cargando = false;
@@ -149,7 +151,7 @@ export class LoginPage implements OnInit {
       const usuarioGoogle = resultadoAuth.user;
 
       if (!usuarioGoogle.email) {
-        alert("Error al leer la cuenta de Google.");
+        this.mostrarAviso("Error al leer la cuenta de Google.",'error');
         this.cargando = false; return;
       }
 
@@ -173,21 +175,21 @@ export class LoginPage implements OnInit {
 
   async procesarRegistroCompleto() {
     if (!this.correoInstitucional || !this.nombreCompleto || !this.cedula || !this.carreraSeleccionada || !this.ciclo || !this.beca || !this.celular || !this.sede) {
-      alert("Por favor llena todos los campos obligatorios.");
+      this.mostrarAviso("Por favor llena todos los campos obligatorios.",'advertencia');
       return;
     }
 
     const correoLimpio = this.correoInstitucional.toLowerCase().trim();
 
     if (!correoLimpio.endsWith('@est.ups.edu.ec') && !correoLimpio.endsWith('@ups.edu.ec')) {
-      alert("El correo ingresado no pertenece a la UPS.");
+      this.mostrarAviso("El correo ingresado no pertenece a la UPS.",'advertencia');
       return;
     }
 
     // 🌟 PUNTO 3: APLICAMOS LA VALIDACIÓN Y AUTO-CORRECCIÓN AL NOMBRE
     const validacionNombre = this.validarNombreCompleto(this.nombreCompleto);
     if (!validacionNombre.valido) {
-      alert(validacionNombre.mensaje);
+      this.mostrarAviso(validacionNombre.mensaje,'info');
       return;
     }
     // Si es válido, reemplazamos la variable con la versión limpia y en MAYÚSCULAS
@@ -195,10 +197,10 @@ export class LoginPage implements OnInit {
 
 
     if (!this.validarCedula(this.cedula)) {
-      alert("La cédula ingresada no es válida."); return;
+      this.mostrarAviso("La cédula ingresada no es válida.",'error'); return;
     }
     if (!this.validarCelular(this.celular)) {
-      alert("El número de celular debe empezar con 09 y tener 10 dígitos."); return;
+      this.mostrarAviso("El número de celular debe empezar con 09 y tener 10 dígitos.",'info'); return;
     }
 
     this.cargando = true;
@@ -207,7 +209,7 @@ export class LoginPage implements OnInit {
       const estRef = doc(this.firestore, 'Estudiantes', correoLimpio);
       const estSnap = await getDoc(estRef);
       if (estSnap.exists()) {
-        alert(`El correo ${correoLimpio} ya está vinculado a otra cuenta de Google.`);
+        this.mostrarAviso(`El correo ${correoLimpio} ya está vinculado a otra cuenta de Google.`,'advertencia');
         this.cargando = false; return;
       }
 
@@ -216,7 +218,7 @@ export class LoginPage implements OnInit {
       if (tutSnap.exists()) {
         const datosTutor = tutSnap.data();
         if (datosTutor['correo_google'] && datosTutor['correo_google'] !== this.correoGoogle) {
-          alert(`Este correo ya fue vinculado a la cuenta: ${datosTutor['correo_google']}.`);
+          this.mostrarAviso(`Este correo ya fue vinculado a la cuenta: ${datosTutor['correo_google']}.`,'advertencia');
           this.cargando = false; return;
         }
         await updateDoc(tutRef, { correo_google: this.correoGoogle });
@@ -231,7 +233,7 @@ export class LoginPage implements OnInit {
       if (adminSnap.exists()) {
         const datosAdmin = adminSnap.data();
         if (datosAdmin['correo_google'] && datosAdmin['correo_google'] !== this.correoGoogle) {
-          alert(`Este correo ya fue vinculado a la cuenta: ${datosAdmin['correo_google']}.`);
+          this.mostrarAviso(`Este correo ya fue vinculado a la cuenta: ${datosAdmin['correo_google']}.`,'advertencia');
           this.cargando = false; return;
         }
         await updateDoc(adminRef, { correo_google: this.correoGoogle });
@@ -243,7 +245,7 @@ export class LoginPage implements OnInit {
 
     } catch(e) { 
       console.error("Error al verificar unicidad:", e); 
-      alert("Hubo un problema verificando tu correo. Inténtalo de nuevo.");
+      this.mostrarAviso("Hubo un problema verificando tu correo. Inténtalo de nuevo.",'error');
       this.cargando = false; return;
     }
 
@@ -277,5 +279,59 @@ export class LoginPage implements OnInit {
     localStorage.setItem('celular', datos.celular);
     this.cargando = false;
     this.router.navigate(['/tabs/horarios']);
+  }
+  // ==========================================
+  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
+  // ==========================================
+  
+  async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
+    let icono = 'checkmark-circle-outline';
+    let claseCss = 'toast-exito';
+
+    if (tipo === 'error') {
+      icono = 'close-circle-outline';
+      claseCss = 'toast-error';
+    } else if (tipo === 'advertencia') {
+      icono = 'warning-outline';
+      claseCss = 'toast-advertencia';
+    } else if (tipo === 'info') {
+      icono = 'information-circle-outline';
+      claseCss = 'toast-info';
+    }
+
+    const toast = await this.toastController.create({
+      message: mensaje,
+      duration: 3000,
+      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      icon: icono,
+      cssClass: `toast-premium-gietaes ${claseCss}`,
+      mode: 'ios' 
+    });
+    await toast.present();
+  }
+
+  async confirmarAccion(cabecera: string, mensaje: string): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: cabecera,
+        message: mensaje,
+        cssClass: 'alerta-premium-gietaes',
+        mode: 'md', 
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel',
+            cssClass: 'btn-alerta-cancelar',
+            handler: () => resolve(false)
+          },
+          {
+            text: 'Sí, Continuar',
+            cssClass: 'btn-alerta-confirmar',
+            handler: () => resolve(true)
+          }
+        ]
+      });
+      await alert.present();
+    });
   }
 }

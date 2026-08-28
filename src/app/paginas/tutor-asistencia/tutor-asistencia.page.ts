@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { 
   IonContent, IonHeader, IonToolbar, IonIcon, IonButton, IonButtons,
-  IonItem, IonLabel, IonSelect, IonSelectOption, IonTextarea, IonInput, IonList,IonRange,IonModal
+  IonItem, IonLabel, IonSelect, IonSelectOption, IonTextarea, IonInput, IonList,IonRange,IonModal,ToastController,AlertController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
@@ -31,6 +31,9 @@ export class TutorAsistenciaPage implements OnInit {
   private firestore = inject(Firestore);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+
+  private toastController = inject(ToastController);
+  private alertController = inject(AlertController);
 
   // 🌟 VARIABLES PARA EL MENÚ DE ROLES
   mostrarMenuRol: boolean = false;
@@ -175,7 +178,7 @@ export class TutorAsistenciaPage implements OnInit {
   // ==========================================
   async enviarRegistro() {
     if (this.estudiantesSeleccionados.length === 0 || !this.form.materia || !this.form.asistio) {
-      alert("Debes añadir al menos un estudiante y completar la Materia y la Asistencia global.");
+      this.mostrarAviso("Debes añadir al menos un estudiante y completar la Materia y la Asistencia global.",'advertencia');
       return;
     }
 
@@ -204,14 +207,14 @@ export class TutorAsistenciaPage implements OnInit {
 
       await Promise.all(promesas);
 
-      alert(`Se registraron exitosamente las asistencias de ${this.estudiantesSeleccionados.length} estudiante(s).`);
+      this.mostrarAviso(`Se registraron exitosamente las asistencias de ${this.estudiantesSeleccionados.length} estudiante(s).`,'exito');
       
       this.form = { materia: '', tema_tratado: '', horas: 1, asistio: '', participo: '', codigo_tutoria: '' };
       this.estudiantesSeleccionados = [];
       this.busquedaEstudiante = '';
 
     } catch (error) {
-      alert("Hubo un error al guardar. Revisa tu conexión a internet.");
+      this.mostrarAviso("Hubo un error al guardar. Revisa tu conexión a internet.",'error');
     } finally {
       this.enviando = false;
     }
@@ -250,7 +253,7 @@ export class TutorAsistenciaPage implements OnInit {
           }
         }
       } catch (error) {
-        console.error("❌ Error consultando permisos:", error);
+        console.error("Error consultando permisos:", error);
       }
     }
 
@@ -265,5 +268,59 @@ export class TutorAsistenciaPage implements OnInit {
     setTimeout(() => {
       this.router.navigate([ruta]); 
     }, 150); 
+  }
+  // ==========================================
+  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
+  // ==========================================
+  
+  async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
+    let icono = 'checkmark-circle-outline';
+    let claseCss = 'toast-exito';
+
+    if (tipo === 'error') {
+      icono = 'close-circle-outline';
+      claseCss = 'toast-error';
+    } else if (tipo === 'advertencia') {
+      icono = 'warning-outline';
+      claseCss = 'toast-advertencia';
+    } else if (tipo === 'info') {
+      icono = 'information-circle-outline';
+      claseCss = 'toast-info';
+    }
+
+    const toast = await this.toastController.create({
+      message: mensaje,
+      duration: 3000,
+      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      icon: icono,
+      cssClass: `toast-premium-gietaes ${claseCss}`,
+      mode: 'ios' 
+    });
+    await toast.present();
+  }
+
+  async confirmarAccion(cabecera: string, mensaje: string): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: cabecera,
+        message: mensaje,
+        cssClass: 'alerta-premium-gietaes',
+        mode: 'md', 
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel',
+            cssClass: 'btn-alerta-cancelar',
+            handler: () => resolve(false)
+          },
+          {
+            text: 'Sí, Continuar',
+            cssClass: 'btn-alerta-confirmar',
+            handler: () => resolve(true)
+          }
+        ]
+      });
+      await alert.present();
+    });
   }
 }

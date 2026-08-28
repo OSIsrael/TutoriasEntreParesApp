@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { 
   IonContent, IonHeader, IonToolbar, IonIcon, IonButton, IonButtons,
-  NavController, IonGrid, IonRow, IonCol, IonSelect, IonSelectOption,IonSpinner
+  NavController, IonGrid, IonRow, IonCol, IonSelect, IonSelectOption,IonSpinner,ToastController,AlertController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
@@ -34,6 +34,9 @@ export class TutorEstadisticasPage implements OnInit {
   private router = inject(Router);
   private auth = inject(Auth);
   private navCtrl = inject(NavController);
+
+  private toastController = inject(ToastController);
+  private alertController = inject(AlertController);
 
   usuario = { nombre: 'CARGANDO...', correo: '', sede: '' };
   rolUsuario: string = '';
@@ -219,7 +222,7 @@ export class TutorEstadisticasPage implements OnInit {
 
   async enviarSolicitudMaterias() {
     if (this.materiasSeleccionadas.length === 0) {
-      alert("Selecciona al menos una materia para solicitar.");
+      this.mostrarAviso("Selecciona al menos una materia para solicitar.",'advertencia');
       return;
     }
 
@@ -253,13 +256,67 @@ export class TutorEstadisticasPage implements OnInit {
         });
       }
 
-      alert("Solicitud enviada correctamente. El administrador la revisará pronto.");
+      this.mostrarAviso("Solicitud enviada correctamente. El administrador la revisará pronto.",'exito');
       this.mostrarModalMaterias = false;
 
     } catch (error) {
-      alert("Error al enviar la solicitud.");
+      this.mostrarAviso("Error al enviar la solicitud.",'error');
     } finally {
       this.cargandoMaterias = false;
     }
+  }
+  // ==========================================
+  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
+  // ==========================================
+  
+  async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
+    let icono = 'checkmark-circle-outline';
+    let claseCss = 'toast-exito';
+
+    if (tipo === 'error') {
+      icono = 'close-circle-outline';
+      claseCss = 'toast-error';
+    } else if (tipo === 'advertencia') {
+      icono = 'warning-outline';
+      claseCss = 'toast-advertencia';
+    } else if (tipo === 'info') {
+      icono = 'information-circle-outline';
+      claseCss = 'toast-info';
+    }
+
+    const toast = await this.toastController.create({
+      message: mensaje,
+      duration: 3000,
+      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      icon: icono,
+      cssClass: `toast-premium-gietaes ${claseCss}`,
+      mode: 'ios' 
+    });
+    await toast.present();
+  }
+
+  async confirmarAccion(cabecera: string, mensaje: string): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: cabecera,
+        message: mensaje,
+        cssClass: 'alerta-premium-gietaes',
+        mode: 'md', 
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel',
+            cssClass: 'btn-alerta-cancelar',
+            handler: () => resolve(false)
+          },
+          {
+            text: 'Sí, Continuar',
+            cssClass: 'btn-alerta-confirmar',
+            handler: () => resolve(true)
+          }
+        ]
+      });
+      await alert.present();
+    });
   }
 }

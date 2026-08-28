@@ -1,19 +1,20 @@
-import { Component, OnInit, inject, ViewChild,ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { 
   IonContent, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, 
   IonList, IonItemSliding, IonItem, IonItemOptions, IonItemOption,
-  IonPopover, IonLabel,IonModal // 🌟 NUEVOS IMPORTS PARA EL MENÚ
+  IonPopover, IonLabel, IonModal,ToastController,AlertController 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   notificationsOutline, bookOutline, logoWhatsapp, 
   personOutline, timeOutline, calendarOutline, trashOutline,
-  checkmarkCircleOutline, closeCircleOutline, closeOutline,helpCircleOutline, informationCircleOutline, documentTextOutline, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, chevronDownOutline, chevronBackOutline } from 'ionicons/icons';
+  checkmarkCircleOutline, closeCircleOutline, closeOutline, helpCircleOutline, informationCircleOutline, documentTextOutline, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, chevronDownOutline, chevronBackOutline } from 'ionicons/icons';
 import { Firestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 @Component({
   selector: 'app-tutor-tutorias',
@@ -23,7 +24,7 @@ import { DatabaseService } from '../../services/database';
   imports: [
     CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, 
     IonButtons, IonButton, IonIcon, IonList, IonItemSliding, 
-    IonItem, IonItemOptions, IonItemOption, IonPopover, IonLabel,IonModal
+    IonItem, IonItemOptions, IonItemOption, IonPopover, IonLabel, IonModal
   ]
 })
 export class TutorTutoriasPage implements OnInit {
@@ -32,7 +33,8 @@ export class TutorTutoriasPage implements OnInit {
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
-  // 🌟 VARIABLES PARA EL MENÚ DE ROLES
+  private toastController = inject(ToastController);
+  private alertController = inject(AlertController);
   mostrarMenuRol: boolean = false;
   tienePanelTutor: boolean = false;
   tienePanelAdmin: boolean = false;
@@ -44,7 +46,6 @@ export class TutorTutoriasPage implements OnInit {
   hayNotificacionesSinLeer: boolean = false;
   mostrarGuiaTutor: boolean = false;
 
-  // 🌟 VARIABLES PARA EL NUEVO MENÚ HERMOSO
   @ViewChild('popoverEstado') popoverEstado!: IonPopover;
   menuEstadoAbierto: boolean = false;
   tutoriaSeleccionada: any = null;
@@ -65,13 +66,12 @@ export class TutorTutoriasPage implements OnInit {
     const guiaTutorVista = localStorage.getItem('guia_tutor_vista');
     if (!guiaTutorVista) {
       this.mostrarGuiaTutor = true;
-      localStorage.setItem('guia_tutor_vista', 'true'); // Marca que ya la vio
+      localStorage.setItem('guia_tutor_vista', 'true'); 
     }
   }
 
-async verificarNotificaciones(correo: string, rol: string, sede: string) {
+  async verificarNotificaciones(correo: string, rol: string, sede: string) {
     try {
-      // 🌟 LE PASAMOS 'TUTOR' COMO CUARTO PARÁMETRO
       const notifs = await this.dbService.obtenerNotificacionesUsuario(correo, rol, sede, 'TUTOR');
       const sinLeer = notifs.filter((n: any) => {
         const leidas = n['leida_por'] || [];
@@ -83,8 +83,7 @@ async verificarNotificaciones(correo: string, rol: string, sede: string) {
     }
   }
 
- irANotificaciones() {
-    // 🌟 ENVIAMOS EL PARÁMETRO EN LA URL
+  irANotificaciones() {
     this.router.navigate(['/notificaciones'], { queryParams: { panel: 'TUTOR' } });
   }
 
@@ -103,9 +102,9 @@ async verificarNotificaciones(correo: string, rol: string, sede: string) {
       snapshot.forEach(documento => {
         const res = documento.data();
         
-        let colorEstado = '#fde047'; // Amarillo (Pendiente)
-        if (res['estado'] === 'CONFIRMADA' || res['estado'] === 'ACEPTADA') colorEstado = '#34d399'; // Verde
-        if (res['estado'] === 'CANCELADA') colorEstado = '#ef4444'; // Rojo
+        let colorEstado = '#fde047'; 
+        if (res['estado'] === 'CONFIRMADA' || res['estado'] === 'ACEPTADA') colorEstado = '#34d399'; 
+        if (res['estado'] === 'CANCELADA') colorEstado = '#ef4444'; 
 
         this.tutoriasPorImpartir.push({
           id: documento.id,
@@ -129,7 +128,7 @@ async verificarNotificaciones(correo: string, rol: string, sede: string) {
 
   contactarEstudiante(celular: string, nombre: string, materia: string) {
     if (!celular || celular === 'No registrado' || celular.trim() === '') {
-      alert("El estudiante no registró su número celular.");
+      this.mostrarAviso("El estudiante no registró su número celular.",'error');
       return;
     }
     
@@ -143,23 +142,20 @@ async verificarNotificaciones(correo: string, rol: string, sede: string) {
     window.open(urlWa, '_blank');
   }
 
-  // 🌟 ABRIR EL NUEVO MENÚ VISUAL
   abrirMenuEstado(evento: any, tutoria: any) {
-    evento.stopPropagation(); // Evitamos que la tarjeta se deslice por error
+    evento.stopPropagation(); 
     this.tutoriaSeleccionada = tutoria;
-    this.popoverEstado.event = evento; // Le decimos al menú que se abra justo donde tocaste
+    this.popoverEstado.event = evento; 
     this.menuEstadoAbierto = true;
   }
 
-  // 🌟 SELECCIONAR DESDE EL MENÚ
   seleccionarNuevoEstado(nuevoEstado: string, nuevoColor: string) {
     if (this.tutoriaSeleccionada) {
       this.actualizarEstadoFirebase(this.tutoriaSeleccionada, nuevoEstado, nuevoColor);
     }
-    this.menuEstadoAbierto = false; // Cerramos el menú
+    this.menuEstadoAbierto = false; 
   }
 
-  // 🌟 VERSIÓN BLINDADA
   async actualizarEstadoFirebase(tutoria: any, nuevoEstado: string, nuevoColor: string) {
     const index = this.tutoriasPorImpartir.findIndex(t => t.id === tutoria.id);
     if (index !== -1) {
@@ -171,12 +167,17 @@ async verificarNotificaciones(correo: string, rol: string, sede: string) {
     try {
       const tutoriaRef = doc(this.firestore, 'Reservas', tutoria.id);
       await updateDoc(tutoriaRef, { estado: nuevoEstado });
+
+      // 🌟 PROGRAMAR RECORDATORIOS AL TUTOR SI SE CONFIRMA LA CLASE
+      if (nuevoEstado === 'CONFIRMADA' || nuevoEstado === 'ACEPTADA') {
+        await this.programarRecordatoriosTutor(tutoria);
+      }
+
     } catch (error) {
-      alert("❌ Error al guardar el estado. Revisa tu conexión a internet.");
+      this.mostrarAviso("Error al guardar el estado. Revisa tu conexión a internet.",'error');
       return;
     }
 
-    // 3. ENVIAR NOTIFICACIÓN AL ALUMNO (Totalmente aislado)
     try {
       if (this.dbService.crearNotificacion) {
         await this.dbService.crearNotificacion({
@@ -184,27 +185,109 @@ async verificarNotificaciones(correo: string, rol: string, sede: string) {
           mensaje: `El tutor ha marcado tu clase de ${tutoria.materia} como ${nuevoEstado}.`,
           tipo: 'TUTORIA',
           correo_destino: tutoria.correoEstudiante || 'sin_correo',
-          rol_destino: 'ESTUDIANTE' // 🌟 SE VA AL PANEL DEL ESTUDIANTE
+          rol_destino: 'ESTUDIANTE' 
         });
       }
-    } catch (notiError) {
-      console.warn("Notificación fallida, pero estado guardado.");
+    } catch (notiError) {}
+  }
+
+  // ==========================================
+  // 🌟 LÓGICA DE ALARMAS LOCALES PARA EL TUTOR
+  // ==========================================
+  calcularProximaFecha(diaElegido: string, horaElegida: string): Date {
+    const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+    const diaNormalizado = diaElegido.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    const diaIndex = dias.indexOf(diaNormalizado);
+
+    const hoy = new Date();
+    let fecha = new Date(hoy);
+
+    if (diaIndex !== -1) {
+      const hoyIndex = hoy.getDay();
+      let diasFaltantes = diaIndex - hoyIndex;
+      if (diasFaltantes < 0) diasFaltantes += 7; 
+      fecha.setDate(hoy.getDate() + diasFaltantes);
+    }
+
+    const horaLimpia = horaElegida.split('-')[0].replace(/[^0-9:]/g, '').trim();
+    if (horaLimpia.includes(':')) {
+      const partes = horaLimpia.split(':');
+      fecha.setHours(parseInt(partes[0], 10), parseInt(partes[1], 10), 0, 0);
+    }
+    return fecha;
+  }
+
+  generarIdNumerico(idString: string): number {
+    let hash = 0;
+    if (!idString) return Math.floor(Math.random() * 100000);
+    for (let i = 0; i < idString.length; i++) {
+      hash = (hash << 5) - hash + idString.charCodeAt(i);
+      hash |= 0; 
+    }
+    return Math.abs(hash);
+  }
+
+  async programarRecordatoriosTutor(tutoria: any) {
+    if(tutoria.dia === 'Por definir' || tutoria.hora === 'Por definir') return;
+
+    const fechaTutoria = this.calcularProximaFecha(tutoria.dia, tutoria.hora);
+    const ahora = new Date().getTime();
+    const notificaciones = [];
+    const idBase = this.generarIdNumerico(tutoria.id);
+
+    // 1. Alarma: 1 Hora Antes
+    const tiempo1Hora = fechaTutoria.getTime() - (60 * 60 * 1000);
+    if (tiempo1Hora > ahora) {
+      notificaciones.push({
+        id: idBase + 50, // Sumamos 50 para que no choque con los IDs del estudiante si usan el mismo cel
+        title: '¡Clase a punto de empezar! ⏰',
+        body: `En 1 hora impartirás ${tutoria.materia} a ${tutoria.nombreEstudiante}.`,
+        schedule: { at: new Date(tiempo1Hora) }
+      });
+    }
+
+    // 2. Alarma: 08:00 AM del mismo día
+    const fechaMismoDia = new Date(fechaTutoria);
+    fechaMismoDia.setHours(8, 0, 0, 0);
+    const tiempoMismoDia = fechaMismoDia.getTime();
+
+    if (tiempoMismoDia > ahora && tiempoMismoDia < tiempo1Hora) {
+      notificaciones.push({
+        id: idBase + 51, 
+        title: 'Hoy tienes clases programadas ',
+        body: `Hoy impartirás una tutoría de ${tutoria.materia} a ${tutoria.nombreEstudiante}.`,
+        schedule: { at: new Date(tiempoMismoDia) }
+      });
+    }
+
+    if (notificaciones.length > 0) {
+      let permStatus = await LocalNotifications.checkPermissions();
+      if (permStatus.display !== 'granted') {
+        permStatus = await LocalNotifications.requestPermissions();
+      }
+      if (permStatus.display === 'granted') {
+        await LocalNotifications.schedule({ notifications: notificaciones });
+      }
     }
   }
 
+  // ==========================================
+  // ==========================================
+
   async eliminarTutoria(tutoria: any) {
-    const confirmar = confirm(`¿Estás seguro de eliminar permanentemente el registro de ${tutoria.nombreEstudiante}?`);
+    const confirmar = await this.confirmarAccion(`¿Estás seguro de eliminar permanentemente el registro de ${tutoria.nombreEstudiante}?`,'');
     if (!confirmar) return;
 
     try {
       const tutoriaRef = doc(this.firestore, 'Reservas', tutoria.id);
       await deleteDoc(tutoriaRef);
-      alert('Tutoría eliminada de tu panel.');
+      this.mostrarAviso('Tutoría eliminada de tu panel.','exito');
       await this.cargarTutoriasPorImpartir();
     } catch (error) {
-      alert('Error al eliminar la tutoría.');
+      this.mostrarAviso('Error al eliminar la tutoría.','error');
     }
   }
+
   abrirGuia() {
     this.mostrarGuiaTutor = true;
   }
@@ -212,9 +295,7 @@ async verificarNotificaciones(correo: string, rol: string, sede: string) {
   cerrarGuia() {
     this.mostrarGuiaTutor = false;
   }
-  // ==========================================
-  // 🌟 CAMBIO DE PANELES (MULTI-COLECCIÓN)
-  // ==========================================
+
   async cambiarPanel() {
     const correo = localStorage.getItem('correo') || '';
     this.tienePanelTutor = false;
@@ -222,7 +303,6 @@ async verificarNotificaciones(correo: string, rol: string, sede: string) {
 
     if (correo) {
       try {
-        // 1. BUSCAMOS EN ESTUDIANTES
         const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
         const snapEst = await getDocs(qEst);
         
@@ -236,7 +316,6 @@ async verificarNotificaciones(correo: string, rol: string, sede: string) {
           }
         }
 
-        // 2. BUSCAMOS EN TUTORES SI AÚN NO LO ES
         if (!this.tienePanelTutor) {
           const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
           const snapTut = await getDocs(qTut);
@@ -245,9 +324,7 @@ async verificarNotificaciones(correo: string, rol: string, sede: string) {
             this.tienePanelTutor = true; 
           }
         }
-      } catch (error) {
-        console.error("❌ Error consultando permisos:", error);
-      }
+      } catch (error) {}
     }
 
     this.mostrarMenuRol = true;
@@ -257,9 +334,63 @@ async verificarNotificaciones(correo: string, rol: string, sede: string) {
   irAPanel(ruta: string, rolDestino: string) {
     this.mostrarMenuRol = false; 
     localStorage.setItem('rol', rolDestino); 
-    
     setTimeout(() => {
       this.router.navigate([ruta]); 
     }, 150); 
+  }
+
+  // ==========================================
+  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
+  // ==========================================
+  
+  async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
+    let icono = 'checkmark-circle-outline';
+    let claseCss = 'toast-exito';
+
+    if (tipo === 'error') {
+      icono = 'close-circle-outline';
+      claseCss = 'toast-error';
+    } else if (tipo === 'advertencia') {
+      icono = 'warning-outline';
+      claseCss = 'toast-advertencia';
+    } else if (tipo === 'info') {
+      icono = 'information-circle-outline';
+      claseCss = 'toast-info';
+    }
+
+    const toast = await this.toastController.create({
+      message: mensaje,
+      duration: 3000,
+      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      icon: icono,
+      cssClass: `toast-premium-gietaes ${claseCss}`,
+      mode: 'ios' 
+    });
+    await toast.present();
+  }
+
+  async confirmarAccion(cabecera: string, mensaje: string): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      const alert = await this.alertController.create({
+        header: cabecera,
+        message: mensaje,
+        cssClass: 'alerta-premium-gietaes',
+        mode: 'md', 
+        buttons: [
+          {
+            text: 'Cancelar',
+            role: 'cancel',
+            cssClass: 'btn-alerta-cancelar',
+            handler: () => resolve(false)
+          },
+          {
+            text: 'Sí, Continuar',
+            cssClass: 'btn-alerta-confirmar',
+            handler: () => resolve(true)
+          }
+        ]
+      });
+      await alert.present();
+    });
   }
 }
