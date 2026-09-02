@@ -5,14 +5,14 @@ import { Router } from '@angular/router';
 import { 
   IonContent, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, 
   IonList, IonItemSliding, IonItem, IonItemOptions, IonItemOption,
-  IonPopover, IonLabel, IonModal,ToastController,AlertController 
+  IonPopover, IonLabel, IonModal,ToastController,AlertController,IonSelect,IonSelectOption,IonRow,IonCol 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   notificationsOutline, bookOutline, logoWhatsapp, 
   personOutline, timeOutline, calendarOutline, trashOutline,
-  checkmarkCircleOutline, closeCircleOutline, closeOutline, helpCircleOutline, informationCircleOutline, documentTextOutline, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, chevronDownOutline, chevronBackOutline } from 'ionicons/icons';
-import { Firestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
+  checkmarkCircleOutline, closeCircleOutline, closeOutline, helpCircleOutline, informationCircleOutline, documentTextOutline, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, chevronDownOutline, chevronBackOutline,informationCircle,closeCircle } from 'ionicons/icons';
+import { Firestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc,getDoc } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
@@ -24,7 +24,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
   imports: [
     CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, 
     IonButtons, IonButton, IonIcon, IonList, IonItemSliding, 
-    IonItem, IonItemOptions, IonItemOption, IonPopover, IonLabel, IonModal
+    IonItem, IonItemOptions, IonItemOption, IonPopover, IonLabel, IonModal,IonSelect,IonSelectOption,IonCol,IonRow
   ]
 })
 export class TutorTutoriasPage implements OnInit {
@@ -32,6 +32,30 @@ export class TutorTutoriasPage implements OnInit {
   private firestore = inject(Firestore);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+
+  // 🌟 VARIABLES PARA RENOVACIÓN DE TUTOR
+  mostrarModalRenovacionTutor: boolean = false;
+  decisionTutor: string = '';
+  nuevoCicloTutor: number = 0;
+  permanenciaTutor: string = ''; // Nueva variable
+  periodoApp: string = '';
+  tutorDocId: string = '';
+  pasoActual: number = 1;
+
+
+  // 🌟 VARIABLES PARA EL MINI-FORMULARIO DE MATERIAS Y HORARIOS
+  materiasCatalogo: any[] = [];
+  materiasDisponibles: string[] = [];
+  materiasSeleccionadas: string[] = [];
+  diassemana=['Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
+  franjasHorarias=['7:00 - 9:00','09:00 - 11:00','11:00 - 13:00','14:00 - 16:00','16:00 - 18:00','18:00 - 20:00','20:00 - 22:00']
+  horarioSeleccionado: { [key: string]: string } = {}; 
+  modalidadGlobal: string = 'PRESENCIAL';
+
+  
+
+
+  datosTutorActual: any = null; // 🌟 Guardará sus datos
 
   private toastController = inject(ToastController);
   private alertController = inject(AlertController);
@@ -45,21 +69,40 @@ export class TutorTutoriasPage implements OnInit {
   rolUsuario: string = '';
   hayNotificacionesSinLeer: boolean = false;
   mostrarGuiaTutor: boolean = false;
+  
 
   @ViewChild('popoverEstado') popoverEstado!: IonPopover;
   menuEstadoAbierto: boolean = false;
   tutoriaSeleccionada: any = null;
 
   constructor() {
-    addIcons({swapHorizontalOutline,helpCircleOutline,notificationsOutline,calendarOutline,bookOutline,personOutline,timeOutline,chevronDownOutline,chevronBackOutline,logoWhatsapp,trashOutline,informationCircleOutline,checkmarkCircleOutline,documentTextOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,closeCircleOutline});
+    addIcons({swapHorizontalOutline,helpCircleOutline,notificationsOutline,calendarOutline,bookOutline,personOutline,timeOutline,chevronDownOutline,chevronBackOutline,logoWhatsapp,trashOutline,informationCircleOutline,checkmarkCircleOutline,documentTextOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,closeCircleOutline,closeCircle,informationCircle});
   }
 
   ngOnInit() { }
 
-  async ionViewWillEnter() {
+async ionViewWillEnter() {
     this.correoUsuario = localStorage.getItem('correo') || '';
     this.rolUsuario = localStorage.getItem('rol') || 'TUTOR';
+
+    await this.dbService.cargarConfiguracionGlobal(true);
+    this.periodoApp = this.dbService.periodo_actual;
+    
     const sede = localStorage.getItem('sede') || 'CUENCA';
+
+    if (this.correoUsuario) {
+      const qTut = query(collection(this.firestore, 'Tutores'), where('correo_google', '==', this.correoUsuario.toLowerCase().trim()));
+      const snapTut = await getDocs(qTut);
+      if (!snapTut.empty) {
+        this.tutorDocId = snapTut.docs[0].id;
+        const datosTut = snapTut.docs[0].data();
+        this.datosTutorActual = datosTut;
+        
+        if (datosTut['ultimo_periodo_activo'] !== this.periodoApp) {
+          this.abrirRenovacion(); // 🌟 LÍNEA CLAVE: Carga las materias en segundo plano
+        }
+      }
+    }
     
     await this.verificarNotificaciones(this.correoUsuario, this.rolUsuario, sede);
     await this.cargarTutoriasPorImpartir();
@@ -393,4 +436,199 @@ export class TutorTutoriasPage implements OnInit {
       await alert.present();
     });
   }
+async confirmarRenovacionTutor() {
+    try {
+      const tutorRef = doc(this.firestore, 'Tutores', this.tutorDocId);
+
+      // 🌟 ESCENARIO A: EL TUTOR RENUNCIA (DESTRUCCIÓN TOTAL DE FIREBASE)
+      if (this.decisionTutor === 'NO') {
+        await deleteDoc(tutorRef); // ELIMINA EL DOCUMENTO DE RAÍZ
+        this.mostrarModalRenovacionTutor = false;
+        this.mostrarAviso('Tu perfil de tutor ha sido eliminado. ¡Gracias por tu servicio!', 'info');
+        this.irAPanel('/tabs/horarios', 'ESTUDIANTE'); 
+        return;
+      }
+
+      // 🌟 ESCENARIO B: EL TUTOR RENUEVA Y ACTUALIZA SU CICLO
+      if (!this.permanenciaTutor || this.materiasSeleccionadas.length === 0 || Object.keys(this.horarioSeleccionado).length === 0) {
+        this.mostrarAviso('Por favor, completa tu permanencia, elige materias y selecciona tus horarios en el calendario.', 'advertencia');
+        return;
+      }
+
+      // 1. Actualiza Firebase con el nuevo paquete
+      await updateDoc(tutorRef, {
+        ciclo: this.nuevoCicloTutor,
+        permanencia: this.permanenciaTutor,
+        materias: this.materiasSeleccionadas,
+        horarios: this.horarioSeleccionado,
+        ultimo_periodo_activo: this.periodoApp
+      });
+
+      // 2. Re-envía al Tutor al Excel para el nuevo periodo (Convirtiendo el horario)
+      if (this.datosTutorActual) {
+        const horariosFormateados = this.dbService.formatearHorariosParaExcel(this.horarioSeleccionado);
+
+        const payloadExcel = {
+          opcion: 'aceptarTutorOficial',
+          nombre: this.datosTutorActual['nombre'],
+          cedula: this.datosTutorActual['cedula'] || '',
+          ciclo: this.nuevoCicloTutor,
+          carrera: this.datosTutorActual['carrera'],
+          materias: this.materiasSeleccionadas.join(', '), 
+          correo: this.datosTutorActual['correo'],
+          celular: this.datosTutorActual['celular'] || '',
+          permanencia: this.permanenciaTutor,
+          horarios: horariosFormateados,
+          periodo: this.periodoApp
+        };
+        await this.dbService.enviarAExcel(payloadExcel);
+      }
+
+      this.mostrarModalRenovacionTutor = false;
+      this.mostrarAviso(`¡Renovación exitosa para el Periodo ${this.periodoApp}!`, 'exito');
+
+    } catch (error) {
+      this.mostrarAviso('Error de conexión al procesar tu renovación.', 'error');
+    }
+  }
+  // 🌟 CARGA EL CATÁLOGO PARA LA RENOVACIÓN
+  async prepararRenovacion() {
+    this.horarioSeleccionado = {}; 
+    
+    // 🌟 NUEVO: RECUPERAMOS EL CICLO DIRECTAMENTE DESDE SU PERFIL DE ESTUDIANTE
+    try {
+      const estudianteRef = doc(this.firestore, 'Estudiantes', this.correoUsuario.toLowerCase().trim());
+      const estudianteSnap = await getDoc(estudianteRef);
+      
+      if (estudianteSnap.exists() && estudianteSnap.data()['ciclo']) {
+        this.nuevoCicloTutor = estudianteSnap.data()['ciclo'];
+      } else {
+        // Respaldo por si falla algo
+        this.nuevoCicloTutor = parseInt((localStorage.getItem('ciclo') || '1').replace(/\D/g, ''), 10) || 1;
+      }
+    } catch (error) {
+      this.nuevoCicloTutor = 1; // Valor por defecto
+    }
+
+    const catalogos = await this.dbService.obtenerCatalogosDesdeExcel();
+    this.materiasCatalogo = catalogos.materias;
+    
+    // Filtramos las materias automáticamente con el ciclo que acabamos de extraer
+    this.filtrarMateriasDisponibles(); 
+  }
+
+  siguientePaso() {
+    if (this.pasoActual === 1) {
+      if (!this.decisionTutor) {
+        this.mostrarAviso('Por favor, selecciona una opción.', 'advertencia');
+        return;
+      }
+      if (this.decisionTutor === 'NO') {
+        this.confirmarRenovacionTutor();
+        return;
+      }
+      this.pasoActual++;
+    } 
+    else if (this.pasoActual === 2) {
+      // 🌟 YA NO VALIDAMOS EL CICLO PORQUE SE EXTRAJO AUTOMÁTICAMENTE
+      if (!this.permanenciaTutor) {
+        this.mostrarAviso('Selecciona tu tiempo como tutor.', 'advertencia');
+        return;
+      }
+      this.filtrarMateriasDisponibles();
+      this.pasoActual++;
+    } 
+    else if (this.pasoActual === 3) {
+      if (this.materiasSeleccionadas.length === 0) {
+        this.mostrarAviso('Selecciona al menos una materia.', 'advertencia');
+        return;
+      }
+      this.pasoActual++;
+    }
+  }
+
+  // 🌟 FILTRA MATERIAS SI EL TUTOR CAMBIA SU CICLO
+  filtrarMateriasDisponibles() {
+    if (!this.datosTutorActual || this.materiasCatalogo.length === 0) return;
+    
+    // Solo puede dar materias de la misma carrera y de ciclos INFERIORES al suyo
+    this.materiasDisponibles = this.materiasCatalogo
+      .filter(m => m.carrera === this.datosTutorActual['carrera'] && m.ciclo < this.nuevoCicloTutor)
+      .map(m => m.nombre);
+      
+    // Limpiamos las seleccionadas por si cambió a un ciclo menor
+    this.materiasSeleccionadas = []; 
+  }
+  // ==========================================
+  // 🌟 LÓGICA DEL WIZARD (PASO A PASO)
+  // ==========================================
+  abrirRenovacion() {
+    this.pasoActual = 1;
+    this.decisionTutor = '';
+    this.mostrarModalRenovacionTutor = true;
+    this.prepararRenovacion();
+  }
+
+  pasoAnterior() {
+    if (this.pasoActual > 1) {
+      this.pasoActual--;
+    }
+  }
+
+  // Selección visual de tarjetas (Reemplaza a los ion-select)
+  seleccionarDecision(decision: string) { this.decisionTutor = decision; }
+  seleccionarCiclo(ciclo: number) { this.nuevoCicloTutor = ciclo; }
+  seleccionarPermanencia(perm: string) { this.permanenciaTutor = perm; }
+  seleccionarModalidadGlobal(mod: string) { this.modalidadGlobal = mod; }
+
+  toggleMateriaSeleccionada(materia: string) {
+    const index = this.materiasSeleccionadas.indexOf(materia);
+    if (index > -1) {
+      this.materiasSeleccionadas.splice(index, 1);
+    } else {
+      this.materiasSeleccionadas.push(materia);
+    }
+  }
+
+  // 🌟 FUNCIÓN BLINDADA: Verifica el bloqueo sin importar las tildes
+  esBloqueDeshabilitado(dia: string, franja: string): boolean {
+    // Normalizamos: 'Sábado' o 'Sabado' siempre se leerá como 'sabado'
+    const diaLimpio = dia.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+    if (diaLimpio === 'sabado') {
+      // Extraemos la hora limpiamente
+      const horaStr = franja.split(':')[0].trim();
+      const horaInicio = parseInt(horaStr, 10);
+      
+      if (horaInicio >= 13) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // 🌟 SELECCIÓN BLINDADA
+  seleccionarBloque(dia: string, franja: string) {
+    // 1. Bloqueo de sábados en la tarde
+    if (this.esBloqueDeshabilitado(dia, franja)) {
+      this.mostrarAviso('Los sábados solo se permiten tutorías hasta las 13:00.', 'advertencia');
+      return;
+    }
+
+    const clave = `${dia}-${franja}`;
+    const diaLimpio = dia.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+    if (this.horarioSeleccionado[clave]) {
+      // Si ya estaba seleccionado, lo desmarca
+      delete this.horarioSeleccionado[clave]; 
+    } else {
+      // Si es sábado, FUERZA a que sea Virtual sin importar lo que diga el selector Global
+      if (diaLimpio === 'sabado') {
+        this.horarioSeleccionado[clave] = 'VIRTUAL';
+      } else {
+        this.horarioSeleccionado[clave] = this.modalidadGlobal; 
+      }
+    }
+  }
+ 
 }

@@ -255,3 +255,197 @@ ion-content {
   margin-left: 2px;
   border-left: 2px dashed #f1f5f9; /* Línea de "corte" visual */
 }
+/* ==============================================
+   🌟 CALENDARIO INTERACTIVO (MODAL RENOVACIÓN)
+   ============================================== */
+.calendario-scroll {
+  overflow-x: auto;
+  margin-top: 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.tabla-horarios {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  background: white;
+
+  th {
+    background: #003366;
+    color: white;
+    padding: 8px 4px;
+    font-size: 0.75rem;
+    border: 1px solid #cbd5e1;
+    text-transform: uppercase;
+  }
+
+  td {
+    border: 1px solid #cbd5e1;
+    padding: 0;
+    cursor: pointer;
+    transition: 0.2s;
+    height: 40px;
+  }
+
+  .columna-hora {
+    font-weight: bold;
+    background: #f8fafc;
+    color: #003366;
+    padding: 2px;
+  }
+
+  .seleccionado {
+    background: #EAB308 !important;
+    color: #003366 !important;
+    font-weight: 900;
+  }
+
+  .celda-contenido {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+  }
+
+  .texto-modalidad {
+    font-size: 0.7rem;
+    font-weight: 900;
+  }
+}
+/* ==============================================
+   🌟 TARJETAS WIZARD (RENOVACIÓN TUTOR)
+   ============================================== */
+.tarjeta-btn {
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  ion-icon { font-size: 1.5rem; }
+
+  &.activa {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: #10b981; /* Verde */
+    color: #10b981;
+  }
+}
+
+.tarjeta-btn.peligro {
+  &.activa-peligro {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444; /* Rojo */
+    color: #ef4444;
+  }
+}
+
+/* Grilla de Ciclos */
+.grilla-ciclos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.ciclo-box {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 12px 0;
+  text-align: center;
+  font-weight: 800;
+  color: #475569;
+  cursor: pointer;
+  transition: 0.2s;
+
+  &.activo {
+    background: #003366;
+    color: #ffffff;
+    border-color: #003366;
+  }
+}
+
+/* Opciones Verticales (Permanencia) */
+.tarjeta-opcion {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 14px 15px;
+  margin-bottom: 8px;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  
+  &.activa {
+    background: #003366;
+    color: #ffffff;
+    border-color: #003366;
+  }
+}
+
+/* Tarjetas Check (Materias) */
+.tarjeta-check {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 14px 15px;
+  margin-bottom: 10px;
+  font-weight: 700;
+  color: #475569;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.4rem;
+    color: #10b981;
+  }
+
+  &.seleccionada {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.05);
+    color: #003366;
+  }
+}
+
+/* Botones Modalidad Calendario */
+.btn-modalidad {
+  flex: 1;
+  text-align: center;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 10px 5px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #475569;
+  cursor: pointer;
+
+  &.activo {
+    background: #EAB308;
+    color: #003366;
+    border-color: #EAB308;
+  }
+}
+.bloqueado {
+    background: #f1f5f9 !important; /* Gris muy claro */
+    cursor: not-allowed !important;
+    opacity: 0.5;
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 5px,
+      #e2e8f0 5px,
+      #e2e8f0 10px
+    ); /* Un tramado sutil de líneas diagonales para que se vea "tachado" */
+  }

@@ -4,7 +4,9 @@ import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { 
   IonContent, IonHeader, IonToolbar, IonIcon, IonButton, IonButtons,
-  NavController, IonGrid, IonRow, IonCol, IonSelect, IonSelectOption,IonSpinner,ToastController,AlertController
+  NavController, IonGrid, IonRow, IonCol, IonSelect, IonSelectOption,
+  IonSpinner, ToastController, AlertController,
+  IonSegment, IonSegmentButton, IonLabel // 🌟 NUEVOS IMPORTADOS
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
@@ -25,7 +27,8 @@ import Chart from 'chart.js/auto';
   imports: [
     IonContent, IonHeader, IonToolbar, CommonModule, FormsModule,
     IonButtons, IonButton, IonIcon, IonGrid, IonRow, IonCol,
-    IonSelect, IonSelectOption, IonSpinner
+    IonSelect, IonSelectOption, IonSpinner,
+    IonSegment, IonSegmentButton, IonLabel // 🌟 AÑADIDOS AQUÍ
   ]
 })
 export class TutorEstadisticasPage implements OnInit {
@@ -54,6 +57,10 @@ export class TutorEstadisticasPage implements OnInit {
   @ViewChild('barCanvas', { static: false }) private barCanvas!: ElementRef;
   graficoBarras: any;
 
+  // 🌟 VARIABLES PARA FILTRO DE PERIODO
+  filtroPeriodo: string = 'ACTUAL';
+  periodoActualApp: string = '';
+
   // 🌟 VARIABLES PARA INCREMENTO DE MATERIAS
   mostrarModalMaterias: boolean = false;
   cargandoMaterias: boolean = false;
@@ -69,8 +76,12 @@ export class TutorEstadisticasPage implements OnInit {
 
   async ionViewWillEnter() {
     this.menuAbierto = false;
-    const correoGuardado = localStorage.getItem('correo');
     
+    // 🌟 1. CARGAMOS EL PERIODO ACTUAL
+    await this.dbService.cargarConfiguracionGlobal();
+    this.periodoActualApp = this.dbService.periodo_actual;
+
+    const correoGuardado = localStorage.getItem('correo');
     if (!correoGuardado) {
       this.navCtrl.navigateRoot('/login');
       return;
@@ -106,13 +117,8 @@ export class TutorEstadisticasPage implements OnInit {
     this.router.navigate(['/notificaciones'], { queryParams: { panel: 'TUTOR' } });
   }
 
-  toggleMenu() {
-    this.menuAbierto = !this.menuAbierto;
-  }
-
-  irAPanelEstudiante() {
-    this.router.navigate(['/tabs/perfil']); 
-  }
+  toggleMenu() { this.menuAbierto = !this.menuAbierto; }
+  irAPanelEstudiante() { this.router.navigate(['/tabs/perfil']); }
 
   async cerrarSesion() {
     try {
@@ -125,23 +131,24 @@ export class TutorEstadisticasPage implements OnInit {
     }
   }
 
+  // 🌟 FUNCIÓN DE ESTADÍSTICAS TUTOR (Ahora filtra localmente por periodo)
   async cargarEstadisticas() {
     try {
-      const qClases = query(
-        collection(this.firestore, 'Asistencias'), 
-        where('correoTutor', '==', this.usuario.correo.toLowerCase())
-      );
+      const qClases = query(collection(this.firestore, 'Asistencias'), where('correoTutor', '==', this.usuario.correo.toLowerCase()));
       const clasesSnap = await getDocs(qClases);
       
-      this.totalClasesDadas = clasesSnap.size;
+      let asistencias = clasesSnap.docs.map(doc => doc.data());
+
+      if (this.filtroPeriodo === 'ACTUAL') {
+        asistencias = asistencias.filter(data => data['periodo'] === this.periodoActualApp);
+      }
+
+      this.totalClasesDadas = asistencias.length;
       const alumnosUnicos = new Set();
       const conteoMaterias: { [key: string]: number } = {};
 
-      clasesSnap.forEach(doc => {
-        const data = doc.data();
-        if (data['estudiante_info']) {
-          alumnosUnicos.add(data['estudiante_info']);
-        }
+      asistencias.forEach(data => {
+        if (data['estudiante_info']) alumnosUnicos.add(data['estudiante_info']);
         const materia = data['materia'] || 'Otra';
         conteoMaterias[materia] = (conteoMaterias[materia] || 0) + 1;
       });
@@ -150,6 +157,8 @@ export class TutorEstadisticasPage implements OnInit {
 
       if (Object.keys(conteoMaterias).length > 0) {
         this.generarGrafico(conteoMaterias);
+      } else {
+        if (this.graficoBarras) this.graficoBarras.destroy(); // Limpia gráfico si está vacío
       }
     } catch (error) {
       console.error("Error al cargar estadísticas:", error);
@@ -191,7 +200,6 @@ export class TutorEstadisticasPage implements OnInit {
     this.materiasSeleccionadas = [];
 
     try {
-      // 1. Buscamos al tutor para saber qué materias YA TIENE y sus horarios
       const qTutor = query(collection(this.firestore, 'Tutores'), where('correo', '==', this.usuario.correo.toLowerCase()));
       const snapTutor = await getDocs(qTutor);
       
@@ -202,10 +210,8 @@ export class TutorEstadisticasPage implements OnInit {
         this.horariosActualesTutor = dataTutor['horarios'] || { "Aviso": "Mantiene horario registrado" };
       }
 
-      // 2. Traemos el catálogo general
       const catalogos = await this.dbService.obtenerCatalogosDesdeExcel();
       
-      // 3. Filtramos: Misma Carrera + Ciclo Menor + Que no la tenga ya
       this.materiasDisponibles = catalogos.materias
         .filter(m => 
           m.carrera.toUpperCase() === this.carreraUsuario && 
@@ -241,12 +247,10 @@ export class TutorEstadisticasPage implements OnInit {
         fecha_postulacion: new Date().toISOString()
       };
 
-      // Guardar cada materia como una postulación
       for (let materia of this.materiasSeleccionadas) {
         const payload = { ...basePayload, materia_postulada: materia };
         await addDoc(collection(this.firestore, 'Postulaciones'), payload);
         
-        // Notificamos a la administración de su sede
         await this.dbService.crearNotificacion({
           titulo: 'Solicitud de Incremento de Materias',
           mensaje: `${this.usuario.nombre} solicitó impartir ${materia}.`,
@@ -265,10 +269,7 @@ export class TutorEstadisticasPage implements OnInit {
       this.cargandoMaterias = false;
     }
   }
-  // ==========================================
-  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
-  // ==========================================
-  
+
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
     let claseCss = 'toast-exito';
@@ -287,7 +288,7 @@ export class TutorEstadisticasPage implements OnInit {
     const toast = await this.toastController.create({
       message: mensaje,
       duration: 3000,
-      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      position: 'top', 
       icon: icono,
       cssClass: `toast-premium-gietaes ${claseCss}`,
       mode: 'ios' 
@@ -303,17 +304,8 @@ export class TutorEstadisticasPage implements OnInit {
         cssClass: 'alerta-premium-gietaes',
         mode: 'md', 
         buttons: [
-          {
-            text: 'Cancelar',
-            role: 'cancel',
-            cssClass: 'btn-alerta-cancelar',
-            handler: () => resolve(false)
-          },
-          {
-            text: 'Sí, Continuar',
-            cssClass: 'btn-alerta-confirmar',
-            handler: () => resolve(true)
-          }
+          { text: 'Cancelar', role: 'cancel', cssClass: 'btn-alerta-cancelar', handler: () => resolve(false) },
+          { text: 'Sí, Continuar', cssClass: 'btn-alerta-confirmar', handler: () => resolve(true) }
         ]
       });
       await alert.present();

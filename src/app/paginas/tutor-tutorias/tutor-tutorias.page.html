@@ -208,5 +208,137 @@
       </div>
     </ng-template>
   </ion-modal>
+ <!-- 🌟 MODAL DE RENOVACIÓN TIPO WIZARD (PASO A PASO) -->
+  <ion-modal [isOpen]="mostrarModalRenovacionTutor" [backdropDismiss]="false">
+    <ng-template>
+      
+      <!-- 🌟 HEADER FIJO (Siempre visible arriba) -->
+      <div style="background: #003366; padding: 20px 15px; text-align: center; position: relative; z-index: 10;">
+        <ion-icon *ngIf="pasoActual > 1" name="chevron-back-outline" (click)="pasoAnterior()" 
+                  style="position: absolute; left: 15px; top: 25px; color: white; font-size: 1.8rem; cursor: pointer;"></ion-icon>
+        <h2 style="color: #ffffff; font-weight: 900; margin: 0; font-size: 1.3rem;">RENOVACIÓN TUTORÍA</h2>
+        <p style="color: #cbd5e1; font-size: 0.8rem; margin: 5px 0 0 0;">Paso {{ pasoActual }} de 4 • Periodo {{ periodoApp }}</p>
+      </div>
+      
+      <!-- 🌟 CUERPO DESLIZABLE (ion-content permite el scroll infinito nativo) -->
+      <ion-content style="--background: #f8fafc;">
+        <div style="padding: 20px;">
+          
+          <!-- ================= PASO 1: DECISIÓN ================= -->
+          <div *ngIf="pasoActual === 1" class="animate__animated animate__fadeIn">
+            <h3 style="color: #003366; font-weight: 900; text-align: center; margin-bottom: 25px;">¿Deseas continuar siendo Tutor este periodo?</h3>
+            
+            <div class="tarjeta-btn" [class.activa]="decisionTutor === 'SI'" (click)="seleccionarDecision('SI')">
+              <ion-icon name="checkmark-circle-outline"></ion-icon>
+              <span>Sí, quiero continuar</span>
+            </div>
+
+            <div class="tarjeta-btn peligro" [class.activa-peligro]="decisionTutor === 'NO'" (click)="seleccionarDecision('NO')" style="margin-top: 15px;">
+              <ion-icon name="close-circle-outline"></ion-icon>
+              <span>No, deseo darme de baja</span>
+            </div>
+          </div>
+
+<!-- ================= PASO 2: DATOS BÁSICOS ================= -->
+          <div *ngIf="pasoActual === 2" class="animate__animated animate__fadeInRight">
+            
+            <!-- 🌟 INFO DEL CICLO (Sincronizado) -->
+            <div style="background: rgba(16, 185, 129, 0.1); border-left: 4px solid #10b981; padding: 12px; border-radius: 8px; margin-bottom: 25px;">
+              <p style="margin: 0; color: #003366; font-weight: 800; font-size: 0.9rem;">
+                <ion-icon name="information-circle" style="color: #10b981; vertical-align: middle; font-size: 1.2rem; margin-right: 5px;"></ion-icon>
+                Ciclo Académico: {{ nuevoCicloTutor }}vo
+              </p>
+              <p style="margin: 5px 0 0 0; color: #475569; font-size: 0.75rem; line-height: 1.3;">
+                Este dato se sincronizó automáticamente desde tu perfil general de estudiante.
+              </p>
+            </div>
+
+            <label style="font-weight: 900; color: #003366;">¿Cuánto tiempo tienes como tutor?</label>
+            <div style="margin-top: 10px;">
+              <div class="tarjeta-opcion" [class.activa]="permanenciaTutor === 'Soy nuevo'" (click)="seleccionarPermanencia('Soy nuevo')">Soy nuevo</div>
+              <div class="tarjeta-opcion" [class.activa]="permanenciaTutor === '1 ciclo'" (click)="seleccionarPermanencia('1 ciclo')">1 Ciclo</div>
+              <div class="tarjeta-opcion" [class.activa]="permanenciaTutor === '2 ciclos'" (click)="seleccionarPermanencia('2 ciclos')">2 Ciclos</div>
+              <div class="tarjeta-opcion" [class.activa]="permanenciaTutor === 'Mas de 2 ciclos'" (click)="seleccionarPermanencia('Mas de 2 ciclos')">Más de 2 Ciclos</div>
+            </div>
+          </div>
+
+          <!-- ================= PASO 3: MATERIAS ================= -->
+          <div *ngIf="pasoActual === 3" class="animate__animated animate__fadeInRight">
+            <label style="font-weight: 900; color: #003366; font-size: 1.1rem;">Materias a impartir</label>
+            <p style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">Toca las materias que deseas dar este ciclo:</p>
+            
+            <div *ngIf="materiasDisponibles.length === 0" style="text-align: center; color: #94a3b8; padding: 20px;">
+              No hay materias disponibles para tu ciclo.
+            </div>
+
+            <div style="margin-top: 15px;">
+              <div class="tarjeta-check" *ngFor="let mat of materiasDisponibles" 
+                   [class.seleccionada]="materiasSeleccionadas.includes(mat)" 
+                   (click)="toggleMateriaSeleccionada(mat)">
+                <span>{{ mat }}</span>
+                <ion-icon name="checkmark-circle" *ngIf="materiasSeleccionadas.includes(mat)"></ion-icon>
+              </div>
+            </div>
+          </div>
+
+          <!-- ================= PASO 4: CALENDARIO ================= -->
+          <div *ngIf="pasoActual === 4" class="animate__animated animate__fadeInRight">
+            <label style="font-weight: 900; color: #003366; font-size: 1.1rem;">Configura tu Disponibilidad</label>
+            
+            <div style="display: flex; gap: 5px; margin-top: 15px;">
+              <div class="btn-modalidad" [class.activo]="modalidadGlobal === 'PRESENCIAL'" (click)="seleccionarModalidadGlobal('PRESENCIAL')">Presencial</div>
+              <div class="btn-modalidad" [class.activo]="modalidadGlobal === 'VIRTUAL'" (click)="seleccionarModalidadGlobal('VIRTUAL')">Virtual</div>
+              <div class="btn-modalidad" [class.activo]="modalidadGlobal === 'AMBAS'" (click)="seleccionarModalidadGlobal('AMBAS')">Ambas</div>
+            </div>
+
+            <p style="font-size: 0.75rem; color: #d97706; font-weight: bold; margin: 15px 0 10px 0;">
+              * Toca los cuadros para asignar tu horario. Sábados obligatoriamente VIRTUAL.
+            </p>
+
+            <div class="calendario-scroll">
+              <table class="tabla-horarios">
+                <thead>
+                  <tr>
+                    <th>Hora</th>
+                    <th *ngFor="let dia of diassemana">{{ dia.substring(0,3) }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let franja of franjasHorarias">
+                    <td class="columna-hora" style="font-size: 0.65rem;">{{ franja }}</td>
+                    <td *ngFor="let dia of diassemana" 
+                        [class.seleccionado]="horarioSeleccionado[dia + '-' + franja]"
+                        [class.bloqueado]="esBloqueDeshabilitado(dia, franja)"
+                        (click)="seleccionarBloque(dia, franja)">
+                      <div class="celda-contenido">
+                        <span *ngIf="horarioSeleccionado[dia + '-' + franja]" class="texto-modalidad">
+                          {{ horarioSeleccionado[dia + '-' + franja] === 'PRESENCIAL' ? 'P' : (horarioSeleccionado[dia + '-' + franja] === 'VIRTUAL' ? 'V' : 'P/V') }}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </ion-content>
+
+      <!-- 🌟 FOOTER FIJO: BOTÓN DE ACCIÓN (Siempre visible abajo) -->
+      <div style="padding: 15px 20px; background: #ffffff; border-top: 1px solid #e2e8f0; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); z-index: 10;">
+        
+        <ion-button *ngIf="pasoActual < 4" expand="block" (click)="siguientePaso()" style="--background: #EAB308; --color: #003366; font-weight: 900; height: 50px; --border-radius: 12px;">
+          SIGUIENTE PASO
+        </ion-button>
+
+        <ion-button *ngIf="pasoActual === 4" expand="block" (click)="confirmarRenovacionTutor()" style="--background: #003366; --color: #ffffff; font-weight: 900; height: 50px; --border-radius: 12px;">
+          CONFIRMAR Y GUARDAR
+        </ion-button>
+        
+      </div>
+
+    </ng-template>
+  </ion-modal>
 
 </ion-content>

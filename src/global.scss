@@ -468,3 +468,23 @@ ion-toast.toast-info::part(container) {
     font-weight: 900;
   }
 }
+/* 🌟 FORZAR MODO CLARO EN DESPLEGABLES (POPOVERS) */
+.popover-claro {
+  --background: #ffffff;
+  --color: #003366;
+  
+  ion-item {
+    --background: #ffffff;
+    --color: #003366;
+    font-weight: 600;
+  }
+  
+  ion-radio {
+    --color-checked: #EAB308;
+  }
+  
+  ion-checkbox {
+    --checkbox-background-checked: #EAB308;
+    --border-color-checked: #EAB308;
+  }
+}

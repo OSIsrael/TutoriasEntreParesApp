@@ -29,9 +29,15 @@ export class HorariosPage implements OnInit {
   private firestore = inject(Firestore);
   private router = inject(Router); 
   private cdr = inject(ChangeDetectorRef);
+  // 🌟 VARIABLES PARA RENOVACIÓN DE PERIODO
+  mostrarModalRenovacionEstudiante: boolean = false;
+  nuevoCicloEstudiante: number = 1;
+  periodoApp: string = '';
 
   private toastController = inject(ToastController);
   private alertController = inject(AlertController);
+
+  datosEstudianteActual: any = null; // 🌟 Guardará los datos para reenviarlos a Excel
 
   // 🌟 VARIABLES PARA EL MENÚ DE ROLES
   mostrarMenuRol: boolean = false;
@@ -89,6 +95,10 @@ export class HorariosPage implements OnInit {
 
   async ionViewWillEnter() {
     const correo = localStorage.getItem('correo') || '';
+    // 🌟 1. CARGAMOS EL PERIODO GLOBAL ANTES DE NADA
+    await this.dbService.cargarConfiguracionGlobal(true);
+    this.periodoApp = this.dbService.periodo_actual;
+
     if (correo) {
       try {
         const qUsuario = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
@@ -96,6 +106,13 @@ export class HorariosPage implements OnInit {
         if (!snapUsuario.empty) {
           const datosUsr = snapUsuario.docs[0].data();
           this.usuarioDocId = snapUsuario.docs[0].id; 
+          this.datosEstudianteActual=datosUsr;  
+
+          if (datosUsr['ultimo_periodo_activo'] !== this.periodoApp) {
+            this.mostrarModalRenovacionEstudiante = true;
+          } else if (!datosUsr['terminos_aceptados']) {
+            this.mostrarModalTerminos = true;
+          }
           
           if (!datosUsr['terminos_aceptados']) {
             this.mostrarModalTerminos = true;
@@ -564,7 +581,7 @@ export class HorariosPage implements OnInit {
         }
 
       } catch (error) {
-        console.error("❌ Error consultando permisos:", error);
+        console.error(" Error consultando permisos:", error);
       }
     }
 
@@ -633,5 +650,29 @@ export class HorariosPage implements OnInit {
       });
       await alert.present();
     });
+  }
+async confirmarRenovacionEstudiante() {
+    try {
+      // 1. Actualiza Firebase
+      await updateDoc(doc(this.firestore, 'Estudiantes', this.usuarioDocId), {
+        ciclo: this.nuevoCicloEstudiante,
+        ultimo_periodo_activo: this.periodoApp
+      });
+
+      // 2. 🌟 RE-ENVÍA LOS DATOS COMPLETOS AL EXCEL CON EL NUEVO PERIODO Y CICLO
+      if (this.datosEstudianteActual) {
+        const payloadExcel = {
+          opcion: 'registrarEstudiante',
+          periodo: this.periodoApp,
+          ...this.datosEstudianteActual,
+          ciclo: this.nuevoCicloEstudiante 
+        };
+        await this.dbService.enviarAExcel(payloadExcel);
+      }
+
+      this.mostrarModalRenovacionEstudiante = false;
+    } catch (error) {
+      alert("Error al actualizar el ciclo. Revisa tu conexión.");
+    }
   }
 }

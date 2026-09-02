@@ -337,6 +337,39 @@
       
     </div>
   </div>
+<!-- 🌟 MODAL DE RENOVACIÓN DE PERIODO (ESTUDIANTE) -->
+  <ion-modal [isOpen]="mostrarModalRenovacionEstudiante" [backdropDismiss]="false" class="modal-gietaes-centrado">
+    <ng-template>
+      <div style="background: #ffffff; height: 100%; display: flex; flex-direction: column;">
+        <div style="background: #f8fafc; padding: 20px; border-bottom: 2px solid #003366; text-align: center;">
+          <ion-icon name="school-outline" style="font-size: 3rem; color: #003366;"></ion-icon>
+          <h2 style="color: #003366; font-weight: 900; margin: 10px 0 0 0;">¡NUEVO PERIODO {{ periodoApp }}!</h2>
+          <p style="color: #475569; font-size: 0.9rem; margin-top: 5px;">Actualiza tu información para continuar.</p>
+        </div>
+        
+        <div style="padding: 20px; flex-grow: 1;">
+          <label style="font-weight: 700; color: #003366; font-size: 0.9rem;">¿En qué ciclo te encuentras actualmente?</label>
+          <ion-item lines="none" style="--background: #f1f5f9; border-radius: 8px; margin-top: 10px; border: 1px solid #003366;">
+            <ion-select [(ngModel)]="nuevoCicloEstudiante" interface="popover" style="width: 100%; font-weight: 700;color: #003366;">
+              <ion-select-option [value]="1">1er Ciclo</ion-select-option>
+              <ion-select-option [value]="2">2do Ciclo</ion-select-option>
+              <ion-select-option [value]="3">3er Ciclo</ion-select-option>
+              <ion-select-option [value]="4">4to Ciclo</ion-select-option>
+              <ion-select-option [value]="5">5to Ciclo</ion-select-option>
+              <ion-select-option [value]="6">6to Ciclo</ion-select-option>
+              <ion-select-option [value]="7">7mo Ciclo</ion-select-option>
+              <ion-select-option [value]="8">8vo Ciclo</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
 
+        <div style="padding: 20px;">
+          <ion-button expand="block" (click)="confirmarRenovacionEstudiante()" style="--background: #EAB308; --color: #003366; font-weight: 900; height: 50px; --border-radius: 10px;">
+            GUARDAR Y CONTINUAR
+          </ion-button>
+        </div>
+      </div>
+    </ng-template>
+  </ion-modal>
  
 </ion-content>

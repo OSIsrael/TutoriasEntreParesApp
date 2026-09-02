@@ -19,47 +19,76 @@ export class DatabaseService {
   materiasMaster: MateriaCatalogo[] = [];
   public firestore = inject(Firestore);
 
+  // 🌟 ELIMINAMOS LA URL QUEMADA Y AGREGAMOS LAS VARIABLES DINÁMICAS
+  scriptURL_dinamica: string = '';
+  periodo_actual: string = '';
 
-  private scriptURL = 'https://script.google.com/macros/s/AKfycbyi4Vqs-mTz4Tu0_sD2yQulFb_K2_yWTnuQZPRQO2Zwn0iQ1eUIUKkaiP28T5xqWoFh/exec';
+// 🌟 AHORA ACEPTA UN PARÁMETRO PARA FORZAR LA ACTUALIZACIÓN
+  async cargarConfiguracionGlobal(forzarActualizacion: boolean = false) {
+    if (this.scriptURL_dinamica && !forzarActualizacion) return; 
 
- 
+    try {
+      const docRef = doc(this.firestore, 'Configuracion', 'General');
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        this.scriptURL_dinamica = docSnap.data()['url_google_script'];
+        this.periodo_actual = docSnap.data()['periodo_actual'];
+        console.log(`[SISTEMA] Conectado al Periodo: ${this.periodo_actual}`);
+      }
+    } catch (error) {
+      console.error("Error crítico al cargar configuración global:", error);
+    }
+  }
+
+  // 🌟 FUNCIÓN AUXILIAR PARA FORMATEAR HORARIOS DEL TUTOR HACIA EXCEL
+  formatearHorariosParaExcel(horariosFusionados: any): any {
+    let horariosExcel: any = { LUNES: '', MARTES: '', MIERCOLES: '', JUEVES: '', VIERNES: '', SABADO: '' };
+    if (horariosFusionados) {
+      for (let clave in horariosFusionados) {
+        let [dia, hora] = clave.split('-');
+        let modalidad = horariosFusionados[clave];
+        let etiqueta = modalidad === 'VIRTUAL' ? '(V)' : modalidad === 'AMBAS' ? '(P)(V)' : '(P)';
+        let diaClave = dia.toUpperCase().replace('É', 'E').replace('Á', 'A');
+        
+        if (horariosExcel[diaClave] !== undefined) {
+          horariosExcel[diaClave] += `${hora.trim()} ${etiqueta}\n`;
+        }
+      }
+    }
+    return horariosExcel;
+  }
+
   async obtenerCatalogosDesdeExcel(): Promise<{carreras: string[], materias: MateriaCatalogo[]}> {
     try {
-      let urlLimpia = this.scriptURL.split('?')[0]; 
+      await this.cargarConfiguracionGlobal(); // 🌟 Asegura que la URL exista
+      if (!this.scriptURL_dinamica) return { carreras: [], materias: [] };
+
+      let urlLimpia = this.scriptURL_dinamica.split('?')[0]; 
       const url = `${urlLimpia}?api=true`;
       
       console.log("[DEBUG GIETAES] Consultando URL final:", url);
       const response = await fetch(url);
       const data = await response.json();
       
-      console.log("[DEBUG GIETAES] Respuesta bruta recibida del Excel:", data);
-      
       this.materiasMaster = []; 
       let carrerasUnicas: Set<string> = new Set();
 
       if (data.mallas && Array.isArray(data.mallas)) {
         data.mallas.forEach((fila: any) => {
-
           if (fila.SEDE && fila.CARRERA && fila.MATERIA && fila.CICLO) {
-            
             const nuevaMateria: MateriaCatalogo = {
               sede: fila.SEDE.toString().trim().toUpperCase(),
               carrera: fila.CARRERA.toString().trim().toUpperCase(),
               ciclo: parseInt(fila.CICLO, 10), 
               nombre: fila.MATERIA.toString().trim().toUpperCase()
             };
-
             this.materiasMaster.push(nuevaMateria);
             carrerasUnicas.add(nuevaMateria.carrera); 
           }
         });
       }
       
-      return {
-        carreras: Array.from(carrerasUnicas).sort(), 
-        materias: this.materiasMaster 
-      };
-
+      return { carreras: Array.from(carrerasUnicas).sort(), materias: this.materiasMaster };
     } catch (error) {
       console.error("[DEBUG GIETAES] Error crítico al obtener catálogos:", error);
       return { carreras: [], materias: [] };
@@ -73,17 +102,19 @@ export class DatabaseService {
   async guardarPostulacion(datosPostulacion: any): Promise<boolean> {
     try {
       const postulacionesRef = collection(this.firestore, 'Postulaciones');
-      await addDoc(postulacionesRef, datosPostulacion);
-      let urlLimpia = this.scriptURL.split('?')[0];
+      
+      // 🌟 Le inyectamos el periodo a la postulación antes de guardarla
+      await this.cargarConfiguracionGlobal();
+      const paqueteFinal = { ...datosPostulacion, periodo: this.periodo_actual };
+      await addDoc(postulacionesRef, paqueteFinal);
+
+      let urlLimpia = this.scriptURL_dinamica.split('?')[0];
       await fetch(urlLimpia, {
         method: 'POST',
         mode: 'no-cors', 
-        headers: {
-          'Content-Type': 'text/plain', 
-        },
-        body: JSON.stringify(datosPostulacion)
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(paqueteFinal)
       });
-
       return true;
     } catch (error) {
       console.error("Error al guardar la postulación:", error);
@@ -155,6 +186,7 @@ export class DatabaseService {
         superPerfil = { ...superPerfil, ...tutSnap.docs[0].data() };
         rolMaximo = tutSnap.docs[0].data()['rol'] || 'TUTOR'; 
       }
+      
       const qAdmin = query(collection(this.firestore, 'Administradores'), where('correo_google', '==', correoLimpio));
       const adminSnap = await getDocs(qAdmin);
       if (!adminSnap.empty) {
@@ -166,7 +198,6 @@ export class DatabaseService {
       if (existe) {
         return { existe: true, rol: rolMaximo, datos: superPerfil };
       }
-
       return { existe: false }; 
       
     } catch (error) {
@@ -175,21 +206,30 @@ export class DatabaseService {
     }
   }
 
-
-  async registrarNuevoEstudiante(datos: any) {
+ async registrarNuevoEstudiante(datos: any) {
     try {
-      // Guarda en Firebase
-      const docRef = doc(this.firestore, 'Estudiantes', datos.correo);
-      await setDoc(docRef, datos);
+      // 1. Cargamos la configuración (URL y Periodo) una sola vez
+      await this.cargarConfiguracionGlobal();
 
-      // Llama a tu Google Apps Script (Asegúrate de que tu script reciba 'sede' y 'contrasena')
-      if (this.scriptURL) {
-        await fetch(this.scriptURL, {
+      // 2. Preparamos el paquete inyectándole el periodo actual
+      const datosCompletos = {
+        ...datos,
+        ultimo_periodo_activo: this.periodo_actual
+      };
+      
+      // 3. Guardamos en Firebase (¡Usando datosCompletos!)
+      const docRef = doc(this.firestore, 'Estudiantes', datos.correo);
+      await setDoc(docRef, datosCompletos);
+
+      // 4. Guardamos en Google Sheets
+      if (this.scriptURL_dinamica) {
+        await fetch(this.scriptURL_dinamica, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             opcion: 'registrarEstudiante',
+            periodo: this.periodo_actual, 
             ...datos
           })
         });
@@ -204,49 +244,47 @@ export class DatabaseService {
   // ==========================================
   async enviarPostulacion(paquete: any) {
     const nuevaRef = doc(collection(this.firestore, 'Postulaciones'));
-    await setDoc(nuevaRef, paquete);
+    await this.cargarConfiguracionGlobal();
+    const paqueteFinal = { ...paquete, periodo: this.periodo_actual };
+    await setDoc(nuevaRef, paqueteFinal);
   }
 
   async aceptarTutor(idPostulacion: string, datosPostulacion: any) {
     try {
       const correoID = datosPostulacion.correo.toLowerCase().trim();
-
-      // 1. Actualizamos el estado de la postulación en Firebase
       const postulacionRef = doc(this.firestore, 'Postulaciones', idPostulacion);
       await updateDoc(postulacionRef, { estado_aprobacion: 'ACEPTADO' });
 
-      // 2. Gestionamos el Perfil del Tutor en Firebase (ID usando el Correo Institucional)
       const tutorRef = doc(this.firestore, 'Tutores', correoID);
       const tutorSnap = await getDoc(tutorRef);
 
       let listaMaterias: string[] = [];
       let horariosFusionados: any = {};
       
+      await this.cargarConfiguracionGlobal(); // 🌟 Obtenemos el periodo
+
       if (tutorSnap.exists()) {
         const datosPrevios = tutorSnap.data();
         listaMaterias = datosPrevios['materias'] || [];
         horariosFusionados = datosPrevios['horarios'] || {}; 
         
-        // Agregamos la nueva materia si no ha sido registrada previamente
         if (!listaMaterias.includes(datosPostulacion.materia_postulada)) {
           listaMaterias.push(datosPostulacion.materia_postulada);
         }
 
-        // Fusionamos los nuevos bloques de horario con los que ya tenía guardados
         if (datosPostulacion.disponibilidad_horaria) {
           for (let clave in datosPostulacion.disponibilidad_horaria) {
             horariosFusionados[clave] = datosPostulacion.disponibilidad_horaria[clave];
           }
         }
 
-        // Guardamos los cambios consolidados en el mismo documento del tutor
         await updateDoc(tutorRef, { 
           materias: listaMaterias,
-          horarios: horariosFusionados 
+          horarios: horariosFusionados,
+          ultimo_periodo_activo: this.periodo_actual // 🌟 ACTUALIZAMOS SU PERIODO
         });
 
       } else {
-        // Si es su primera materia aprobada, inicializamos arreglos y objetos limpios
         listaMaterias = [datosPostulacion.materia_postulada];
         horariosFusionados = datosPostulacion.disponibilidad_horaria || {};
 
@@ -261,47 +299,42 @@ export class DatabaseService {
           celular: datosPostulacion.celular || '',
           correo: correoID, 
           materias: listaMaterias, 
-          horarios: horariosFusionados, // Guardamos sus horarios iniciales
+          horarios: horariosFusionados, 
           estado: 'ACTIVO',
-          rol: 'TUTOR'
+          rol: 'TUTOR',
+          ultimo_periodo_activo: this.periodo_actual // 🌟 SE REGISTRA CON EL PERIODO ACTUAL
         };
         await setDoc(tutorRef, nuevoTutor);
       }
 
-      // 3. 🌟 MAGIA PARA EXCEL: Formateamos el total acumulado de sus horarios
       let horariosExcel: any = { LUNES: '', MARTES: '', MIERCOLES: '', JUEVES: '', VIERNES: '', SABADO: '' };
-
       if (horariosFusionados) {
         for (let clave in horariosFusionados) {
           let [dia, hora] = clave.split('-');
           let modalidad = horariosFusionados[clave];
-
-          // Asignamos las iniciales correspondientes según la modalidad guardada
           let etiqueta = '(P)';
           if (modalidad === 'VIRTUAL') etiqueta = '(V)';
           if (modalidad === 'AMBAS') etiqueta = '(P)(V)';
-
           let diaClave = dia.toUpperCase().replace('É', 'E').replace('Á', 'A');
           
           if (horariosExcel[diaClave] !== undefined) {
-            // Añade un salto de línea si ya hay horas registradas en ese mismo día
             horariosExcel[diaClave] += `${hora.trim()} ${etiqueta}\n`;
           }
         }
       }
 
-      // Creamos el paquete de datos estructurado para enviar a tu Google Apps Script
       const payloadExcel = {
         opcion: 'aceptarTutorOficial', 
         nombre: datosPostulacion.nombre,
         cedula: datosPostulacion.cedula || '',
         ciclo: datosPostulacion.ciclo,
         carrera: datosPostulacion.carrera,
-        materias: listaMaterias.join(', '), // Enviamos la lista de todas sus materias unidas por comas
+        materias: listaMaterias.join(', '), 
         correo: correoID,
         celular: datosPostulacion.celular || '',
         permanencia: datosPostulacion.permanencia || 'Soy nuevo',
-        horarios: horariosExcel
+        horarios: horariosExcel,
+        periodo: this.periodo_actual
       };
 
       await this.enviarAExcel(payloadExcel);
@@ -312,22 +345,18 @@ export class DatabaseService {
     }
   }
 
-  // 🌟 ACTUALIZADA: Ahora rastrea si hay materias aprobadas, rechazadas o pendientes
   async verificarEstadoPostulacion(correo: string): Promise<string> {
     try {
       const postQ = query(collection(this.firestore, 'Postulaciones'), where('correo', '==', correo));
       const postSnap = await getDocs(postQ);
       
       if (!postSnap.empty) {
-        // ¿Tiene alguna pendiente? Sigue en proceso
         const hayPendientes = postSnap.docs.some(doc => doc.data()['estado_aprobacion'] === 'PENDIENTE');
         if (hayPendientes) return 'PENDIENTE';
         
-        // ¿Tiene alguna aceptada? Ya es tutor (al menos de una materia)
         const hayAceptadas = postSnap.docs.some(doc => doc.data()['estado_aprobacion'] === 'ACEPTADO');
         if (hayAceptadas) return 'TUTOR';
         
-        // ¿Todas fueron rechazadas?
         const todasRechazadas = postSnap.docs.every(doc => doc.data()['estado_aprobacion'] === 'RECHAZADO');
         if (todasRechazadas) return 'RECHAZADO';
       }
@@ -350,7 +379,11 @@ export class DatabaseService {
 
   async obtenerCoordinadoresDesdeExcel(): Promise<any[]> {
     try {
-      const url = 'https://script.google.com/macros/s/AKfycbxfbFHADKVpIzIaD2zAS7siM8NkmyuCBfxbXEKIPcmTmQ9XSekLbc4V6Zki1rBkBEcajg/exec?api=coordinadores'; 
+      await this.cargarConfiguracionGlobal(); // 🌟 Actualizado para usar enlace dinámico
+      if (!this.scriptURL_dinamica) return [];
+
+      let urlLimpia = this.scriptURL_dinamica.split('?')[0]; 
+      const url = `${urlLimpia}?api=coordinadores`; 
       const respuesta = await fetch(url);
       const texto = await respuesta.text(); 
       try {
@@ -365,7 +398,8 @@ export class DatabaseService {
 
   async enviarAExcel(paqueteCompleto: any) {
     try {
-      let urlLimpia = this.scriptURL.split('?')[0]; 
+      await this.cargarConfiguracionGlobal();
+      let urlLimpia = this.scriptURL_dinamica.split('?')[0]; 
       await fetch(urlLimpia, {
         method: 'POST',
         mode: 'no-cors',
@@ -390,34 +424,33 @@ export class DatabaseService {
     return collectionData(horariosRef, { idField: 'id' });
   } 
 
-  // Generador de códigos tipo "MAT - 001"
   generarCodigoTutoria(materia: string): string {
     const siglas = materia.substring(0, 3).toUpperCase();
-    const numeros = Math.floor(1000 + Math.random() * 9000); // 4 dígitos aleatorios
+    const numeros = Math.floor(1000 + Math.random() * 9000); 
     return `${siglas} - ${numeros}`;
   }
 
   async agendarTutoria(datosReserva: any) {
+    await this.cargarConfiguracionGlobal();
     const reservasRef = collection(this.firestore, 'Reservas');
     
-    // Le inyectamos el código y el estado inicial antes de guardarlo
     const nuevaReserva = {
       ...datosReserva,
       codigo: this.generarCodigoTutoria(datosReserva.materia),
-      estado: 'PENDIENTE', // Inicia esperando la respuesta del tutor
-      fecha_solicitud: new Date().toISOString()
+      estado: 'PENDIENTE', 
+      fecha_solicitud: new Date().toISOString(),
+      periodo: this.periodo_actual // 🌟 Etiqueta de periodo para las tutorías
     };
+
     try {
-      await addDoc(collection(this.firestore, 'Tutorias_Agendadas'), datosReserva);
+      await addDoc(collection(this.firestore, 'Tutorias_Agendadas'), nuevaReserva); // Corregido para incluir todo
       
-      // 🌟 ESCENARIO 1: Notificar SOLO al Tutor específico
       await this.crearNotificacion({
         titulo: '¡Nueva Tutoría Agendada!',
         mensaje: `${datosReserva.nombreEstudiante} ha agendado una tutoría de ${datosReserva.materia} el ${datosReserva.dia_elegido} a las ${datosReserva.hora_elegida}.`,
         tipo: 'TUTORIA',
-        correo_destino: datosReserva.correoTutor // Va directo a su correo
+        correo_destino: datosReserva.correoTutor 
       });
-
     } catch (error) {
       throw error;
     }
@@ -425,26 +458,16 @@ export class DatabaseService {
     return addDoc(reservasRef, nuevaReserva);
   }
   
-  // Función para leer mis reservas (Actualizada: Visión 360°)
   async obtenerMisTutorias(correo: string, rol: string) {
     try {
       const correoLimpio = correo.toLowerCase().trim();
-      console.log(`DB_SERVICE: Buscando TODAS las reservas (Dadas y Recibidas) para: [${correoLimpio}]`);
-
-      // 1. Buscamos las clases donde este correo va a enseñar (Tutor)
-      const qTutor = query(collection(this.firestore, 'Reservas'), where('correoTutor', '==', correoLimpio));
       
-      // 2. Buscamos las clases donde este correo va a aprender (Estudiante)
+      const qTutor = query(collection(this.firestore, 'Reservas'), where('correoTutor', '==', correoLimpio));
       const qEstudiante = query(collection(this.firestore, 'Reservas'), where('correoEstudiante', '==', correoLimpio));
       
-      // Ejecutamos ambas búsquedas al mismo tiempo
       const [snapTutor, snapEstudiante] = await Promise.all([getDocs(qTutor), getDocs(qEstudiante)]);
       
-      // Unimos los resultados
       const todosLosDocs = [...snapTutor.docs, ...snapEstudiante.docs];
-      
-      console.log(`DB_SERVICE: Encontradas ${todosLosDocs.length} reservas en total.`);
-      
       return todosLosDocs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (e) {
       console.error("DB_SERVICE: Error crítico trayendo tutorías", e);
@@ -456,19 +479,11 @@ export class DatabaseService {
     try {
       const correoID = correo.toLowerCase().trim();
       
-      // 1. Revisión de máxima autoridad (Búsqueda por campo correo_google)
-      const qAdmin = query(
-        collection(this.firestore, 'Administradores'), 
-        where('correo_google', '==', correoID)
-      );
+      const qAdmin = query(collection(this.firestore, 'Administradores'), where('correo_google', '==', correoID));
       const adminSnap = await getDocs(qAdmin);
       if (!adminSnap.empty) return 'ADMIN';
 
-      // 2. Revisión de tutores (Búsqueda por campo correo_google)
-      const qTutor = query(
-        collection(this.firestore, 'Tutores'), 
-        where('correo_google', '==', correoID)
-      );
+      const qTutor = query(collection(this.firestore, 'Tutores'), where('correo_google', '==', correoID));
       const tutorSnap = await getDocs(qTutor);
       if (!tutorSnap.empty) return 'TUTOR';
 
@@ -487,29 +502,17 @@ export class DatabaseService {
       const codigoLimpio = codigoIngresado.toUpperCase().trim();
       const correoLimpio = correoUsuario.toLowerCase().trim();
 
-      // 1. Buscar si la tutoría existe usando el código
       const qBusqueda = query(collection(this.firestore, 'Reservas'), where('codigo', '==', codigoLimpio));
       const snapshot = await getDocs(qBusqueda);
 
-      if (snapshot.empty) {
-        return { exito: false, mensaje: 'El código ingresado no existe o es incorrecto.' };
-      }
+      if (snapshot.empty) return { exito: false, mensaje: 'El código ingresado no existe o es incorrecto.' };
 
-      // 2. Extraer los datos de la tutoría original
       const tutoriaOriginal = snapshot.docs[0].data();
-
-      // 3. Validar que el estudiante no esté ya en esta tutoría
       const yaEstaEnTutoria = snapshot.docs.some(doc => doc.data()['correoEstudiante'] === correoLimpio);
-      if (yaEstaEnTutoria) {
-        return { exito: false, mensaje: 'Ya estás registrado en esta tutoría.' };
-      }
+      
+      if (yaEstaEnTutoria) return { exito: false, mensaje: 'Ya estás registrado en esta tutoría.' };
+      if (tutoriaOriginal['correoTutor'] === correoLimpio) return { exito: false, mensaje: 'No puedes unirte como estudiante a tu propia tutoría.' };
 
-      // 4. Validar que el tutor no intente unirse a su propia clase como alumno
-      if (tutoriaOriginal['correoTutor'] === correoLimpio) {
-        return { exito: false, mensaje: 'No puedes unirte como estudiante a tu propia tutoría.' };
-      }
-
-      // 5. Buscar el celular del estudiante que se está uniendo (para que el tutor pueda contactarlo)
       let celularAlumno = 'Desconocido';
       const estSnap = await getDoc(doc(this.firestore, 'Estudiantes', correoLimpio));
       if (estSnap.exists() && estSnap.data()['celular']) {
@@ -521,7 +524,6 @@ export class DatabaseService {
         }
       }
 
-      // 6. Crear la nueva reserva clonada para el compañero
       const nuevaReserva = {
         correoEstudiante: correoLimpio,
         nombreEstudiante: nombreUsuario,
@@ -533,21 +535,19 @@ export class DatabaseService {
         dia_elegido: tutoriaOriginal['dia_elegido'],
         hora_elegida: tutoriaOriginal['hora_elegida'],
         codigo: codigoLimpio, 
-        estado: tutoriaOriginal['estado'], // ¡Hereda el estado actual! (Pendiente o Confirmada)
-        fecha_solicitud: new Date().toISOString()
+        estado: tutoriaOriginal['estado'], 
+        fecha_solicitud: new Date().toISOString(),
+        periodo: tutoriaOriginal['periodo'] || this.periodo_actual // 🌟 Hereda el periodo
       };
 
       await addDoc(collection(this.firestore, 'Reservas'), nuevaReserva);
-      
       return { exito: true, mensaje: `¡Te has unido a la tutoría de ${tutoriaOriginal['materia']} con éxito!` };
-
     } catch (error) {
       console.error("Error al unirse por código:", error);
       return { exito: false, mensaje: 'Ocurrió un error en el servidor.' };
     }
   }
 
-  // 🌟 NUEVA FUNCIÓN: Verifica si el usuario ya tiene postulaciones en espera
   async verificarPostulacionPendiente(correo: string): Promise<boolean> {
     try {
       const q = query(
@@ -555,10 +555,7 @@ export class DatabaseService {
         where('correo', '==', correo),
         where('estado_aprobacion', '==', 'PENDIENTE')
       );
-      
       const querySnapshot = await getDocs(q);
-      
-      // Si el resultado NO está vacío, significa que tiene postulaciones pendientes (Retorna TRUE)
       return !querySnapshot.empty; 
     } catch (error) {
       console.error("Error al verificar postulaciones pendientes:", error);
@@ -569,7 +566,6 @@ export class DatabaseService {
   async rechazarPostulacion(idPostulacion: string): Promise<void> {
     try {
       const postRef = doc(this.firestore, 'Postulaciones', idPostulacion);
-      // Cambiamos el estado para que el estudiante vea que no cumplió los requisitos
       await updateDoc(postRef, { estado_aprobacion: 'RECHAZADO' });
     } catch (error) {
       console.error("Error al rechazar postulación:", error);
@@ -578,7 +574,7 @@ export class DatabaseService {
   }
 
   // 🌟 MOTOR MAESTRO DE NOTIFICACIONES
- async crearNotificacion(datos: any) {
+  async crearNotificacion(datos: any) {
     try {
       const notificacionRef = doc(collection(this.firestore, 'Notificaciones'));
       await setDoc(notificacionRef, {
@@ -587,7 +583,7 @@ export class DatabaseService {
         tipo: datos.tipo,
         correo_destino: datos.correo_destino,
         sede_destino: datos.sede_destino || 'GLOBAL',
-        rol_destino: datos.rol_destino || 'ESTUDIANTE', // 🌟 ETIQUETA POR DEFECTO
+        rol_destino: datos.rol_destino || 'ESTUDIANTE', 
         fecha: new Date().toISOString(),
         leida_por: [] 
       });
@@ -601,7 +597,7 @@ export class DatabaseService {
       const q = query(
         collection(this.firestore, 'Notificaciones'),
         where('correo_destino', '==', correo),
-        where('rol_destino', '==', contextoPanel) // 🌟 EL NUEVO FILTRO MÁGICO
+        where('rol_destino', '==', contextoPanel)
       );
       
       const querySnapshot = await getDocs(q);
@@ -616,9 +612,7 @@ export class DatabaseService {
       return [];
     }
   }
- 
 
-  // 🌟 2. Marcar Notificación como Leída por este usuario
   async marcarNotificacionLeida(idNotificacion: string, correoUsuario: string) {
     try {
       const notifRef = doc(this.firestore, 'Notificaciones', idNotificacion);
@@ -637,13 +631,10 @@ export class DatabaseService {
       console.error("Error al marcar como leída:", error);
     }
   }
-  // 🌟 NUEVA FUNCIÓN: Trae a todos los estudiantes de una carrera a nivel nacional
+
   async obtenerEstudiantesPorCarrera(carrera: string) {
     try {
-      const q = query(
-        collection(this.firestore, 'Estudiantes'),
-        where('carrera', '==', carrera.toUpperCase())
-      );
+      const q = query(collection(this.firestore, 'Estudiantes'), where('carrera', '==', carrera.toUpperCase()));
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => doc.data());
     } catch (error) {
@@ -652,47 +643,49 @@ export class DatabaseService {
     }
   }
 
-async guardarAsistencia(datosAsistencia: any) {
+  async guardarAsistencia(datosAsistencia: any) {
     try {
-      // 1. Extraemos el nombre del estudiante del string 'estudiante_info' (Ej: "JUAN PEREZ - 0102030405")
+      await this.cargarConfiguracionGlobal();
+
       let nombreLimpio = 'ESTUDIANTE_DESCONOCIDO';
-      
       if (datosAsistencia.estudiante_info) {
-        // Cortamos el string antes del guion y reemplazamos los espacios con guiones bajos
         const nombreCrudo = datosAsistencia.estudiante_info.split(' - ')[0].trim();
         nombreLimpio = nombreCrudo.replace(/\s+/g, '_'); 
       }
 
-      // 2. Creamos el ID Compuesto: Nombre + Milisegundos exactos de este instante
-      // Ejemplo resultante: "JUAN_PIERRE_ARTEAGA_1714582938475"
       const idUnico = `${nombreLimpio}_${new Date().getTime()}`;
-
-      // 3. Guardamos en Firebase usando este nuevo ID perfecto y legible
       const nuevaRef = doc(this.firestore, 'Asistencias', idUnico);
-      await setDoc(nuevaRef, datosAsistencia);
+      
+      // 🌟 Añadimos el periodo al guardar la asistencia en Firebase
+      const asistenciaFinal = { ...datosAsistencia, periodo: this.periodo_actual };
+      await setDoc(nuevaRef, asistenciaFinal);
 
-      // 4. Guardamos en Excel (Tu código intacto)
       const payloadExcel = {
         opcion: 'registrarAsistencia',
-        ...datosAsistencia
+        ...asistenciaFinal
       };
 
-      await fetch(this.scriptURL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payloadExcel)
-      });
+      if (this.scriptURL_dinamica) {
+        await fetch(this.scriptURL_dinamica, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payloadExcel)
+        });
+      }
       
     } catch (error) {
       console.error('Error al guardar asistencia:', error);
       throw error;
     }
   }
-  // 🌟 OBTENER DOCENTES DESDE EXCEL
+
   async obtenerDocentesDesdeExcel(): Promise<string[]> {
     try {
-      let urlLimpia = this.scriptURL.split('?')[0];
+      await this.cargarConfiguracionGlobal();
+      if (!this.scriptURL_dinamica) return [];
+
+      let urlLimpia = this.scriptURL_dinamica.split('?')[0];
       const url = `${urlLimpia}?api=true`;
       const response = await fetch(url);
       const data = await response.json();
@@ -702,5 +695,4 @@ async guardarAsistencia(datosAsistencia: any) {
       return [];
     }
   }
- 
 }

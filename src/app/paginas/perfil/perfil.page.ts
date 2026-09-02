@@ -12,11 +12,11 @@ import { Auth, signOut } from '@angular/fire/auth';
 import { 
   IonContent, IonHeader, IonToolbar, 
   IonButtons, IonButton, IonIcon,
-  NavController,ToastController,AlertController 
+  NavController, ToastController, AlertController,
+  IonSegment, IonSegmentButton, IonLabel // 🌟 NUEVOS IMPORTADOS
 } from '@ionic/angular/standalone';
 
 import { DatabaseService } from '../../services/database';
-// 🌟 IMPORTAMOS doc y getDoc para buscar en múltiples colecciones
 import { Firestore, collection, query, where, getDocs, doc, getDoc } from '@angular/fire/firestore';
 import Chart from 'chart.js/auto'; 
 
@@ -28,6 +28,7 @@ import Chart from 'chart.js/auto';
   imports: [
     IonContent, IonHeader, IonToolbar, CommonModule, FormsModule,
     RouterModule, IonButtons, IonButton, IonIcon, 
+    IonSegment, IonSegmentButton, IonLabel // 🌟 AÑADIDOS AQUI
   ]
 })
 export class PerfilPage implements OnInit {
@@ -41,11 +42,7 @@ export class PerfilPage implements OnInit {
   private alertController = inject(AlertController);
 
   esTutor: boolean = false;
-  usuario = {
-    nombre: 'CARGANDO...',
-    correo: '',
-    sede: ''
-  };
+  usuario = { nombre: 'CARGANDO...', correo: '', sede: '' };
   menuAbierto: boolean = false; 
   rolUsuario: string = '';
   esAdmin: boolean = false;
@@ -55,6 +52,10 @@ export class PerfilPage implements OnInit {
   @ViewChild('barCanvas', { static: false }) private barCanvas!: ElementRef;
   graficoBarras: any;
   totalTutorias: number = 0;
+
+  // 🌟 VARIABLES DE FILTRO POR PERIODO
+  filtroPeriodo: string = 'ACTUAL';
+  periodoActualApp: string = '';
 
   constructor() {
     addIcons({
@@ -67,6 +68,10 @@ export class PerfilPage implements OnInit {
   
   async ionViewWillEnter() {
     this.menuAbierto = false; 
+    
+    // 🌟 1. CARGAMOS EL PERIODO
+    await this.dbService.cargarConfiguracionGlobal();
+    this.periodoActualApp = this.dbService.periodo_actual;
 
     const correoGuardado = localStorage.getItem('correo');
     if (!correoGuardado) {
@@ -77,19 +82,16 @@ export class PerfilPage implements OnInit {
     let dataPerfil: any = null;
     let coleccionOrigen = 'Estudiantes';
 
-    // 🌟 1. BUSCAMOS EN ADMINISTRADORES PUROS
     const adminSnap = await getDoc(doc(this.firestore, 'Administradores', correoGuardado));
     if (adminSnap.exists()) {
       dataPerfil = adminSnap.data();
       coleccionOrigen = 'Administradores';
     } else {
-      // 🌟 2. BUSCAMOS EN TUTORES (Estudiantes ascendidos a Coordinador)
       const tutorSnap = await getDoc(doc(this.firestore, 'Tutores', correoGuardado));
       if (tutorSnap.exists()) {
         dataPerfil = tutorSnap.data();
         coleccionOrigen = 'Tutores';
       } else {
-        // 🌟 3. BUSCAMOS EN ESTUDIANTES NORMALES
         const estSnap = await getDoc(doc(this.firestore, 'Estudiantes', correoGuardado));
         if (estSnap.exists()) {
           dataPerfil = estSnap.data();
@@ -98,12 +100,10 @@ export class PerfilPage implements OnInit {
       }
     }
 
-    // Si encontró los datos en alguna de las 3 tablas, los asigna
     if (dataPerfil) {
       this.usuario.nombre = (dataPerfil['nombre_completo'] || dataPerfil['nombre'] || 'USUARIO').toUpperCase();
       this.usuario.sede = (dataPerfil['sede'] || 'CUENCA').toUpperCase();
       this.rolUsuario = (dataPerfil['rol'] || 'ESTUDIANTE').toUpperCase();
-
       localStorage.setItem('nombre', this.usuario.nombre);
       localStorage.setItem('rol', this.rolUsuario);
       localStorage.setItem('sede', this.usuario.sede);
@@ -111,11 +111,10 @@ export class PerfilPage implements OnInit {
 
     this.esAdmin = (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR');
     
-    // 🌟 LÓGICA DE BOTONES: Si es Admin puro, no da clases ni se postula
     if (coleccionOrigen === 'Administradores') {
       this.esTutor = false;
       this.puedePostularse = false;
-      localStorage.setItem('es_admin_puro', 'true'); // Guardamos esto por si lo necesitas
+      localStorage.setItem('es_admin_puro', 'true'); 
     } else {
       this.esTutor = (this.rolUsuario === 'TUTOR' || this.rolUsuario === 'COORDINADOR');
       this.puedePostularse = true;
@@ -126,26 +125,30 @@ export class PerfilPage implements OnInit {
     setTimeout(() => { this.cargarEstadisticasEstudiante(); }, 500);
   }
 
-  // ... (El resto de tus funciones como cargarEstadisticasEstudiante, generarGraficoBarras, etc. se mantienen exactamente igual)
+  // 🌟 FUNCIÓN DE ESTADÍSTICAS (Ahora filtra localmente por periodo)
   async cargarEstadisticasEstudiante() {
     try {
-      const q = query(
-        collection(this.firestore, 'Reservas'),
-        where('correoEstudiante', '==', this.usuario.correo)
-      );
+      const q = query(collection(this.firestore, 'Reservas'), where('correoEstudiante', '==', this.usuario.correo));
       const snapshot = await getDocs(q);
-      this.totalTutorias = snapshot.size;
+      
+      // 1. Extraemos todo y aplicamos el filtro de periodo si es necesario
+      let reservas = snapshot.docs.map(doc => doc.data());
+      
+      if (this.filtroPeriodo === 'ACTUAL') {
+        reservas = reservas.filter(res => res['periodo'] === this.periodoActualApp);
+      }
 
+      this.totalTutorias = reservas.length;
       const conteoMaterias: { [key: string]: number } = {};
-      snapshot.forEach(doc => {
-        const data = doc.data();
+      
+      reservas.forEach(data => {
         const materia = data['materia'] || 'Otra';
         conteoMaterias[materia] = (conteoMaterias[materia] || 0) + 1;
       });
 
       const labels = Object.keys(conteoMaterias);
-      const data = Object.values(conteoMaterias);
-      this.generarGraficoBarras(labels, data);
+      const dataGrafico = Object.values(conteoMaterias);
+      this.generarGraficoBarras(labels, dataGrafico);
     } catch (error) {
       console.error("Error cargando estadísticas del estudiante: ", error);
     }
@@ -200,9 +203,6 @@ export class PerfilPage implements OnInit {
       this.navCtrl.navigateRoot('/login');
     }
   }
-  // ==========================================
-  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
-  // ==========================================
   
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
@@ -222,7 +222,7 @@ export class PerfilPage implements OnInit {
     const toast = await this.toastController.create({
       message: mensaje,
       duration: 3000,
-      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      position: 'top', 
       icon: icono,
       cssClass: `toast-premium-gietaes ${claseCss}`,
       mode: 'ios' 

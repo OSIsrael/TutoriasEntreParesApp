@@ -32,6 +32,22 @@
       </div>
     </div>
   </div>
+<!-- 🌟 SELECTOR DINÁMICO DE PERIODO (DISEÑO CORREGIDO) -->
+    <div style="padding: 0 15px; margin-bottom: 25px;">
+      <ion-segment [(ngModel)]="filtroPeriodo" (ionChange)="cargarEstadisticas()" mode="ios" style="background: #e2e8f0; border-radius: 10px; padding: 4px;">
+        
+        <!-- Botón Periodo -->
+        <ion-segment-button value="ACTUAL" style="--color: #64748b; --color-checked: #ffffff; --indicator-color: #003366;">
+          <ion-label style="font-weight: 800; font-size: 0.8rem; letter-spacing: 0.5px;">PERIODO {{ periodoActualApp }}</ion-label>
+        </ion-segment-button>
+        
+        <!-- Botón Histórico -->
+        <ion-segment-button value="HISTORICO" style="--color: #64748b; --color-checked: #ffffff; --indicator-color: #003366;">
+          <ion-label style="font-weight: 800; font-size: 0.8rem; letter-spacing: 0.5px;">HISTÓRICO</ion-label>
+        </ion-segment-button>
+        
+      </ion-segment>
+    </div>
 
   <div class="ion-padding animate__animated animate__fadeIn">
     <h3 class="subtitulo-seccion"><ion-icon name="bar-chart-outline"></ion-icon> Mi Dashboard de Rendimiento</h3>
