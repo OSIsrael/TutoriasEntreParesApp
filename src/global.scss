@@ -488,3 +488,25 @@ ion-toast.toast-info::part(container) {
     --border-color-checked: #EAB308;
   }
 }
+/* ==============================================
+   🌟 MICRO-INTERACCIÓN: TABS ESTILO WHATSAPP
+   ============================================== */
+ion-tab-button {
+  /* 1. Preparamos una transición suave estilo "resorte" */
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease, border-radius 0.15s ease !important;
+  transform-origin: center center;
+}
+
+/* 2. El efecto MIENTRAS el dedo está aplastando la pantalla */
+ion-tab-button:active {
+  transform: scale(1.18) translateY(-2px) !important; /* Crece un 18% y sube un poquito */
+  background-color: rgba(0, 51, 102, 0.08) !important; /* Un círculo súper sutil de tu azul corporativo */
+  border-radius: 20px !important; /* Le da la forma de burbuja de tu imagen */
+  z-index: 100 !important; /* Asegura que la burbuja se ponga por encima del resto */
+}
+
+/* 3. (Opcional) Hacer que el icono también reaccione ligeramente */
+ion-tab-button:active ion-icon {
+  transform: scale(1.05);
+  transition: transform 0.1s ease;
+}

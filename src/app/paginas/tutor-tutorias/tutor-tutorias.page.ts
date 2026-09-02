@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { 
   IonContent, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, 
   IonList, IonItemSliding, IonItem, IonItemOptions, IonItemOption,
-  IonPopover, IonLabel, IonModal,ToastController,AlertController,IonSelect,IonSelectOption,IonRow,IonCol 
+  IonPopover, IonLabel, IonModal,ToastController,AlertController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
@@ -24,7 +24,7 @@ import { LocalNotifications } from '@capacitor/local-notifications';
   imports: [
     CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, 
     IonButtons, IonButton, IonIcon, IonList, IonItemSliding, 
-    IonItem, IonItemOptions, IonItemOption, IonPopover, IonLabel, IonModal,IonSelect,IonSelectOption,IonCol,IonRow
+    IonItem, IonItemOptions, IonItemOption, IonPopover, IonLabel, IonModal
   ]
 })
 export class TutorTutoriasPage implements OnInit {
