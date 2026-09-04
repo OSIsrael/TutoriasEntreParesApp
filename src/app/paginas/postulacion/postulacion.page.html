@@ -2,9 +2,7 @@
   <ion-toolbar class="header-blanco">
     <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
     
-    <!-- 🌟 BOTÓN DE AYUDA (Solo visible si ya pasó los filtros y ve el formulario) -->
     <ion-buttons slot="end" style="margin-right: 10px;" *ngIf="estadoVista === 'FORMULARIO'">
-      <!-- ETIQUETA FIJA: ESTUDIANTE -->
       <div style="background: #f8fafc; border: 1.5px solid #003366; border-radius: 20px; padding: 2px 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: max-content; margin-right: 4px;">
         <ion-icon name="person-circle-outline" style="color: #003366; font-size: 1.1rem; margin-right: 4px;"></ion-icon>
         <span style="color: #003366; font-size: 0.65rem; font-weight: 900; white-space: nowrap;">
@@ -30,7 +28,7 @@
       <!-- CARGANDO -->
       <div *ngIf="estadoVista === 'CARGANDO'" class="estado-centro animate__animated animate__fadeIn">
         <ion-spinner name="crescent"></ion-spinner>
-        <p>Procesando información...</p>
+        <p>Procesando información y subiendo archivos...</p>
       </div>
 
       <!-- BLOQUEADO CICLO 1 -->
@@ -53,7 +51,6 @@
       <div *ngIf="estadoVista === 'RESULTADOS'" class="animate__animated animate__zoomIn">
         <h2 class="titulo-seccion-postulacion" style="margin-bottom: 20px;">Resultados de Postulación</h2>
         
-        <!-- Aceptadas -->
         <div *ngIf="materiasAceptadas.length > 0" class="tarjeta-premium" style="border-left: 5px solid #10b981; margin-bottom: 15px;">
           <h3 style="color: #10b981; margin-top: 0;"><ion-icon name="checkmark-circle-outline"></ion-icon> Fuiste seleccionado en:</h3>
           <ul style="color: #333; font-weight: bold;">
@@ -61,7 +58,6 @@
           </ul>
         </div>
 
-        <!-- Rechazadas -->
         <div *ngIf="materiasRechazadas.length > 0" class="tarjeta-premium" style="border-left: 5px solid #ef4444; margin-bottom: 15px;">
           <h3 style="color: #ef4444; margin-top: 0;"><ion-icon name="close-circle-outline"></ion-icon> Materias no aprobadas:</h3>
           <ul style="color: #333; font-weight: bold; margin-bottom: 5px;">
@@ -137,6 +133,32 @@
             </table>
           </div>
 
+          <div class="divisor mt-4"></div>
+
+          <!-- 🌟 NUEVA SECCIÓN: RENDIMIENTO ACADÉMICO -->
+          <h3 class="mini-titulo"><ion-icon name="document-text-outline"></ion-icon> 3. Rendimiento Académico</h3>
+          <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 15px;">
+            Sube el archivo PDF de tu récord académico descargado desde tu portal web universitario.
+          </p>
+          
+          <!-- Input oculto para manejar el archivo -->
+          <input type="file" accept="application/pdf" (change)="seleccionarArchivoPDF($event)" #fileInput hidden>
+          
+          <!-- Botón de subida y estado -->
+          <div style="display: flex; flex-direction: column; align-items: center; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px;">
+            <ion-button (click)="fileInput.click()" style="--background: #003366; --border-radius: 8px; margin-bottom: 10px;">
+              <ion-icon name="cloud-upload-outline" slot="start"></ion-icon> Seleccionar PDF
+            </ion-button>
+            
+            <div *ngIf="nombreArchivoPDF" style="display: flex; align-items: center; color: #10b981; font-weight: bold; font-size: 0.85rem; text-align: center;">
+              <ion-icon name="checkmark-circle-outline" style="font-size: 1.2rem; margin-right: 5px;"></ion-icon>
+              {{ nombreArchivoPDF }}
+            </div>
+            <div *ngIf="!nombreArchivoPDF" style="color: #94a3b8; font-size: 0.8rem;">
+              Ningún archivo seleccionado (Max 5MB)
+            </div>
+          </div>
+
           <ion-button expand="block" class="btn-finalizar mt-4" (click)="enviarPostulaciones()">
             <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon> Enviar Solicitud
           </ion-button>
@@ -146,50 +168,36 @@
     </div>
   </div>
 
-  <!-- 🌟 MODAL DE GUÍA INTERACTIVA (POSTULACIÓN) -->
+  <!-- MODAL DE GUÍA INTERACTIVA -->
   <div class="overlay-modal animate__animated animate__fadeIn" *ngIf="mostrarGuiaPostulacion">
     <div class="modal-premium animate__animated animate__zoomIn">
-      
       <div class="modal-header">
         <ion-icon name="information-circle-outline"></ion-icon>
         <h3>¿CÓMO POSTULARSE?</h3>
       </div>
-
       <div class="modal-body text-left">
-        <p class="modal-desc" style="text-align: center;">Convertirte en tutor es fácil. Sigue estos 3 pasos:</p>
+        <p class="modal-desc" style="text-align: center;">Convertirte en tutor es fácil. Sigue estos 4 pasos:</p>
         
         <div class="step-item">
           <ion-icon name="book-outline"></ion-icon>
-          <div>
-            <strong>1. Elige tu Materia</strong>
-            <p>Selecciona las asignaturas que deseas impartir. Solo verás las que corresponden a ciclos anteriores al tuyo.</p>
-          </div>
+          <div><strong>1. Elige tu Materia</strong><p>Selecciona las asignaturas que deseas impartir.</p></div>
         </div>
-
         <div class="step-item">
           <ion-icon name="time-outline"></ion-icon>
-          <div>
-            <strong>2. Tu Experiencia</strong>
-            <p>Indica si eres nuevo o si ya has sido tutor en ciclos pasados. Esto ayuda a la coordinación.</p>
-          </div>
+          <div><strong>2. Tu Experiencia</strong><p>Indica cuánto tiempo llevas siendo tutor.</p></div>
         </div>
-
         <div class="step-item">
           <ion-icon name="calendar-outline"></ion-icon>
-          <div>
-            <strong>3. Pinta tu Horario</strong>
-            <p>Toca los cuadros en la tabla para marcar tus horas libres. ¡Tus alumnos agendarán basándose en esto!</p>
-          </div>
+          <div><strong>3. Pinta tu Horario</strong><p>Toca los cuadros en la tabla para marcar tus horas libres.</p></div>
+        </div>
+        <div class="step-item">
+          <ion-icon name="document-text-outline"></ion-icon>
+          <div><strong>4. Récord Académico</strong><p>Adjunta tu documento de RECORD ACADEMICO DISPONIBLE EN TU PORTAL DE LA UPS.</p></div>
         </div>
       </div>
-
       <div class="modal-footer">
-        <ion-button class="btn-enviar" (click)="cerrarGuia()" style="width: 100%;">
-          ¡ENTENDIDO!
-        </ion-button>
+        <ion-button class="btn-enviar" (click)="cerrarGuia()" style="width: 100%;">¡ENTENDIDO!</ion-button>
       </div>
-
     </div>
   </div>
-
 </ion-content>

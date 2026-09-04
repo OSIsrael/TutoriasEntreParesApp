@@ -4,6 +4,7 @@ import {
   getDocs, doc, setDoc, collectionData, getDoc, updateDoc
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
+import { Storage, ref, uploadBytes, getDownloadURL } from '@angular/fire/storage';
 
 export interface MateriaCatalogo {
   sede: string;
@@ -18,6 +19,7 @@ export interface MateriaCatalogo {
 export class DatabaseService {
   materiasMaster: MateriaCatalogo[] = [];
   public firestore = inject(Firestore);
+  public storage = inject(Storage);
 
   // 🌟 ELIMINAMOS LA URL QUEMADA Y AGREGAMOS LAS VARIABLES DINÁMICAS
   scriptURL_dinamica: string = '';
@@ -693,6 +695,27 @@ export class DatabaseService {
     } catch (error) {
       console.error("Error obteniendo docentes:", error);
       return [];
+    }
+  }
+  // ==========================================
+  // 🌟 SUBIDA DE ARCHIVOS (PDF)
+  // ==========================================
+  async subirPDFRendimiento(archivo: File, cedula: string): Promise<string> {
+    try {
+      // Creamos una ruta única usando la cédula y la fecha para que no se sobreescriban
+      const timestamp = new Date().getTime();
+      const rutaArchivo = `RendimientoAcademico/${cedula}_${timestamp}.pdf`;
+      const referencia = ref(this.storage, rutaArchivo);
+
+      // Subimos el archivo
+      await uploadBytes(referencia, archivo);
+      
+      // Obtenemos el link público para descargarlo
+      const urlDescarga = await getDownloadURL(referencia);
+      return urlDescarga;
+    } catch (error) {
+      console.error("Error al subir el PDF:", error);
+      throw error;
     }
   }
 }

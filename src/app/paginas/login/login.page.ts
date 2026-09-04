@@ -7,7 +7,7 @@ import {
   IonSelect, IonSelectOption, IonButton, IonSpinner, IonList, IonIcon,ToastController,AlertController 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { logoGoogle, arrowBackOutline } from 'ionicons/icons'; 
+import { logoGoogle, arrowBackOutline,checkmarkCircleOutline,warningOutline } from 'ionicons/icons'; 
 import { DatabaseService } from '../../services/database';
 import { Auth, GoogleAuthProvider, signInWithPopup } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, updateDoc } from '@angular/fire/firestore'; 
@@ -49,8 +49,48 @@ export class LoginPage implements OnInit {
   listaCarrerasMaster: string[] = [];
   carrerasFiltradas: string[] = [];
 
+  // ==========================================
+  // 🌟 GETTERS DE VALIDACIÓN EN TIEMPO REAL
+  // ==========================================
+  get estadoCorreo(): { texto: string, color: string } | null {
+    if (!this.correoInstitucional) return null; 
+    const correoLimpio = this.correoInstitucional.toLowerCase().trim();
+    if (correoLimpio.endsWith('@est.ups.edu.ec') || correoLimpio.endsWith('@ups.edu.ec')) {
+      return { texto: 'Correo válido', color: 'exito' };
+    }
+    return { texto: 'Debe terminar en @est.ups.edu.ec o @ups.edu.ec', color: 'error' };
+  }
+
+  get estadoNombre(): { texto: string, color: string } | null {
+    if (!this.nombreCompleto) return null;
+    const val = this.validarNombreCompleto(this.nombreCompleto);
+    if (val.valido) return { texto: 'Nombre correcto', color: 'exito' };
+    return { texto: val.mensaje, color: 'error' };
+  }
+
+  get estadoCedula(): { texto: string, color: string } | null {
+    if (!this.cedula) return null;
+    const val = this.validarDocumento(this.cedula);
+    if (val.valido) return { texto: val.mensaje, color: 'exito' };
+    return { texto: val.mensaje, color: 'error' };
+  }
+
+  get estadoCelular(): { texto: string, color: string } | null {
+    if (!this.celular) return null;
+    if (this.validarCelular(this.celular)) return { texto: 'Número celular válido', color: 'exito' };
+    return { texto: 'Debe tener 10 dígitos y empezar con 09', color: 'error' };
+  }
+
+  get estadoCarrera(): { texto: string, color: string } | null {
+    if (!this.busquedaCarrera) return null;
+    if (this.carreraSeleccionada && this.carreraSeleccionada === this.busquedaCarrera) {
+      return { texto: 'Carrera seleccionada correctamente', color: 'exito' };
+    }
+    return { texto: 'Toca una carrera de la lista desplegable', color: 'error' };
+  }
+
   constructor() {
-    addIcons({ logoGoogle, arrowBackOutline }); 
+    addIcons({ logoGoogle, arrowBackOutline,checkmarkCircleOutline,warningOutline }); 
   }
 
   async ngOnInit() {
@@ -74,8 +114,34 @@ export class LoginPage implements OnInit {
     this.carrerasFiltradas = [];
   }
 
-  validarCedula(cedula: string): boolean {
-    if (!cedula || cedula.length !== 10) return false;
+  // ==========================================
+  // 🌟 LÓGICA DE VALIDACIÓN (CÉDULA / PASAPORTE)
+  // ==========================================
+  validarDocumento(docId: string): { valido: boolean, mensaje: string } {
+    if (!docId) return { valido: false, mensaje: 'El documento está vacío.' };
+    const docLimpio = docId.trim().toUpperCase();
+
+    // 1. Si el usuario escribe exactamente 10 números, asumimos que es Cédula y aplicamos tu fórmula
+    if (/^[0-9]{10}$/.test(docLimpio)) {
+      if (this.validarCedulaLogica(docLimpio)) {
+        return { valido: true, mensaje: 'Cédula ecuatoriana válida' };
+      } else {
+        return { valido: false, mensaje: 'Cédula incorrecta (no pasa validación de registro civil)' };
+      }
+    }
+
+    // 2. Si tiene letras o una longitud distinta (entre 6 y 15 caracteres), lo validamos como Pasaporte
+    const regexPasaporte = /^[A-Z0-9]{6,15}$/;
+    if (regexPasaporte.test(docLimpio)) {
+      return { valido: true, mensaje: 'Pasaporte válido' };
+    }
+
+    // 3. Si no cumple ninguna de las dos reglas
+    return { valido: false, mensaje: 'Ingrese una cédula (10 números) o pasaporte (6-15 caracteres alfanuméricos)' };
+  }
+
+  // Tu fórmula matemática para la cédula (ahora actúa en segundo plano)
+  validarCedulaLogica(cedula: string): boolean {
     const provincia = parseInt(cedula.substring(0, 2), 10);
     if (provincia < 1 || (provincia > 24 && provincia !== 30)) return false;
     const tercerDigito = parseInt(cedula.substring(2, 3), 10);
@@ -96,33 +162,36 @@ export class LoginPage implements OnInit {
     return celular.length === 10 && celular.startsWith('09');
   }
 
-  // 🌟 PUNTO 3: FILTRO ESTRICTO Y AUTOCORRECTOR DE NOMBRE
+  // 🌟 PUNTO 3: FILTRO ESTRICTO (DOS NOMBRES Y DOS APELLIDOS)
   validarNombreCompleto(nombre: string): { valido: boolean, mensaje: string, nombreLimpio: string } {
     if (!nombre) return { valido: false, mensaje: "El nombre está vacío.", nombreLimpio: "" };
 
-    // 1. Quitar espacios dobles o al inicio/final
     const limpio = nombre.trim().replace(/\s+/g, ' ');
-
-    // 2. Validar que solo tenga letras y espacios (bloquea números y símbolos)
     const regexSoloLetras = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    
     if (!regexSoloLetras.test(limpio)) {
-      return { valido: false, mensaje: "El nombre solo debe contener letras y espacios (sin números ni símbolos).", nombreLimpio: limpio };
+      return { valido: false, mensaje: "El nombre solo debe contener letras y espacios.", nombreLimpio: limpio };
     }
 
     const palabras = limpio.split(' ');
 
-    // 3. Exigir al menos un nombre y un apellido (mínimo 2 palabras)
-    if (palabras.length < 2) {
-      return { valido: false, mensaje: "Debes ingresar al menos tu primer nombre y primer apellido.", nombreLimpio: limpio };
+    if (palabras.length < 4) {
+      return { 
+        valido: false, 
+        mensaje: "Debes ingresar obligatoriamente dos nombres y dos apellidos.", 
+        nombreLimpio: limpio 
+      };
     }
 
-    // 4. Bloquear palabras de una sola letra (ejemplo: "A B", "Juan P")
     const palabraInvalida = palabras.find(p => p.length < 2);
     if (palabraInvalida) {
-      return { valido: false, mensaje: `Has ingresado iniciales ("${palabraInvalida}"). Por favor, escribe tus nombres completos.`, nombreLimpio: limpio };
+      return { 
+        valido: false, 
+        mensaje: `Has ingresado iniciales ("${palabraInvalida}"). Por favor, escribe tus nombres completos.`, 
+        nombreLimpio: limpio 
+      };
     }
 
-    // 5. Retorna todo en MAYÚSCULAS tal como está configurada tu BD
     return { valido: true, mensaje: "", nombreLimpio: limpio.toUpperCase() }; 
   }
 
@@ -186,19 +255,23 @@ export class LoginPage implements OnInit {
       return;
     }
 
-    // 🌟 PUNTO 3: APLICAMOS LA VALIDACIÓN Y AUTO-CORRECCIÓN AL NOMBRE
+    // Validación Nombre
     const validacionNombre = this.validarNombreCompleto(this.nombreCompleto);
     if (!validacionNombre.valido) {
       this.mostrarAviso(validacionNombre.mensaje,'info');
       return;
     }
-    // Si es válido, reemplazamos la variable con la versión limpia y en MAYÚSCULAS
     this.nombreCompleto = validacionNombre.nombreLimpio; 
 
-
-    if (!this.validarCedula(this.cedula)) {
-      this.mostrarAviso("La cédula ingresada no es válida.",'error'); return;
+    // 🌟 NUEVA Validación Cédula/Pasaporte
+    const valDoc = this.validarDocumento(this.cedula);
+    if (!valDoc.valido) {
+      this.mostrarAviso("El documento de identidad ingresado no es válido.", 'error'); 
+      return;
     }
+    this.cedula = this.cedula.trim().toUpperCase(); // Guardar en mayúsculas
+
+    // Validación Celular
     if (!this.validarCelular(this.celular)) {
       this.mostrarAviso("El número de celular debe empezar con 09 y tener 10 dígitos.",'info'); return;
     }
@@ -252,8 +325,8 @@ export class LoginPage implements OnInit {
     const nuevoEstudiante = {
       correo_google: this.correoGoogle,    
       correo: correoLimpio,                
-      nombre_completo: this.nombreCompleto, // Ya fue puesto en MAYÚSCULAS por el validador
-      cedula: this.cedula,
+      nombre_completo: this.nombreCompleto, 
+      cedula: this.cedula, // Ya validado como cédula o pasaporte
       sede: this.sede,               
       carrera: this.carreraSeleccionada, 
       ciclo: this.ciclo,
@@ -268,7 +341,7 @@ export class LoginPage implements OnInit {
     this.iniciarSesionLocal(nuevoEstudiante, 'ESTUDIANTE');
   }
 
- iniciarSesionLocal(datos: any, rol: string) {
+  iniciarSesionLocal(datos: any, rol: string) {
     localStorage.setItem('correo', datos.correo); 
     localStorage.setItem('nombre', datos.nombre_completo || datos.nombre);
     localStorage.setItem('rol', rol);
@@ -280,10 +353,10 @@ export class LoginPage implements OnInit {
     this.cargando = false;
     this.router.navigate(['/tabs/horarios']);
   }
+
   // ==========================================
   // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
   // ==========================================
-  
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
     let claseCss = 'toast-exito';
@@ -302,7 +375,7 @@ export class LoginPage implements OnInit {
     const toast = await this.toastController.create({
       message: mensaje,
       duration: 3000,
-      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      position: 'top', 
       icon: icono,
       cssClass: `toast-premium-gietaes ${claseCss}`,
       mode: 'ios' 

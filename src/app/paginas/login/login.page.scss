@@ -254,3 +254,39 @@ ion-select-option {
     --color-checked: #003366 !important;
   }
 }
+/* ==========================================
+   🌟 MENSAJES DE VALIDACIÓN EN TIEMPO REAL
+   ========================================== */
+.mensaje-validacion {
+  display: flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  margin-top: 5px;
+  margin-left: 5px;
+  animation: fadeInDown 0.3s ease;
+
+  ion-icon {
+    font-size: 1.1rem;
+    margin-right: 5px;
+  }
+
+  &.exito {
+    color: #10b981; /* Verde brillante */
+  }
+
+  &.error {
+    color: #ef4444; /* Rojo de alerta */
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -51,22 +51,44 @@
           <p class="subtitulo-registro">Verifica tus datos académicos antes de continuar.</p>
 
           <div class="campos-contenedor">
+            
+            <!-- CUENTA GOOGLE VINCULADA -->
             <ion-input class="input-moderno input-bloqueado" label="Cuenta vinculada" labelPlacement="stacked" fill="outline" [(ngModel)]="correoGoogle" readonly="true"></ion-input>
 
+            <!-- 🌟 CORREO INSTITUCIONAL + VALIDACIÓN -->
             <ion-input class="input-moderno mt-3" type="email" label="Correo Institucional" labelPlacement="stacked" fill="outline" [(ngModel)]="correoInstitucional" placeholder="ejemplo@est.ups.edu.ec"></ion-input>
+            <div *ngIf="estadoCorreo" class="mensaje-validacion" [ngClass]="estadoCorreo.color">
+              <ion-icon [name]="estadoCorreo.color === 'exito' ? 'checkmark-circle-outline' : 'warning-outline'"></ion-icon>
+              <span>{{ estadoCorreo.texto }}</span>
+            </div>
 
-            <!-- Menú desplegable -->
+            <!-- Menú desplegable: SEDE -->
             <ion-select class="input-moderno mt-3" label="Sede Universitaria" labelPlacement="stacked" fill="outline" [(ngModel)]="sede" interface="popover">
               <ion-select-option value="CUENCA">Cuenca</ion-select-option>
               <ion-select-option value="QUITO">Quito</ion-select-option>
               <ion-select-option value="GUAYAQUIL">Guayaquil</ion-select-option>
             </ion-select>
 
-            <ion-input class="input-moderno mt-3" type="text" label="Nombres Completos Ej.('JUAN DIEGO PEREZ LOPEZ' )" labelPlacement="stacked" fill="outline" [(ngModel)]="nombreCompleto"></ion-input>
+            <!-- 🌟 NOMBRES COMPLETOS + VALIDACIÓN -->
+            <ion-input class="input-moderno mt-3" type="text" label="Nombres Completos Ej. ('JUAN DIEGO PEREZ LOPEZ')" labelPlacement="stacked" fill="outline" [(ngModel)]="nombreCompleto"></ion-input>
+            <div *ngIf="estadoNombre" class="mensaje-validacion" [ngClass]="estadoNombre.color">
+              <ion-icon [name]="estadoNombre.color === 'exito' ? 'checkmark-circle-outline' : 'warning-outline'"></ion-icon>
+              <span>{{ estadoNombre.texto }}</span>
+            </div>
 
-            <ion-input class="input-moderno mt-3" type="tel" maxlength="10" label="Cédula Ecuatoriana" labelPlacement="stacked" fill="outline" [(ngModel)]="cedula"></ion-input>
+          <!-- 🌟 CÉDULA O PASAPORTE + VALIDACIÓN INTELIGENTE -->
+            <ion-input class="input-moderno mt-3" type="text" maxlength="15" label="Cédula o Pasaporte" labelPlacement="stacked" fill="outline" [(ngModel)]="cedula" style="text-transform: uppercase;"></ion-input>
+            <div *ngIf="estadoCedula" class="mensaje-validacion" [ngClass]="estadoCedula.color">
+              <ion-icon [name]="estadoCedula.color === 'exito' ? 'checkmark-circle-outline' : 'warning-outline'"></ion-icon>
+              <span>{{ estadoCedula.texto }}</span>
+            </div>
 
+            <!-- 🌟 BUSCAR CARRERA + VALIDACIÓN -->
             <ion-input class="input-moderno mt-3" type="text" label="Buscar Carrera" labelPlacement="stacked" fill="outline" [(ngModel)]="busquedaCarrera" (ionInput)="filtrarCarreras()"></ion-input>
+            <div *ngIf="estadoCarrera" class="mensaje-validacion" [ngClass]="estadoCarrera.color">
+              <ion-icon [name]="estadoCarrera.color === 'exito' ? 'checkmark-circle-outline' : 'warning-outline'"></ion-icon>
+              <span>{{ estadoCarrera.texto }}</span>
+            </div>
             
             <ion-list *ngIf="carrerasFiltradas.length > 0" class="lista-autocompletado">
               <ion-item *ngFor="let c of carrerasFiltradas" (click)="seleccionarCarrera(c)" button lines="full">
@@ -75,6 +97,7 @@
             </ion-list>
 
             <div class="grid-2-columnas mt-3">
+              <!-- CICLO -->
               <ion-select class="input-moderno" label="Ciclo" labelPlacement="stacked" fill="outline" [(ngModel)]="ciclo" interface="popover">
                 <ion-select-option value="1">1°</ion-select-option>
                 <ion-select-option value="2">2°</ion-select-option>
@@ -86,13 +109,20 @@
                 <ion-select-option value="8">8°</ion-select-option>
               </ion-select>
 
+              <!-- BECA -->
               <ion-select class="input-moderno" label="Beca Del Gobierno" labelPlacement="stacked" fill="outline" [(ngModel)]="beca" interface="popover">
                 <ion-select-option value="SI">Sí</ion-select-option>
                 <ion-select-option value="NO">No</ion-select-option>
               </ion-select>
             </div>
 
+            <!-- 🌟 NÚMERO CELULAR + VALIDACIÓN -->
             <ion-input class="input-moderno mt-3" type="tel" maxlength="10" label="Número Celular" labelPlacement="stacked" fill="outline" [(ngModel)]="celular" placeholder="09xxxxxxxx"></ion-input>
+            <div *ngIf="estadoCelular" class="mensaje-validacion" [ngClass]="estadoCelular.color">
+              <ion-icon [name]="estadoCelular.color === 'exito' ? 'checkmark-circle-outline' : 'warning-outline'"></ion-icon>
+              <span>{{ estadoCelular.texto }}</span>
+            </div>
+
           </div>
 
           <ion-button expand="block" class="btn-finalizar mt-4" (click)="procesarRegistroCompleto()">

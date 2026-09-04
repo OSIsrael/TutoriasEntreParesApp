@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonContent, IonHeader, IonToolbar, IonButton, IonIcon, IonSpinner, IonSelect, IonSelectOption, IonItem, IonLabel, NavController, IonButtons,ToastController,AlertController } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { arrowBackOutline, bookOutline, warningOutline, checkmarkCircleOutline, timeOutline, closeCircleOutline, calendarOutline, helpCircleOutline, informationCircleOutline, personCircleOutline } from 'ionicons/icons';
+import { arrowBackOutline, bookOutline, warningOutline, checkmarkCircleOutline, timeOutline, closeCircleOutline, calendarOutline, helpCircleOutline, informationCircleOutline, personCircleOutline, documentTextOutline, cloudUploadOutline } from 'ionicons/icons';
 import { DatabaseService, MateriaCatalogo } from '../../services/database'; 
 import { collection, query, where, getDocs } from '@angular/fire/firestore';
 
@@ -40,12 +40,14 @@ export class PostulacionPage {
   horarioSeleccionado: { [key: string]: string } = {}; 
   modalidadGlobal: string = 'PRESENCIAL';
 
-  // 🌟 VARIABLE PARA LA GUÍA INTERACTIVA
   mostrarGuiaPostulacion: boolean = false;
 
+  // 🌟 VARIABLES PARA EL PDF DE RENDIMIENTO
+  archivoPDF: File | null = null;
+  nombreArchivoPDF: string = '';
+
   constructor() {
-    // 🌟 Añadidos los iconos de ayuda
-    addIcons({personCircleOutline,helpCircleOutline,arrowBackOutline,warningOutline,timeOutline,checkmarkCircleOutline,closeCircleOutline,bookOutline,calendarOutline,informationCircleOutline});
+    addIcons({personCircleOutline,helpCircleOutline,arrowBackOutline,warningOutline,timeOutline,checkmarkCircleOutline,closeCircleOutline,bookOutline,calendarOutline,informationCircleOutline,documentTextOutline,cloudUploadOutline});
   }
 
   async ionViewWillEnter() {
@@ -53,6 +55,8 @@ export class PostulacionPage {
     this.horarioSeleccionado = {};
     this.materiasSeleccionadas = [];
     this.tiempoTutor = 'Soy nuevo';
+    this.archivoPDF = null;
+    this.nombreArchivoPDF = '';
     
     const correoGuardado = localStorage.getItem('correo') || '';
 
@@ -103,24 +107,17 @@ export class PostulacionPage {
 
     this.estadoVista = 'FORMULARIO';
 
-    // 🌟 LÓGICA DE GUÍA: Solo aparece si logró acceder al formulario y es su primera vez
     setTimeout(() => {
       const guiaVista = localStorage.getItem('guia_postulacion_vista');
       if (!guiaVista) {
         this.mostrarGuiaPostulacion = true;
         localStorage.setItem('guia_postulacion_vista', 'true');
       }
-    }, 400); // Pequeño retraso para que la animación de entrada se vea elegante
+    }, 400); 
   }
 
-  // 🌟 FUNCIONES PARA ABRIR Y CERRAR LA GUÍA
-  abrirGuia() {
-    this.mostrarGuiaPostulacion = true;
-  }
-
-  cerrarGuia() {
-    this.mostrarGuiaPostulacion = false;
-  }
+  abrirGuia() { this.mostrarGuiaPostulacion = true; }
+  cerrarGuia() { this.mostrarGuiaPostulacion = false; }
 
   seleccionarBloque(dia: string, franja: string) {
     const clave = `${dia}-${franja}`;
@@ -132,9 +129,34 @@ export class PostulacionPage {
     }
   }
 
+  // 🌟 FUNCIÓN PARA LEER EL ARCHIVO SELECCIONADO
+  seleccionarArchivoPDF(event: any) {
+    const archivo = event.target.files[0];
+    if (archivo) {
+      if (archivo.type !== 'application/pdf') {
+        this.mostrarAviso("Solo se permiten archivos en formato PDF.", 'error');
+        event.target.value = null;
+        return;
+      }
+      if (archivo.size > 5 * 1024 * 1024) { // Limite de 5MB
+        this.mostrarAviso("El archivo es muy pesado. El límite es 5MB.", 'advertencia');
+        event.target.value = null;
+        return;
+      }
+      this.archivoPDF = archivo;
+      this.nombreArchivoPDF = archivo.name;
+    }
+  }
+
   async enviarPostulaciones() {
     if (this.materiasSeleccionadas.length === 0 || Object.keys(this.horarioSeleccionado).length === 0) {
-      this.mostrarAviso("Debes seleccionar al menos una materia y un bloque de horario.",'advertencia');
+      this.mostrarAviso("Debes seleccionar al menos una materia y un bloque de horario.", 'advertencia');
+      return;
+    }
+
+    // 🌟 VALIDAMOS QUE EL PDF ESTÉ CARGADO
+    if (!this.archivoPDF) {
+      this.mostrarAviso("Es obligatorio subir tu récord académico en PDF.", 'error');
       return;
     }
 
@@ -146,6 +168,10 @@ export class PostulacionPage {
       const celular = localStorage.getItem('celular') || '';
       const cedula = localStorage.getItem('cedula') || '';
 
+      // 1. Subir el PDF a Storage y obtener el link
+      const urlRendimiento = await this.dbService.subirPDFRendimiento(this.archivoPDF, cedula);
+
+      // 2. Construir el documento con el link incluido
       const datosBasePostulacion = {
         correo: correo,
         nombre: nombre,
@@ -157,12 +183,12 @@ export class PostulacionPage {
         permanencia: this.tiempoTutor, 
         disponibilidad_horaria: this.horarioSeleccionado, 
         estado_aprobacion: 'PENDIENTE',
-        fecha_postulacion: new Date().toISOString()
+        fecha_postulacion: new Date().toISOString(),
+        url_documento_rendimiento: urlRendimiento // 🌟 Link asignado
       };
 
       for (const nombreMateria of this.materiasSeleccionadas) {
         const documentoPostulacion = { ...datosBasePostulacion, materia_postulada: nombreMateria };
-        
         await this.dbService.enviarPostulacion(documentoPostulacion); 
 
         await this.dbService.crearNotificacion({
@@ -178,16 +204,14 @@ export class PostulacionPage {
       this.navCtrl.navigateBack('/tabs/perfil');
 
     } catch (error) {
+      console.error(error);
       this.mostrarAviso("Hubo un fallo al procesar la solicitud.",'error');
       this.estadoVista = 'FORMULARIO';
     }
   }
 
   regresar() { this.navCtrl.navigateBack('/tabs/perfil'); }
-  // ==========================================
-  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
-  // ==========================================
-  
+
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
     let claseCss = 'toast-exito';
@@ -206,7 +230,7 @@ export class PostulacionPage {
     const toast = await this.toastController.create({
       message: mensaje,
       duration: 3000,
-      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      position: 'top', 
       icon: icono,
       cssClass: `toast-premium-gietaes ${claseCss}`,
       mode: 'ios' 
