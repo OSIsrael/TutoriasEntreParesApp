@@ -3,6 +3,13 @@
     <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
     
     <ion-buttons slot="end" style="margin-right: 10px;">
+      <!-- ETIQUETA FIJA: ESTUDIANTE -->
+      <div style="background: #f8fafc; border: 1.5px solid #003366; border-radius: 20px; padding: 2px 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: max-content; margin-right: 4px;">
+        <ion-icon name="person-circle-outline" style="color: #003366; font-size: 1.1rem; margin-right: 4px;"></ion-icon>
+        <span style="color: #003366; font-size: 0.65rem; font-weight: 900; white-space: nowrap;">
+          ROL: TUTOR
+        </span>
+      </div>
       <ion-button (click)="cambiarPanel()" style="--background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px; margin-right: 5px;">
         <ion-icon name="swap-horizontal-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
       </ion-button>
@@ -148,7 +155,7 @@
         
         <!-- Cabecera -->
         <div class="modal-header" style="background: #f8fafc; padding: 15px 20px; border-bottom: 2px solid #EAB308; display: flex; justify-content: space-between; align-items: center;">
-          <h3 style="color: #003366; font-size: 1.15rem; font-weight: 900; margin: 0;">CAMBIAR DE MUNDO</h3>
+          <h3 style="color: #003366; font-size: 1.15rem; font-weight: 900; margin: 0;">CAMBIAR DE ROL</h3>
           <ion-icon name="close-outline" (click)="mostrarMenuRol = false" style="font-size: 1.8rem; color: #94a3b8; cursor: pointer;"></ion-icon>
         </div>
 
@@ -161,7 +168,7 @@
             <!-- 🌟 BOTÓN 1: ESTUDIANTE -->
             <ion-item button lines="none" (click)="irAPanel('/tabs/horarios', 'ESTUDIANTE')" style="--background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; --border-radius: 8px; --padding-start: 10px;">
               <ion-icon name="school-outline" slot="start" style="color: #003366; font-size: 1.6rem; margin-right: 15px;"></ion-icon>
-              <ion-label style="color: #003366; font-weight: 800; font-size: 1.05rem;">Mundo Estudiante</ion-label>
+              <ion-label style="color: #003366; font-weight: 800; font-size: 1.05rem;">Panel Estudiante</ion-label>
             </ion-item>
 
             <!-- 🌟 BOTÓN 2: PANEL TUTOR -->

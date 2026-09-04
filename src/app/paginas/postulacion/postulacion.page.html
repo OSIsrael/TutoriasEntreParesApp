@@ -4,6 +4,13 @@
     
     <!-- 🌟 BOTÓN DE AYUDA (Solo visible si ya pasó los filtros y ve el formulario) -->
     <ion-buttons slot="end" style="margin-right: 10px;" *ngIf="estadoVista === 'FORMULARIO'">
+      <!-- ETIQUETA FIJA: ESTUDIANTE -->
+      <div style="background: #f8fafc; border: 1.5px solid #003366; border-radius: 20px; padding: 2px 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: max-content; margin-right: 4px;">
+        <ion-icon name="person-circle-outline" style="color: #003366; font-size: 1.1rem; margin-right: 4px;"></ion-icon>
+        <span style="color: #003366; font-size: 0.65rem; font-weight: 900; white-space: nowrap;">
+          ROL: ESTUDIANTE
+        </span>
+      </div>
       <ion-button (click)="abrirGuia()" style="--background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px;">
         <ion-icon name="help-circle-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
       </ion-button>
@@ -77,7 +84,7 @@
           <ion-item class="input-moderno mt-3" lines="none">
             <ion-label position="stacked">Asignaturas a impartir</ion-label>
             <ion-select [(ngModel)]="materiasSeleccionadas" multiple="true" placeholder="Elige una o varias" cancelText="Cancelar" okText="Aceptar" [interfaceOptions]="{ cssClass: 'alerta-premium-gietaes', header: 'Selecciona Materias' }">
-              <ion-select-option *ngFor="let mat of materiasDisponibles" [value]="mat.nombre">{{ mat.nombre }} (Ciclo {{ mat.ciclo }})</ion-select-option>
+              <ion-select-option *ngFor="let mat of materiasDisponibles" [value]="mat.nombre">{{ mat.nombre }}</ion-select-option>
             </ion-select>
           </ion-item>
 

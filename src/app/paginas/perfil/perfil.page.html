@@ -3,6 +3,13 @@
     <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
 
     <ion-buttons slot="end" style="margin-right: 10px;">
+      <!-- ETIQUETA FIJA: ESTUDIANTE -->
+      <div style="background: #f8fafc; border: 1.5px solid #003366; border-radius: 20px; padding: 2px 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: max-content; margin-right: 4px;">
+        <ion-icon name="person-circle-outline" style="color: #003366; font-size: 1.1rem; margin-right: 4px;"></ion-icon>
+        <span style="color: #003366; font-size: 0.65rem; font-weight: 900; white-space: nowrap;">
+          ROL: ESTUDIANTE
+        </span>
+      </div>
       <ion-button (click)="irANotificaciones()" style="position: relative; --background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px;">
         <ion-icon name="notifications-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
         
@@ -21,12 +28,9 @@
       <ion-icon name="person-circle-outline" class="icono-avatar"></ion-icon>
       <div class="texto-usuario">
         <h2>{{ usuario.nombre }}</h2>
-        <p style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin-top: 5px;">
-          <ion-icon name="mail-outline" style="color: #003366;"></ion-icon> {{ usuario.correo }}
-        </p>
         
         <p style="display: inline-flex; align-items: center; justify-content: center; gap: 5px; margin-top: 5px; font-weight: bold; color: #003366;">
-          <ion-icon name="business-outline"></ion-icon> SEDE: {{ usuario.sede }}
+          <ion-icon name="school-outline"></ion-icon>SEDE: {{ usuario.sede }}
         </p>
         <p style="font-size: 0.8rem; color: #666; margin-top: 8px; font-weight: bold; text-transform: uppercase; background: rgba(0,0,0,0.05); padding: 4px 10px; border-radius: 6px; display: inline-block;">
           Rol: {{ rolUsuario }}

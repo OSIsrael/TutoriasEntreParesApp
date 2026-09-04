@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonContent, IonHeader, IonToolbar, IonButton, IonIcon, IonSpinner, IonSelect, IonSelectOption, IonItem, IonLabel, NavController, IonButtons,ToastController,AlertController } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { arrowBackOutline, bookOutline, warningOutline, checkmarkCircleOutline, timeOutline, closeCircleOutline, calendarOutline, helpCircleOutline, informationCircleOutline } from 'ionicons/icons';
+import { arrowBackOutline, bookOutline, warningOutline, checkmarkCircleOutline, timeOutline, closeCircleOutline, calendarOutline, helpCircleOutline, informationCircleOutline, personCircleOutline } from 'ionicons/icons';
 import { DatabaseService, MateriaCatalogo } from '../../services/database'; 
 import { collection, query, where, getDocs } from '@angular/fire/firestore';
 
@@ -45,7 +45,7 @@ export class PostulacionPage {
 
   constructor() {
     // 🌟 Añadidos los iconos de ayuda
-    addIcons({arrowBackOutline,warningOutline,timeOutline,checkmarkCircleOutline,closeCircleOutline,bookOutline,calendarOutline, helpCircleOutline, informationCircleOutline});
+    addIcons({personCircleOutline,helpCircleOutline,arrowBackOutline,warningOutline,timeOutline,checkmarkCircleOutline,closeCircleOutline,bookOutline,calendarOutline,informationCircleOutline});
   }
 
   async ionViewWillEnter() {

@@ -2,7 +2,7 @@ import { Component, inject,ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonContent, IonHeader, IonToolbar, IonIcon, IonSpinner,IonButtons,IonButton,IonModal,IonList,IonItem,IonLabel } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { megaphoneOutline, notificationsOffOutline, notificationsOutline, closeOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, swapHorizontalOutline } from 'ionicons/icons';
+import { megaphoneOutline, notificationsOffOutline, notificationsOutline, closeOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, swapHorizontalOutline, personCircleOutline } from 'ionicons/icons';
 import { Firestore, collection, query, orderBy, getDocs,where } from '@angular/fire/firestore';
 import { Router } from '@angular/router'; 
 import { DatabaseService } from '../../services/database';
@@ -22,6 +22,7 @@ export class AvisosPage {
   private router = inject(Router); // 🌟 Inyectamos Router
   hayNotificacionesSinLeer: boolean = false;
   private cdr = inject(ChangeDetectorRef);
+  rolUsuario:string='ESTUDIANTE';
 
   // 🌟 VARIABLES PARA EL MENÚ DE ROLES
   mostrarMenuRol: boolean = false;
@@ -30,7 +31,7 @@ export class AvisosPage {
 
   constructor() {
     // Registramos los íconos necesarios para esta pantalla
-    addIcons({swapHorizontalOutline,notificationsOutline,notificationsOffOutline,megaphoneOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline});
+    addIcons({personCircleOutline,swapHorizontalOutline,notificationsOutline,notificationsOffOutline,megaphoneOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline});
   }
   // Se ejecuta siempre que el usuario entra a esta pestaña
   async ionViewWillEnter() {

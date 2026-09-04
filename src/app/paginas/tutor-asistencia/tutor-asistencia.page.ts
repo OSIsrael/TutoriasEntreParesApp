@@ -11,7 +11,7 @@ import {
   documentTextOutline, sendOutline, notificationsOutline, 
   personOutline, bookOutline, timeOutline, schoolOutline,
   checkmarkCircleOutline, chatbubblesOutline, gitNetworkOutline, barcodeOutline,
-  peopleOutline, trashOutline, closeCircle, helpCircleOutline, swapHorizontalOutline, closeOutline, briefcaseOutline, shieldCheckmarkOutline } from 'ionicons/icons';
+  peopleOutline, trashOutline, closeCircle, helpCircleOutline, swapHorizontalOutline, closeOutline, briefcaseOutline, shieldCheckmarkOutline, personCircleOutline } from 'ionicons/icons';
 import { Firestore, doc, getDoc, collection, getDocs,where,query } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
 
@@ -72,7 +72,7 @@ export class TutorAsistenciaPage implements OnInit {
   };
 
   constructor() {
-    addIcons({swapHorizontalOutline,notificationsOutline,bookOutline,documentTextOutline,timeOutline,barcodeOutline,peopleOutline,personOutline,trashOutline,schoolOutline,gitNetworkOutline,sendOutline,closeOutline,briefcaseOutline,shieldCheckmarkOutline,helpCircleOutline,checkmarkCircleOutline,chatbubblesOutline,closeCircle});
+    addIcons({personCircleOutline,swapHorizontalOutline,notificationsOutline,bookOutline,documentTextOutline,timeOutline,barcodeOutline,peopleOutline,personOutline,trashOutline,schoolOutline,gitNetworkOutline,sendOutline,closeOutline,briefcaseOutline,shieldCheckmarkOutline,helpCircleOutline,checkmarkCircleOutline,chatbubblesOutline,closeCircle});
   }
 
   ngOnInit() { }

@@ -6,7 +6,7 @@ import {
   bookOutline, logoWhatsapp, addOutline, checkmarkOutline, closeOutline, 
   personCircleOutline, mailOutline, businessOutline, settingsOutline, 
   logOutOutline, peopleOutline, filterOutline, notificationsOutline, trashOutline,
-  chatbubblesOutline, informationCircle, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline } from 'ionicons/icons';
+  chatbubblesOutline, informationCircle, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, helpCircleOutline } from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
 import { Router } from '@angular/router'; 
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -35,6 +35,7 @@ export class MisTutoriasPage implements OnInit {
   private toastController = inject(ToastController);
   private alertController = inject(AlertController);
 
+
   // 🌟 VARIABLES PARA EL MENÚ DE ROLES
   mostrarMenuRol: boolean = false;
   tienePanelTutor: boolean = false;
@@ -46,14 +47,14 @@ export class MisTutoriasPage implements OnInit {
   tutorias: any[] = [];
   cargando: boolean = true;
   correoUsuario: string = '';
-  rolUsuario: string = '';
+  rolUsuario: string = 'ESTUDIANTE';
   nombreUsuario: string = '';
 
   hayNotificacionesSinLeer: boolean = false;
 
   constructor() {
     // 🌟 Añadimos los iconos para nuestras guías visuales
-    addIcons({notificationsOutline,swapHorizontalOutline,chatbubblesOutline,bookOutline,logoWhatsapp,trashOutline,addOutline,informationCircle,checkmarkOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,personCircleOutline,mailOutline,businessOutline,settingsOutline,logOutOutline,peopleOutline,filterOutline});
+    addIcons({personCircleOutline,helpCircleOutline,swapHorizontalOutline,notificationsOutline,chatbubblesOutline,bookOutline,logoWhatsapp,trashOutline,addOutline,informationCircle,checkmarkOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,mailOutline,businessOutline,settingsOutline,logOutOutline,peopleOutline,filterOutline});
   }
 
   ngOnInit() {

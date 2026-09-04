@@ -10,7 +10,7 @@ import { addIcons } from 'ionicons';
 import { 
   searchOutline, closeOutline, logoWhatsapp, star, mailOutline, 
   peopleOutline, checkmarkOutline, businessOutline, notificationsOutline, 
-  informationCircleOutline, locationOutline, calendarOutline, helpCircleOutline, checkmarkCircleOutline, starOutline, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, closeCircleOutline, sendOutline } from 'ionicons/icons';
+  informationCircleOutline, locationOutline, calendarOutline, helpCircleOutline, checkmarkCircleOutline, starOutline, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, closeCircleOutline, sendOutline, personCircleOutline } from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
 import { Router } from '@angular/router'; 
 
@@ -25,6 +25,8 @@ import { Router } from '@angular/router';
   ]
 })
 export class HorariosPage implements OnInit {
+
+  rolUsuario:string='ESTUDIANTE';
   private dbService = inject(DatabaseService);
   private firestore = inject(Firestore);
   private router = inject(Router); 
@@ -81,7 +83,7 @@ export class HorariosPage implements OnInit {
   usuarioDocId: string = '';
 
   constructor() {
-    addIcons({helpCircleOutline,swapHorizontalOutline,notificationsOutline,businessOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,searchOutline,calendarOutline,checkmarkCircleOutline,sendOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,closeCircleOutline,locationOutline,starOutline});
+    addIcons({personCircleOutline,helpCircleOutline,swapHorizontalOutline,notificationsOutline,businessOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,searchOutline,calendarOutline,checkmarkCircleOutline,sendOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,closeCircleOutline,locationOutline,starOutline});
   }
 
   ngOnInit() {
@@ -95,6 +97,7 @@ export class HorariosPage implements OnInit {
 
   async ionViewWillEnter() {
     const correo = localStorage.getItem('correo') || '';
+    this.rolUsuario = localStorage.getItem('rol') || 'ESTUDIANTE';
     // 🌟 1. CARGAMOS EL PERIODO GLOBAL ANTES DE NADA
     await this.dbService.cargarConfiguracionGlobal(true);
     this.periodoApp = this.dbService.periodo_actual;
@@ -218,6 +221,7 @@ export class HorariosPage implements OnInit {
     }
     
     await this.verificarEvaluacionesPendientes();
+    
   }
   
   async verificarNotificaciones(correo: string, rol: string, sede: string) {

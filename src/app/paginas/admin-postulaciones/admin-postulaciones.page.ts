@@ -10,7 +10,7 @@ import {
   IonDatetime, IonDatetimeButton, IonModal,ToastController,AlertController 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { arrowBackOutline, megaphoneOutline, checkmarkCircleOutline, closeCircleOutline, personOutline, timeOutline, bookOutline } from 'ionicons/icons';
+import { arrowBackOutline, megaphoneOutline, checkmarkCircleOutline, closeCircleOutline, personOutline, timeOutline, bookOutline, personCircleOutline } from 'ionicons/icons';
 import Chart from 'chart.js/auto';
 
 @Component({
@@ -52,7 +52,7 @@ export class AdminPostulacionesPage {
   };
 
   constructor() {
-    addIcons({ arrowBackOutline, megaphoneOutline, checkmarkCircleOutline, closeCircleOutline, personOutline, timeOutline, bookOutline });
+    addIcons({arrowBackOutline,personCircleOutline,checkmarkCircleOutline,personOutline,timeOutline,bookOutline,closeCircleOutline,megaphoneOutline});
   }
 
   async ionViewWillEnter() {
