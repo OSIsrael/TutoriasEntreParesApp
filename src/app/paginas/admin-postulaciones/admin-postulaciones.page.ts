@@ -6,11 +6,11 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   IonContent, IonHeader, IonToolbar, IonButton, IonButtons, IonIcon,
-  IonItem, IonLabel, IonInput, IonTextarea, IonSelect, IonSelectOption,
+  IonInput, IonTextarea, IonSelect, IonSelectOption,
   IonDatetime, IonDatetimeButton, IonModal,ToastController,AlertController 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { arrowBackOutline, megaphoneOutline, checkmarkCircleOutline, closeCircleOutline, personOutline, timeOutline, bookOutline, personCircleOutline } from 'ionicons/icons';
+import { arrowBackOutline, megaphoneOutline, checkmarkCircleOutline, closeCircleOutline, personOutline, timeOutline, bookOutline, personCircleOutline, documentTextOutline, filterOutline, locationOutline, callOutline, pieChartOutline, mailOutline, closeOutline, checkmarkOutline,chevronDownOutline,chevronUpOutline } from 'ionicons/icons';
 import Chart from 'chart.js/auto';
 
 @Component({
@@ -20,7 +20,7 @@ import Chart from 'chart.js/auto';
   standalone: true,
   imports: [
     CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, IonButton,
-    KeyValuePipe, IonButtons, IonIcon, IonItem, IonLabel, IonInput,
+    KeyValuePipe, IonButtons, IonIcon, IonInput,
     IonTextarea, IonSelect, IonSelectOption,
     IonDatetime, IonDatetimeButton, IonModal
   ],
@@ -52,7 +52,7 @@ export class AdminPostulacionesPage {
   };
 
   constructor() {
-    addIcons({arrowBackOutline,personCircleOutline,checkmarkCircleOutline,personOutline,timeOutline,bookOutline,closeCircleOutline,megaphoneOutline});
+    addIcons({arrowBackOutline,personCircleOutline,checkmarkCircleOutline,personOutline,timeOutline,bookOutline,closeCircleOutline,megaphoneOutline, documentTextOutline, filterOutline, locationOutline, callOutline, pieChartOutline, mailOutline, closeOutline, checkmarkOutline,chevronDownOutline,chevronUpOutline});
   }
 
   async ionViewWillEnter() {
@@ -98,7 +98,7 @@ export class AdminPostulacionesPage {
 
       const diccionarioEstudiantes: { [correo: string]: any } = {};
 
-      rawPostulaciones.forEach((post: any) => {
+     rawPostulaciones.forEach((post: any) => {
         const correo = post['correo'];
         
         if (!diccionarioEstudiantes[correo]) {
@@ -112,6 +112,8 @@ export class AdminPostulacionesPage {
             celular: post['celular'],
             permanencia: post['permanencia'],
             horarios: post['disponibilidad_horaria'], 
+            url_documento: post['url_documento_rendimiento'] || null, 
+            expandido: false, // 🌟 NUEVO: CONTROL DEL ACORDEÓN
             materias_postuladas: [] 
           };
         }
@@ -127,28 +129,44 @@ export class AdminPostulacionesPage {
   }
 
   // ==========================================
-  // 🌟 ACEPTAR Y RECHAZAR (AHORA CON NOTIFICACIONES)
+  // 🌟 ABRIR DOCUMENTO PDF
   // ==========================================
-  async aceptar(post: any) {
+  verDocumento(url: string) {
+    if (!url) {
+      this.mostrarAviso('El estudiante no adjuntó un documento válido.', 'advertencia');
+      return;
+    }
+    // Abre el PDF en una nueva pestaña (funciona en PWA, Navegador y dispositivos móviles)
+    window.open(url, '_blank');
+  }
+
+  // ==========================================
+  // 🌟 ACEPTAR Y RECHAZAR (CON NOTIFICACIONES)
+  // ==========================================
+ async aceptar(post: any) {
+    // 🌟 AGREGAMOS LA CONFIRMACIÓN ANTES DE PROCEDER
+    const confirmar = await this.confirmarAccion(`¿Estás seguro de APROBAR a ${post.nombre} para dictar ${post.materia_postulada}?`,'');
+    if (!confirmar) return; // Si el administrador cancela, se detiene aquí
+
     try {
+      // Las peticiones a la base de datos se ejecutan inmediatamente tras la confirmación
       await this.dbService.aceptarTutor(post.id, post);
       
-      // 🌟 PUNTO 5: NOTIFICAR AL ESTUDIANTE QUE FUE ACEPTADO
       try {
         await this.dbService.crearNotificacion({
           titulo: '¡Postulación Aprobada!',
           mensaje: `¡Felicidades! Tu solicitud para impartir "${post.materia_postulada}" ha sido aceptada. Ya puedes ver tu panel de tutor.`,
           tipo: 'POSTULACION',
-          correo_destino: post.correo, // Dirigido exclusivamente al estudiante
+          correo_destino: post.correo, 
           sede_destino: post.sede,
-          rol_destino: 'TODOS' // Se pone "TODOS" porque en este momento el usuario está transicionando de rol
+          rol_destino: 'TODOS' 
         });
       } catch (e) {
         console.warn('Postulación aceptada, pero falló la notificación', e);
       }
 
       this.mostrarAviso(`Tutor aceptado en ${post.materia_postulada}`,'info');
-      await this.cargarPostulaciones(); // Recarga y re-agrupa automáticamente
+      await this.cargarPostulaciones(); 
       this.cargarEstadisticas();
     } catch (e) { 
       this.mostrarAviso('Error al aceptar tutor','error'); 
@@ -162,13 +180,12 @@ export class AdminPostulacionesPage {
     try {
       await this.dbService.rechazarPostulacion(post.id);
       
-      // 🌟 PUNTO 5: NOTIFICAR AL ESTUDIANTE QUE FUE RECHAZADO
       try {
         await this.dbService.crearNotificacion({
           titulo: 'Postulación Rechazada',
           mensaje: `Tu solicitud para ser tutor de "${post.materia_postulada}" no pudo ser aprobada en esta ocasión.`,
           tipo: 'POSTULACION',
-          correo_destino: post.correo, // Dirigido exclusivamente al estudiante
+          correo_destino: post.correo, 
           sede_destino: post.sede,
           rol_destino: 'ESTUDIANTE' 
         });
@@ -243,12 +260,13 @@ export class AdminPostulacionesPage {
     });
   }
 
-  async publicarAnuncio() {
+async publicarAnuncio() {
     if (!this.nuevoAnuncio.titulo || !this.nuevoAnuncio.descripcion) {
       this.mostrarAviso('Por favor, llena el título y la descripción del comunicado.','advertencia');
       return;
     }
 
+    // 🌟 SE AGREGAN CAMPOS "estado" Y "tipo" PARA EVITAR QUE LA APP LOS IGNORE
     const payload = {
       titulo: this.nuevoAnuncio.titulo.toUpperCase(),
       descripcion: this.nuevoAnuncio.descripcion,
@@ -256,6 +274,8 @@ export class AdminPostulacionesPage {
       fecha_publicacion: new Date().toISOString(),
       sede_destino: this.nuevoAnuncio.sede_destino.toUpperCase(),
       autor: localStorage.getItem('nombre') || 'COORDINACIÓN',
+      estado: 'ACTIVO', 
+      tipo: 'AVISO'     
     };
 
     try {
@@ -277,7 +297,6 @@ export class AdminPostulacionesPage {
       this.mostrarAviso('Error al publicar el comunicado.','error');
     }
   }
-
   async limpiarAnunciosExpirados() {
     try {
       const q = query(collection(this.firestore, 'Anuncios'));
@@ -312,10 +331,10 @@ export class AdminPostulacionesPage {
       console.error("Error al limpiar anuncios:", error);
     }
   }
+
   // ==========================================
   // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
   // ==========================================
-  
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
     let claseCss = 'toast-exito';
@@ -334,7 +353,7 @@ export class AdminPostulacionesPage {
     const toast = await this.toastController.create({
       message: mensaje,
       duration: 3000,
-      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      position: 'top', 
       icon: icono,
       cssClass: `toast-premium-gietaes ${claseCss}`,
       mode: 'ios' 

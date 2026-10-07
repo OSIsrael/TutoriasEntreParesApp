@@ -1,46 +1,19 @@
 /* ========================================== */
-/* ESTILOS ORIGINALES INTACTOS (POSTULACIONES)*/
+/* CONFIGURACIÓN BASE (LÍNEA GRÁFICA) */
 /* ========================================== */
 .fondo-admin {
   --background: #f4f5f8;
 }
 
-.card-estudiante {
-  background: #ffffff;
-  border: 1px solid #dcdcdc;
-  padding: 20px;
-  margin-bottom: 20px;
-  border-radius: 15px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  color: #333333;
-}
-
-.bloque-horarios {
-  background: #f8f9fa;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  margin-top: 10px;
-  color: #555555;
-}
-
-.btn-aceptar {
-  margin-top: 15px;
-  font-weight: bold;
-}
-
-/* ========================================== */
-/* NUEVOS ESTILOS FASE 4 (LÍNEA GRÁFICA GIETAES) */
-/* ========================================== */
 .titulo-seccion {
   color: #003366; 
-  font-weight: 800; 
-  font-size: 1.25rem;
+  font-weight: 900; 
+  font-size: 1.2rem;
   margin-top: 25px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-left: 5px solid #EAB308; /* Detalle dorado a la izquierda */
+  border-left: 6px solid #d97706; /* Detalle dorado a la izquierda */
   padding-left: 10px;
 }
 
@@ -51,15 +24,246 @@
   background: #cbd5e1;
 }
 
-/* --- DASHBOARD --- */
+/* --- BADGE ADMIN HEADER --- */
+.badge-admin-header {
+  background: #f8fafc; 
+  border: 1.5px solid #003366; 
+  border-radius: 20px; 
+  padding: 4px 10px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  margin-right: 15px;
+  
+  ion-icon { color: #003366; font-size: 1.1rem; margin-right: 5px; }
+  span { color: #003366; font-size: 0.65rem; font-weight: 900; white-space: nowrap; }
+}
+
+/* --- FILTROS MODERNOS --- */
+.contenedor-filtro {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  display: flex;
+  align-items: center;
+  padding: 5px 15px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  
+  .filtro-icono {
+    background: #f1f5f9;
+    color: #003366;
+    border-radius: 8px;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 1.2rem;
+  }
+  
+  .filtro-contenido {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    
+    label { font-size: 0.7rem; font-weight: bold; color: #64748b; margin-bottom: -5px; margin-top: 5px; text-transform: uppercase; }
+    ion-select { color: #003366; font-weight: 900; font-size: 0.95rem; }
+  }
+}
+
+/* --- ESTADO VACÍO --- */
+.estado-vacio {
+  text-align: center;
+  padding: 40px 20px;
+  
+  ion-icon { font-size: 4.5rem; color: #10b981; margin-bottom: 10px; }
+  h3 { color: #003366; font-weight: 900; margin: 0 0 5px 0; font-size: 1.2rem; }
+  p { color: #64748b; font-size: 0.95rem; margin: 0; }
+}
+
+/* ========================================== */
+/* TARJETAS DE ESTUDIANTES PREMIUM */
+/* ========================================== */
+.premium-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 6px 15px rgba(0,51,102,0.06);
+  border: 1px solid #e2e8f0;
+  border-top: 6px solid #003366; /* Identidad visual en el tope */
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+  
+  .avatar-inicial {
+    background: #f1f5f9;
+    color: #003366;
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    border: 2px solid #e2e8f0;
+  }
+  
+  .info-principal {
+    flex: 1;
+    
+    .nombre-estudiante { margin: 0 0 5px 0; color: #003366; font-weight: 900; font-size: 1.1rem; text-transform: uppercase; }
+    
+    .tags-info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      
+      .badge-sede { background: #003366; color: white; padding: 3px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: bold; display: flex; align-items: center; gap: 3px; }
+      .badge-carrera { background: #fef3c7; color: #d97706; padding: 3px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: bold; }
+    }
+  }
+}
+
+.contacto-seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #f8fafc;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  
+  .datos-contacto {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    font-size: 0.85rem;
+    color: #475569;
+    font-weight: 600;
+    
+    span { display: flex; align-items: center; gap: 5px; }
+    ion-icon { color: #d97706; font-size: 1rem; }
+  }
+  
+  .btn-pdf {
+    --background: white;
+    --color: #003366;
+    --border-color: #003366;
+    --border-radius: 8px;
+    --border-width: 1.5px;
+    font-weight: 800;
+    margin: 0;
+    height: 38px;
+    font-size: 0.8rem;
+  }
+}
+
+.seccion-interna {
+  border-bottom: 1px dashed #cbd5e1;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+  
+  &.sin-borde { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+  
+  .subtitulo-seccion {
+    color: #003366;
+    font-size: 0.9rem;
+    font-weight: 900;
+    margin: 0 0 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-transform: uppercase;
+  }
+}
+
+/* CHIPS DE HORARIOS */
+.horarios-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  
+  .chip-horario {
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    
+    .dia { font-weight: 900; color: #003366; text-transform: capitalize; }
+    .hora { color: #64748b; font-weight: 600; }
+    .modalidad {
+      font-size: 0.65rem;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: white;
+      
+      &.PRESENCIAL { background: #003366; }
+      &.VIRTUAL { background: #10b981; }
+      &.AMBAS { background: #d97706; }
+    }
+  }
+}
+
+/* LISTA DE MATERIAS Y BOTONES ACEPTAR/RECHAZAR */
+.materia-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border: 1px solid #e2e8f0;
+  
+  .materia-nombre {
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 0.85rem;
+    flex: 1;
+    padding-right: 10px;
+  }
+  
+  .materia-acciones {
+    display: flex;
+    gap: 8px;
+    
+    .btn-accion {
+      margin: 0;
+      height: 35px;
+      width: 45px;
+      --border-radius: 8px;
+      --box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      
+      &.btn-rechazar { --background: #fee2e2; --color: #ef4444; }
+      &.btn-aceptar { --background: #d1fae5; --color: #10b981; }
+      
+      &::part(native) { padding: 0; }
+      ion-icon { font-size: 1.4rem; }
+    }
+  }
+}
+
+/* ========================================== */
+/* DASHBOARD Y FORMULARIOS */
+/* ========================================== */
 .charts-container {
   display: grid;
   grid-template-columns: 1fr; 
   gap: 20px;
-  
-  @media (min-width: 768px) {
-    grid-template-columns: 1fr 1fr;
-  }
+  @media (min-width: 768px) { grid-template-columns: 1fr 1fr; }
 }
 
 .chart-card {
@@ -68,39 +272,23 @@
   padding: 20px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.05);
   border: 1px solid #e2e8f0;
-  border-top: 4px solid #003366; /* Cabecera azul sutil */
+  border-top: 4px solid #003366; 
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.chart-title {
-  font-size: 1.05rem;
-  color: #003366;
-  font-weight: 800;
-  margin-top: 0;
-  margin-bottom: 15px;
-  text-align: center;
-}
+.chart-title { font-size: 1.05rem; color: #003366; font-weight: 800; margin-top: 0; margin-bottom: 15px; text-align: center; }
+.canvas-wrapper { position: relative; width: 100%; display: flex; justify-content: center; }
+.pie-wrapper { max-height: 220px; }
 
-.canvas-wrapper {
-  position: relative;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-.pie-wrapper {
-  max-height: 220px;
-}
-
-/* --- FORMULARIO ESTILO GIETAES --- */
+/* --- FORMULARIO CARTELERA --- */
 .formulario-eventos {
   background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 6px 20px rgba(0,51,102,0.06);
   border: 1px solid #e2e8f0;
-  overflow: hidden; /* Para que la cabecera azul respete los bordes redondos */
+  overflow: hidden; 
 }
 
 .header-azul-gietaes {
@@ -115,17 +303,8 @@
   letter-spacing: 0.5px;
 }
 
-.form-body {
-  padding: 25px;
-}
-
-.form-descripcion {
-  font-size: 0.9rem;
-  color: #64748b;
-  margin-bottom: 25px;
-  margin-top: 0;
-  line-height: 1.4;
-}
+.form-body { padding: 25px; }
+.form-descripcion { font-size: 0.85rem; color: #64748b; margin-bottom: 25px; margin-top: 0; line-height: 1.4; }
 
 .input-group {
   margin-bottom: 20px;
@@ -135,7 +314,7 @@
   label {
     color: #003366;
     font-weight: 800;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     margin-bottom: 8px;
     margin-left: 4px;
     text-transform: uppercase;
@@ -147,7 +326,6 @@
   --background: #f8fafc; 
   --color: #0f172a; 
   --placeholder-color: #94a3b8;
-  --placeholder-opacity: 1;
   --padding-start: 15px;
   --padding-end: 15px;
   --padding-top: 12px;
@@ -157,30 +335,28 @@
   border-radius: 8px;
   font-size: 0.95rem;
   transition: all 0.3s ease;
-  color: #0f172a; /* 🌟 FUERZA EL COLOR BASE */
+  color: #0f172a;
 
-  /* 🌟 FUERZA EL COLOR DENTRO DEL ION-SELECT */
-  &::part(text) {
-    color: #0f172a; 
-  }
-
-  &.ion-focused {
-    border-color: #EAB308; 
-    --background: #ffffff;
-    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.1);
-  }
+  &::part(text) { color: #0f172a; }
+  &.ion-focused { border-color: #EAB308; --background: #ffffff; box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.1); }
 }
 
-
-.mt-4 {
-  margin-top: 30px;
+.contenedor-fecha {
+  background: #f8fafc; 
+  border: 2px solid #cbd5e1; 
+  border-radius: 8px; 
+  padding: 10px; 
+  display: flex; 
+  align-items: center;
 }
+
+.mt-4 { margin-top: 30px; }
 
 .btn-publicar {
-  --background: #EAB308; /* Botón en dorado para contrastar con la cabecera */
-  --background-hover: #EAB308;
-  --color: #003366;
+  --background: #003366; 
+  --color: white;
   --border-radius: 8px;
+  --box-shadow: 0 4px 10px rgba(0, 51, 102, 0.2);
   font-weight: 800;
   letter-spacing: 0.5px;
   height: 50px;

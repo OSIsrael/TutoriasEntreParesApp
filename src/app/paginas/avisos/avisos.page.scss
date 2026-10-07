@@ -123,3 +123,32 @@
   color: #0f172a;
   border: 1px dashed #cbd5e1;
 }
+/* --- Ajustes para el Swipe to Delete --- */
+/* --- Ajustes para el Swipe to Delete --- */
+ion-item-sliding {
+  margin-bottom: 15px; /* Mueve la separación aquí para que no interfiera con el deslizamiento */
+  width: 100%;
+  display: block;
+}
+
+.item-aviso-transparente {
+  --background: transparent;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  width: 100%; /* 🌟 Fuerza al contenedor nativo a expandirse */
+}
+
+/* --- Tarjetas de Anuncios --- */
+.anuncio-card {
+  background: #ffffff;
+  border-left: 4px solid #003366;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  border-top: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  
+  width: 100%; /* 🌟 FUERZA A LA TARJETA A OCUPAR TODO EL ESPACIO */
+  box-sizing: border-box; /* Evita que el padding rompa el ancho en pantallas pequeñas */
+}

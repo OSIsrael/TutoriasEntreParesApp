@@ -98,46 +98,49 @@
 
           <h3 class="mini-titulo"><ion-icon name="calendar-outline"></ion-icon> 2. Tu Disponibilidad</h3>
           
-          <div class="modalidad-selector mt-3">
-            <ion-item class="input-moderno" lines="none">
-              <ion-select [(ngModel)]="modalidadGlobal" interface="popover" [interfaceOptions]="{ cssClass: 'popover-premium-gietaes' }">
-                <ion-select-option value="PRESENCIAL">Presencial</ion-select-option>
-                <ion-select-option value="VIRTUAL">Virtual</ion-select-option>
-                <ion-select-option value="AMBAS">Ambas</ion-select-option>
-              </ion-select>
-            </ion-item>
-          </div>
+<!-- 🌟 NUEVOS BOTONES DE MODALIDAD (Reemplazan al ion-select) -->
+<div style="display: flex; gap: 5px; margin-top: 15px;">
+  <div class="btn-modalidad" [class.activo]="modalidadGlobal === 'PRESENCIAL'" (click)="seleccionarModalidadGlobal('PRESENCIAL')">Presencial</div>
+  <div class="btn-modalidad" [class.activo]="modalidadGlobal === 'VIRTUAL'" (click)="seleccionarModalidadGlobal('VIRTUAL')">Virtual</div>
+  <div class="btn-modalidad" [class.activo]="modalidadGlobal === 'AMBAS'" (click)="seleccionarModalidadGlobal('AMBAS')">Ambas</div>
+</div>
 
-          <p style="font-size: 0.75rem; color: #d97706; font-weight: bold; margin-bottom: 10px; margin-top: 15px;">
-            * Nota: Las tutorías de los días sábados se imparten exclusivamente VIRTUAL.
-          </p>
-          
-          <div class="calendario-scroll">
-            <table class="tabla-horarios">
-              <thead>
-                <tr>
-                  <th>Hora</th>
-                  <th *ngFor="let dia of diassemana">{{ dia }}</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let franja of franjasHorarias">
-                  <td class="columna-hora">{{ franja }}</td>
-                  <td *ngFor="let dia of diassemana" [class.seleccionado]="horarioSeleccionado[dia + '-' + franja]" (click)="seleccionarBloque(dia, franja)">
-                    <div class="celda-contenido">
-                      <span *ngIf="horarioSeleccionado[dia + '-' + franja]" class="texto-modalidad">{{ horarioSeleccionado[dia + '-' + franja] }}</span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+<p style="font-size: 0.75rem; color: #EAB308; font-weight: bold; margin: 15px 0 10px 0;">
+  * Toca los cuadros para asignar tu horario. Sábados obligatoriamente VIRTUAL hasta las 13:00.
+</p>
 
-          <div class="divisor mt-4"></div>
+<!-- 🌟 TABLA BLINDADA CON INICIALES (P / V) Y DÍAS RECORTADOS -->
+<div class="calendario-scroll">
+  <table class="tabla-horarios">
+    <thead>
+      <tr>
+        <th>Hora</th>
+        <th *ngFor="let dia of diassemana">{{ dia.substring(0,3) }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let franja of franjasHorarias">
+        <td class="columna-hora" style="font-size: 0.65rem;">{{ franja }}</td>
+        <td *ngFor="let dia of diassemana" 
+            [class.seleccionado]="horarioSeleccionado[dia + '-' + franja]"
+            [class.bloqueado]="esBloqueDeshabilitado(dia, franja)"
+            (click)="seleccionarBloque(dia, franja)">
+          <div class="celda-contenido">
+            <span *ngIf="horarioSeleccionado[dia + '-' + franja]" class="texto-modalidad">
+              {{ horarioSeleccionado[dia + '-' + franja] === 'PRESENCIAL' ? 'P' : (horarioSeleccionado[dia + '-' + franja] === 'VIRTUAL' ? 'V' : 'P/V') }}
+            </span>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="divisor mt-4"></div>
 
           <!-- 🌟 NUEVA SECCIÓN: RENDIMIENTO ACADÉMICO -->
           <h3 class="mini-titulo"><ion-icon name="document-text-outline"></ion-icon> 3. Rendimiento Académico</h3>
-          <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 15px;">
+          <p style="font-size: 0.8rem; color: #ffffff; margin-bottom: 15px;">
             Sube el archivo PDF de tu récord académico descargado desde tu portal web universitario.
           </p>
           
@@ -146,8 +149,8 @@
           
           <!-- Botón de subida y estado -->
           <div style="display: flex; flex-direction: column; align-items: center; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 20px;">
-            <ion-button (click)="fileInput.click()" style="--background: #003366; --border-radius: 8px; margin-bottom: 10px;">
-              <ion-icon name="cloud-upload-outline" slot="start"></ion-icon> Seleccionar PDF
+            <ion-button (click)="fileInput.click()" style="--background: #003366; --border-radius: 8px; margin-bottom: 10px;color: white;">
+              <ion-icon name="cloud-upload-outline" slot="start" style="color: white;"></ion-icon> Seleccionar PDF
             </ion-button>
             
             <div *ngIf="nombreArchivoPDF" style="display: flex; align-items: center; color: #10b981; font-weight: bold; font-size: 0.85rem; text-align: center;">

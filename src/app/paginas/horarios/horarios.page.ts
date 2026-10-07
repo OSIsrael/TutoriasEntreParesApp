@@ -35,6 +35,8 @@ export class HorariosPage implements OnInit {
   mostrarModalRenovacionEstudiante: boolean = false;
   nuevoCicloEstudiante: number = 1;
   periodoApp: string = '';
+  listaHorasDisponibles: string[] = [];
+  horaSeleccionada: string = '';
 
   private toastController = inject(ToastController);
   private alertController = inject(AlertController);
@@ -348,8 +350,7 @@ export class HorariosPage implements OnInit {
       return coincideMateria || coincideTutor;
     });
   }
-
-  abrirConfirmacion(tutor: any, dia: string, horas: string, materia: string) { 
+abrirConfirmacion(tutor: any, dia: string, horas: string, materia: string) { 
     if (!horas || horas.trim() === '') return; 
 
     const miCorreo = String(localStorage.getItem('correo') || '').toLowerCase().trim();
@@ -368,6 +369,10 @@ export class HorariosPage implements OnInit {
       return;
     }
 
+    // 🌟 SEPARAMOS EL TEXTO DE LAS HORAS EN UNA LISTA PARA EL SELECTOR
+    this.listaHorasDisponibles = horas.split('\n').map(h => h.trim()).filter(h => h.length > 0);
+    this.horaSeleccionada = ''; // Reiniciamos la selección cada vez que se abre el modal
+
     this.reservaActual = { 
       tutorNombre: tutor.nombre, 
       correoTutor: tutor.correo || tutor.correo_google, 
@@ -382,10 +387,19 @@ export class HorariosPage implements OnInit {
   cerrarConfirmacion() {
     this.mostrarModal = false;
     this.reservaActual = null;
+    this.listaHorasDisponibles = [];
+    this.horaSeleccionada = '';
   }
 
   async confirmarReserva() {
     if (!this.reservaActual) return;
+
+    // 🌟 VALIDAMOS QUE EL ESTUDIANTE HAYA ELEGIDO UNA HORA
+    if (!this.horaSeleccionada) {
+      this.mostrarAviso('Por favor, selecciona una hora específica para la tutoría.', 'advertencia');
+      return;
+    }
+
     try {
       const datosReserva = {
         correoEstudiante: this.correoUsuario,
@@ -396,7 +410,7 @@ export class HorariosPage implements OnInit {
         celularTutor: this.reservaActual.celularTutor || 'No registrado',
         materia: this.reservaActual.materia,
         dia_elegido: this.reservaActual.dia,
-        hora_elegida: this.reservaActual.horas, 
+        hora_elegida: this.horaSeleccionada, // 🌟 ENVIAMOS LA HORA EXACTA SELECCIONADA
         codigo: this.dbService.generarCodigoTutoria(this.reservaActual.materia)
       };
       
@@ -406,7 +420,7 @@ export class HorariosPage implements OnInit {
         if (this.dbService.crearNotificacion) {
           await this.dbService.crearNotificacion({
             titulo: 'Nueva Solicitud de Tutoría',
-            mensaje: `${this.nombreUsuario} ha solicitado una clase de ${this.reservaActual.materia} el día ${this.reservaActual.dia}.`,
+            mensaje: `${this.nombreUsuario} ha solicitado una clase de ${this.reservaActual.materia} el día ${this.reservaActual.dia} a las ${this.horaSeleccionada}.`, // 🌟 INCLUIMOS LA HORA EN LA NOTIFICACIÓN
             tipo: 'TUTORIA',
             correo_destino: this.reservaActual.correoTutor,
             sede_destino: 'GLOBAL',
@@ -424,7 +438,6 @@ export class HorariosPage implements OnInit {
       this.mostrarAviso('Hubo un problema al enviar tu solicitud.','error');
     }
   }
-
   formatearNumeroWA(numero: string): string {
     if (!numero) return '';
     let limpio = numero.replace(/\D/g, '');

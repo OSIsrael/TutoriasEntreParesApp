@@ -40,30 +40,49 @@
     <p>No hay avisos recientes para tu sede en este momento.</p>
   </div>
 
-  <div *ngIf="!cargandoAnuncios" class="cards-stack">
-    
-    <div class="anuncio-card animate__animated animate__fadeInUp" *ngFor="let aviso of anuncios">
+ <div *ngIf="!cargandoAnuncios" class="cards-stack">
+    <ion-list style="background: transparent; padding: 0;">
       
-      <div class="anuncio-header">
-        <span class="anuncio-badge" [ngClass]="{'badge-global': aviso.sede_destino === 'GLOBAL'}">
-          {{ aviso.sede_destino }}
-        </span>
-        <span class="anuncio-fecha">{{ aviso.fecha_publicacion | date:'mediumDate' }}</span>
-      </div>
+      <!-- 🌟 CONTENEDOR DESLIZABLE -->
+      <ion-item-sliding *ngFor="let aviso of anuncios" #slidingItem class="animate__animated animate__fadeInUp">
+        
+        <!-- Tarjeta visible -->
+        <ion-item lines="none" class="item-aviso-transparente">
+          <div class="anuncio-card">
+            
+            <div class="anuncio-header">
+              <span class="anuncio-badge" [ngClass]="{'badge-global': aviso.sede_destino === 'GLOBAL'}">
+                {{ aviso.sede_destino }}
+              </span>
+              <span class="anuncio-fecha">{{ aviso.fecha_publicacion | date:'mediumDate' }}</span>
+            </div>
+            
+            <h3 class="anuncio-titulo">
+              <ion-icon name="megaphone-outline"></ion-icon> 
+              {{ aviso.titulo }}
+            </h3>
+            <p class="anuncio-desc">{{ aviso.descripcion }}</p>
+            
+            <div class="anuncio-footer" *ngIf="aviso.fecha_evento && aviso.fecha_evento !== 'Sin fecha' && aviso.fecha_evento !== ''">
+              <strong>Fecha del Evento:</strong> {{ aviso.fecha_evento }}
+            </div>
+            
+          </div>
+        </ion-item>
+
+        <!-- 🌟 BOTÓN OCULTO QUE APARECE AL DESLIZAR HACIA LA IZQUIERDA -->
+        <ion-item-options side="end">
+          <ion-item-option color="danger" (click)="ocultarAviso(aviso.id, slidingItem)" style="border-radius: 12px; margin: 10px 0;">
+            <ion-icon slot="icon-only" name="trash-outline" style="font-size: 1.8rem;"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+
+      </ion-item-sliding>
       
-      <h3 class="anuncio-titulo">
-        <ion-icon name="megaphone-outline"></ion-icon> 
-        {{ aviso.titulo }}
-      </h3>
-      <p class="anuncio-desc">{{ aviso.descripcion }}</p>
-      
-      <div class="anuncio-footer" *ngIf="aviso.fecha_evento && aviso.fecha_evento !== 'Sin fecha' && aviso.fecha_evento !== ''">
-        <strong>Fecha del Evento:</strong> {{ aviso.fecha_evento }}
-      </div>
-      
-    </div>
-    
+    </ion-list>
   </div>
+    
+ 
 <!-- 🌟 MODAL DE CAMBIO DE ROL (ESTILO GIETAES CENTRADO) -->
   <ion-modal [isOpen]="mostrarMenuRol" (didDismiss)="mostrarMenuRol = false" class="modal-gietaes-centrado">
     <ng-template>

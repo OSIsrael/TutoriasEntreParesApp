@@ -59,9 +59,11 @@
     </div>
 
     
-    <div class="buscador-contenedor">
-      <input type="text" placeholder="Busca asignatura o tutor..." class="input-busqueda" [(ngModel)]="textoBusqueda" (keyup)="filtrar()">
-    </div>
+   <div class="buscador-contenedor">
+  <ion-icon name="search-outline" class="icono-lupa"></ion-icon>
+  <input type="text" placeholder="Busca asignatura o tutor..." class="input-busqueda" [(ngModel)]="textoBusqueda" (keyup)="filtrar()">
+</div>
+<br>
      
     <div style="margin-bottom: 20px;">
       <button (click)="toggleCoordinacion()" style="background: #EAB308; color:#003366; border-style: solid;border-color: #003366; padding: 12px 20px; border-radius: 25px; font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -138,18 +140,28 @@
     </div>
   </div>
 
-  <div class="overlay" *ngIf="mostrarModal">
+ <div class="overlay" *ngIf="mostrarModal">
     <div class="modal-amarillo animate__animated animate__zoomIn">
       <h3>¿ESTÁS SEGURO DE AGENDAR LA TUTORÍA?</h3>
       
-      <p style="color: #003366; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem;">
+      <p style="color: #f4f5f6; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem;">
         {{ reservaActual?.tutorNombre }} <br><br>
-        {{ reservaActual?.dia }}: <br>
-        <span style="font-size: 0.95rem; font-weight: normal; white-space: pre-line;">{{ reservaActual?.horas }}</span>
+        {{ reservaActual?.dia }}:
       </p>
 
+    <!-- 🌟 BARO A SELECTOR INTERACTIVO -->
+<div style="background: white; border-radius: 8px; margin: 15px 0; padding: 2px;">
+  <ion-item lines="none" style="--background: transparent;">
+    <ion-select [(ngModel)]="horaSeleccionada" placeholder="Selecciona una hora..." interface="popover" [interfaceOptions]="{ cssClass: 'popover-horario' }" style="color: #003366; font-weight: bold; width: 100%;">
+      <ion-select-option *ngFor="let hora of listaHorasDisponibles" [value]="hora">
+        {{ hora }}
+      </ion-select-option>
+    </ion-select>
+  </ion-item>
+</div>
+
       <div style="margin-bottom: 25px;">
-        <p style="color: #003366; font-size: 0.9rem; font-weight: bold; background: rgba(255,255,255,0.4); padding: 5px 10px; border-radius: 8px; display: inline-block;">
+        <p style="color: #f3f4f5; font-size: 0.9rem; font-weight: bold; background: rgba(255,255,255,0.4); padding: 5px 10px; border-radius: 8px; display: inline-block;">
           {{ reservaActual?.materia }}
         </p>
       </div>

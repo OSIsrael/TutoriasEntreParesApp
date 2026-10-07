@@ -41,6 +41,7 @@ export class PostulacionPage {
   modalidadGlobal: string = 'PRESENCIAL';
 
   mostrarGuiaPostulacion: boolean = false;
+  
 
   // 🌟 VARIABLES PARA EL PDF DE RENDIMIENTO
   archivoPDF: File | null = null;
@@ -119,13 +120,44 @@ export class PostulacionPage {
   abrirGuia() { this.mostrarGuiaPostulacion = true; }
   cerrarGuia() { this.mostrarGuiaPostulacion = false; }
 
+// 🌟 FUNCIÓN 1: Para los nuevos botones visuales de modalidad
+  seleccionarModalidadGlobal(mod: string) { 
+    this.modalidadGlobal = mod; 
+  }
+
+  // 🌟 FUNCIÓN 2: Bloquea automáticamente los sábados pasada la 1 PM
+  esBloqueDeshabilitado(dia: string, franja: string): boolean {
+    const diaLimpio = dia.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+    if (diaLimpio === 'sabado') {
+      const horaStr = franja.split(':')[0].trim();
+      const horaInicio = parseInt(horaStr, 10);
+      
+      if (horaInicio >= 13) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // 🌟 FUNCIÓN 3: La versión blindada de tu selección
   seleccionarBloque(dia: string, franja: string) {
+    if (this.esBloqueDeshabilitado(dia, franja)) {
+      this.mostrarAviso('Los sábados solo se permiten tutorías hasta las 13:00.', 'advertencia');
+      return;
+    }
+
     const clave = `${dia}-${franja}`;
+    const diaLimpio = dia.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
     if (this.horarioSeleccionado[clave]) {
       delete this.horarioSeleccionado[clave]; 
     } else {
-      if (dia === 'Sábado') this.horarioSeleccionado[clave] = 'VIRTUAL';
-      else this.horarioSeleccionado[clave] = this.modalidadGlobal; 
+      if (diaLimpio === 'sabado') {
+        this.horarioSeleccionado[clave] = 'VIRTUAL';
+      } else {
+        this.horarioSeleccionado[clave] = this.modalidadGlobal; 
+      }
     }
   }
 
@@ -148,7 +180,7 @@ export class PostulacionPage {
     }
   }
 
-  async enviarPostulaciones() {
+async enviarPostulaciones() {
     if (this.materiasSeleccionadas.length === 0 || Object.keys(this.horarioSeleccionado).length === 0) {
       this.mostrarAviso("Debes seleccionar al menos una materia y un bloque de horario.", 'advertencia');
       return;
@@ -168,7 +200,7 @@ export class PostulacionPage {
       const celular = localStorage.getItem('celular') || '';
       const cedula = localStorage.getItem('cedula') || '';
 
-      // 1. Subir el PDF a Storage y obtener el link
+      // 1. Subir el PDF a Storage y obtener el link (esto es lo único que toma unos segundos)
       const urlRendimiento = await this.dbService.subirPDFRendimiento(this.archivoPDF, cedula);
 
       // 2. Construir el documento con el link incluido
@@ -184,21 +216,30 @@ export class PostulacionPage {
         disponibilidad_horaria: this.horarioSeleccionado, 
         estado_aprobacion: 'PENDIENTE',
         fecha_postulacion: new Date().toISOString(),
-        url_documento_rendimiento: urlRendimiento // 🌟 Link asignado
+        url_documento_rendimiento: urlRendimiento 
       };
+
+      // 🌟 TRUCO DE OPTIMIZACIÓN: Disparamos todas las peticiones a Firestore al mismo tiempo
+      const peticionesEnParalelo = [];
 
       for (const nombreMateria of this.materiasSeleccionadas) {
         const documentoPostulacion = { ...datosBasePostulacion, materia_postulada: nombreMateria };
-        await this.dbService.enviarPostulacion(documentoPostulacion); 
+        
+        // Agregamos el guardado de la postulación a la "cola" de ejecución paralela
+        peticionesEnParalelo.push(this.dbService.enviarPostulacion(documentoPostulacion)); 
 
-        await this.dbService.crearNotificacion({
+        // Agregamos la notificación a la misma "cola"
+        peticionesEnParalelo.push(this.dbService.crearNotificacion({
           titulo: 'Nueva Postulación de Tutor',
           mensaje: `${nombre} postuló para dictar ${nombreMateria}.`,
           tipo: 'POSTULACION',
           rol_destino: 'ADMIN', 
           sede_destino: this.sedeUsuario 
-        });
+        }));
       }
+
+      // ⚡ Ejecutamos TODA la lista al mismo tiempo. Lo que tomaba 5 segundos ahora toma milisegundos.
+      await Promise.all(peticionesEnParalelo);
 
       this.mostrarAviso("Postulaciones enviadas con éxito.",'exito');
       this.navCtrl.navigateBack('/tabs/perfil');
@@ -209,7 +250,6 @@ export class PostulacionPage {
       this.estadoVista = 'FORMULARIO';
     }
   }
-
   regresar() { this.navCtrl.navigateBack('/tabs/perfil'); }
 
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {

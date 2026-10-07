@@ -697,24 +697,34 @@ export class DatabaseService {
       return [];
     }
   }
-  // ==========================================
-  // 🌟 SUBIDA DE ARCHIVOS (PDF)
-  // ==========================================
-  async subirPDFRendimiento(archivo: File, cedula: string): Promise<string> {
-    try {
-      // Creamos una ruta única usando la cédula y la fecha para que no se sobreescriban
-      const timestamp = new Date().getTime();
-      const rutaArchivo = `RendimientoAcademico/${cedula}_${timestamp}.pdf`;
-      const referencia = ref(this.storage, rutaArchivo);
+async subirPDFRendimiento(archivo: File, cedula: string): Promise<string> {
+    
+    const CLOUD_NAME = 'ostzs4f1';       // Ej: 'dzh7q8r9w'
+    const UPLOAD_PRESET = 's7tcq2rz'; // Ej: 'ml_default'
 
-      // Subimos el archivo
-      await uploadBytes(referencia, archivo);
+    // Endpoint oficial para subir archivos raw (como PDFs) a tu nube
+    const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`;
+
+    const formData = new FormData();
+    formData.append('file', archivo);
+    formData.append('upload_preset', UPLOAD_PRESET);
+
+    try {
+      // Usamos fetch nativo para enviar el PDF directamente a la nube
+      const respuesta = await fetch(urlCloudinary, {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await respuesta.json();
       
-      // Obtenemos el link público para descargarlo
-      const urlDescarga = await getDownloadURL(referencia);
-      return urlDescarga;
+      if (data.secure_url) {
+        return data.secure_url; // Este es el link público del PDF para el Admin
+      } else {
+        throw new Error('Cloudinary no devolvió la URL de descarga.');
+      }
     } catch (error) {
-      console.error("Error al subir el PDF:", error);
+      console.error("Error al subir el PDF externo:", error);
       throw error;
     }
   }

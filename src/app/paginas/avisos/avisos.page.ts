@@ -1,9 +1,12 @@
-import { Component, inject,ChangeDetectorRef } from '@angular/core';
+import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonContent, IonHeader, IonToolbar, IonIcon, IonSpinner,IonButtons,IonButton,IonModal,IonList,IonItem,IonLabel } from '@ionic/angular/standalone';
+// 🌟 SE AGREGARON LOS COMPONENTES DE SLIDING
+import { IonContent, IonHeader, IonToolbar, IonIcon, IonSpinner, IonButtons, IonButton, IonModal, IonList, IonItem, IonLabel, IonItemSliding, IonItemOptions, IonItemOption } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { megaphoneOutline, notificationsOffOutline, notificationsOutline, closeOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, swapHorizontalOutline, personCircleOutline } from 'ionicons/icons';
-import { Firestore, collection, query, orderBy, getDocs,where } from '@angular/fire/firestore';
+// 🌟 SE AGREGÓ EL ÍCONO DE PAPELERA (trashOutline)
+import { megaphoneOutline, notificationsOffOutline, notificationsOutline, closeOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, swapHorizontalOutline, personCircleOutline, trashOutline } from 'ionicons/icons';
+// 🌟 SE IMPORTÓ deleteDoc y doc
+import { Firestore, collection, query, orderBy, getDocs, where, deleteDoc, doc } from '@angular/fire/firestore';
 import { Router } from '@angular/router'; 
 import { DatabaseService } from '../../services/database';
 
@@ -12,84 +15,83 @@ import { DatabaseService } from '../../services/database';
   templateUrl: './avisos.page.html',
   styleUrls: ['./avisos.page.scss'],
   standalone: true,
-  imports: [IonContent, IonHeader, IonToolbar, IonIcon, IonSpinner, CommonModule,IonButtons,IonButton,IonModal,IonList,IonItem,IonLabel]
+  // 🌟 SE DECLARAN LOS COMPONENTES
+  imports: [IonContent, IonHeader, IonToolbar, IonIcon, IonSpinner, CommonModule, IonButtons, IonButton, IonModal, IonList, IonItem, IonLabel, IonItemSliding, IonItemOptions, IonItemOption]
 })
 export class AvisosPage {
   private firestore = inject(Firestore);
   anuncios: any[] = [];
   cargandoAnuncios: boolean = true;
   private dbService = inject(DatabaseService);
-  private router = inject(Router); // 🌟 Inyectamos Router
+  private router = inject(Router); 
   hayNotificacionesSinLeer: boolean = false;
   private cdr = inject(ChangeDetectorRef);
-  rolUsuario:string='ESTUDIANTE';
+  rolUsuario: string = 'ESTUDIANTE';
 
-  // 🌟 VARIABLES PARA EL MENÚ DE ROLES
   mostrarMenuRol: boolean = false;
   tienePanelTutor: boolean = false;
   tienePanelAdmin: boolean = false;
 
   constructor() {
-    // Registramos los íconos necesarios para esta pantalla
-    addIcons({personCircleOutline,swapHorizontalOutline,notificationsOutline,notificationsOffOutline,megaphoneOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline});
+    // 🌟 SE REGISTRA EL ÍCONO TRASH
+    addIcons({personCircleOutline,swapHorizontalOutline,notificationsOutline,notificationsOffOutline,megaphoneOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline, trashOutline});
   }
-  // Se ejecuta siempre que el usuario entra a esta pestaña
+
   async ionViewWillEnter() {
     const correo = localStorage.getItem('correo') || '';
     const rol = localStorage.getItem('rol') || 'ESTUDIANTE';
     const sede = localStorage.getItem('sede') || 'CUENCA';
 
-    // 🌟 Disparamos la revisión de la campanita
     await this.verificarNotificaciones(correo, rol, sede);
     await this.cargarCartelera();
   }
+
   async cargarCartelera() {
     this.cargandoAnuncios = true;
     try {
       const sedeUsuario = localStorage.getItem('sede') || 'CUENCA';
+      // 🌟 RECUPERAMOS LOS AVISOS QUE EL USUARIO HA ELIMINADO LOCALMENTE
+      const avisosOcultos = JSON.parse(localStorage.getItem('avisos_ocultos') || '[]');
       
       const q = query(collection(this.firestore, 'Anuncios'), orderBy('fecha_publicacion', 'desc'));
       const snapshot = await getDocs(q);
 
       this.anuncios = [];
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0); // Hoy a medianoche exacto
+      const ahora = new Date(); // Fecha y hora actual exacta
 
-      snapshot.forEach(doc => {
-        const data = doc.data();
+      snapshot.forEach(documento => {
+        const data = documento.data();
         const destino = data['sede_destino'];
-        const fechaEvento = data['fecha_evento']; // "2026-06-22" o "2026-06-22T14:30"
+        const fechaEvento = data['fecha_evento']; 
         
-        // 🌟 1. FILTRO DE SEDE (Aplica a Global y a la Sede por igual)
+        // Si el usuario ya lo borró de su pantalla, lo ignoramos
+        if (avisosOcultos.includes(documento.id)) return;
+
         if (destino === 'GLOBAL' || destino === sedeUsuario.toUpperCase()) {
-          
           let mostrarAviso = true;
 
-          // 🌟 2. FILTRO DE FECHA (El analizador blindado)
           if (fechaEvento && fechaEvento !== 'Sin fecha' && fechaEvento !== '') {
-            
-            // Cortamos cualquier hora que venga pegada con la "T" para quedarnos solo con YYYY-MM-DD
             const soloFecha = fechaEvento.split('T')[0]; 
             const partes = soloFecha.split('-'); 
 
             if (partes.length === 3) {
               const anio = parseInt(partes[0], 10);
-              const mes = parseInt(partes[1], 10) - 1; // En JavaScript, enero es el mes 0
+              const mes = parseInt(partes[1], 10) - 1; 
               const dia = parseInt(partes[2], 10);
 
-              // Forzamos la creación de la fecha en horario LOCAL hasta las 23:59:59
-              const fechaDelAviso = new Date(anio, mes, dia, 23, 59, 59, 999);
+              // 🌟 CALCULAMOS EL FINAL DEL DÍA DEL EVENTO
+              const fechaLimiteAviso = new Date(anio, mes, dia, 23, 59, 59, 999);
 
-              // Si la fecha del evento es menor a hoy a las 00:00, expiró
-              if (fechaDelAviso.getTime() < hoy.getTime()) {
+              // 🌟 SI LA FECHA YA PASÓ: LO OCULTA Y LO DESTRUYE DE LA BASE DE DATOS
+              if (fechaLimiteAviso.getTime() < ahora.getTime()) {
                 mostrarAviso = false;
+                deleteDoc(doc(this.firestore, 'Anuncios', documento.id)).catch(e => console.error(e));
               }
             }
           }
 
-          // Lo mostramos solo si pasó las pruebas
           if (mostrarAviso) {
-            this.anuncios.push({ id: doc.id, ...data });
+            this.anuncios.push({ id: documento.id, ...data });
           }
         }
       }); 
@@ -98,6 +100,24 @@ export class AvisosPage {
     }
     this.cargandoAnuncios = false;
   }
+
+  // 🌟 FUNCIÓN PARA ELIMINAR EL AVISO DESLIZANDO
+  ocultarAviso(id: string, slidingItem: any) {
+    // Cerramos la animación del deslizador
+    slidingItem.close();
+    
+    // Guardamos el ID en el almacenamiento del teléfono para que no vuelva a aparecer
+    const avisosOcultos = JSON.parse(localStorage.getItem('avisos_ocultos') || '[]');
+    if (!avisosOcultos.includes(id)) {
+      avisosOcultos.push(id);
+      localStorage.setItem('avisos_ocultos', JSON.stringify(avisosOcultos));
+    }
+    
+    // Lo quitamos visualmente al instante
+    this.anuncios = this.anuncios.filter(a => a.id !== id);
+  }
+
+  /* ... MANTÉN EL RESTO DE TUS FUNCIONES INTACTAS (verificarNotificaciones, irANotificaciones, cambiarPanel, etc.) ... */
   async verificarNotificaciones(correo: string, rol: string, sede: string) {
     // 🌟 DETECTA AUTOMÁTICAMENTE EN QUÉ PANEL ESTÁ
     const esPanelTutor = this.router.url.includes('tabs-tutor');
