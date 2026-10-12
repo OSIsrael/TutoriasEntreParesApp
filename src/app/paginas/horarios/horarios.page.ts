@@ -4,13 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { Firestore, collection, getDocs, query, where, updateDoc, doc } from '@angular/fire/firestore';
 import { 
   IonContent, IonHeader, IonToolbar, 
-  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal,ToastController,AlertController 
+  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal,IonFab,IonFabButton,ToastController,AlertController,IonInput 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   searchOutline, closeOutline, logoWhatsapp, star, mailOutline, 
   peopleOutline, checkmarkOutline, businessOutline, notificationsOutline, 
-  informationCircleOutline, locationOutline, calendarOutline, helpCircleOutline, checkmarkCircleOutline, starOutline, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, closeCircleOutline, sendOutline, personCircleOutline } from 'ionicons/icons';
+  informationCircleOutline, locationOutline, calendarOutline, helpCircleOutline, checkmarkCircleOutline, starOutline, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, closeCircleOutline, sendOutline, personCircleOutline, flashOutline } from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
 import { Router } from '@angular/router'; 
 
@@ -21,7 +21,7 @@ import { Router } from '@angular/router';
   standalone: true,
   imports: [
     IonContent, IonHeader, IonToolbar, CommonModule, FormsModule, 
-    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal
+    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal,IonFab,IonFabButton,IonInput
   ]
 })
 export class HorariosPage implements OnInit {
@@ -84,8 +84,19 @@ export class HorariosPage implements OnInit {
   guardandoTerminos: boolean = false;
   usuarioDocId: string = '';
 
+  mostrarModalInteligente: boolean = false;
+  textoBusquedaInteligente: string = '';
+  materiasSugeridas: string[] = [];
+  
+  materiaInteligente: string = '';
+  diaInteligente: string = '';
+  horaInteligente: string = '';
+
+  diasDisponiblesInteligente: string[] = [];
+  horasDisponiblesInteligente: string[] = [];
+
   constructor() {
-    addIcons({personCircleOutline,helpCircleOutline,swapHorizontalOutline,notificationsOutline,businessOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,searchOutline,calendarOutline,checkmarkCircleOutline,sendOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,closeCircleOutline,locationOutline,starOutline});
+    addIcons({personCircleOutline,helpCircleOutline,swapHorizontalOutline,notificationsOutline,businessOutline,searchOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,calendarOutline,checkmarkCircleOutline,sendOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,flashOutline,closeCircleOutline,locationOutline,starOutline});
   }
 
   ngOnInit() {
@@ -337,16 +348,36 @@ export class HorariosPage implements OnInit {
 
     this.asignaturasFiltradas = [...this.asignaturasMaster];
   }
+// 🌟 1. Agrega esta función auxiliar justo arriba de tu función filtrar()
+  limpiarTexto(texto: string): string {
+    if (!texto) return '';
+    return texto
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  }
 
+  // 🌟 2. Reemplaza tu función filtrar() por esta
   filtrar() {
-    const texto = this.textoBusqueda.toLowerCase().trim();
-    if (texto === '') {
+    const busquedaLimpia = this.limpiarTexto(this.textoBusqueda);
+    
+    if (busquedaLimpia === '') {
       this.asignaturasFiltradas = [...this.asignaturasMaster];
       return;
     }
+    
     this.asignaturasFiltradas = this.asignaturasMaster.filter(bloque => {
-      const coincideMateria = bloque.asignatura.toLowerCase().includes(texto);
-      const coincideTutor = bloque.tutores.some((t: any) => (t.nombre || '').toLowerCase().includes(texto));
+      // Limpiamos la materia
+      const materiaLimpia = this.limpiarTexto(bloque.asignatura);
+      const coincideMateria = materiaLimpia.includes(busquedaLimpia);
+      
+      // Limpiamos el nombre de cada tutor
+      const coincideTutor = bloque.tutores.some((t: any) => {
+        const tutorLimpio = this.limpiarTexto(t.nombre || '');
+        return tutorLimpio.includes(busquedaLimpia);
+      });
+      
       return coincideMateria || coincideTutor;
     });
   }
@@ -691,5 +722,151 @@ async confirmarRenovacionEstudiante() {
     } catch (error) {
       alert("Error al actualizar el ciclo. Revisa tu conexión.");
     }
+  }
+  // ==========================================
+  // 🌟 FUNCIONES DEL AGENDAMIENTO INTELIGENTE
+  // ==========================================
+  abrirAgendamientoInteligente() {
+    this.mostrarModalInteligente = true;
+    this.resetearFiltrosInteligentes();
+  }
+
+  cerrarAgendamientoInteligente() {
+    this.mostrarModalInteligente = false;
+    this.resetearFiltrosInteligentes();
+  }
+
+  resetearFiltrosInteligentes() {
+    this.textoBusquedaInteligente = '';
+    this.materiaInteligente = '';
+    this.diaInteligente = '';
+    this.horaInteligente = '';
+    this.materiasSugeridas = [];
+    this.diasDisponiblesInteligente = [];
+    this.horasDisponiblesInteligente = [];
+  }
+
+// 🌟 FUNCIÓN BLINDADA PARA BUSCAR
+  buscarMateriaInteligente(event?: any) {
+    // 1. Extraemos el texto exacto letra por letra mientras escribes
+    if (event && event.detail) {
+      this.textoBusquedaInteligente = event.detail.value;
+    }
+
+    // 2. Si borró todo, ocultamos la lista y forzamos el refresco
+    if (!this.textoBusquedaInteligente || this.textoBusquedaInteligente.trim() === '') {
+      this.materiasSugeridas = [];
+      if (this.cdr) this.cdr.detectChanges();
+      return;
+    }
+
+    const busqueda = this.limpiarTexto(this.textoBusquedaInteligente);
+    const sugerenciasTemp: string[] = [];
+
+    // 3. Recorremos tu base de asignaturas comprobando una por una
+    if (this.asignaturasMaster && this.asignaturasMaster.length > 0) {
+      this.asignaturasMaster.forEach((bloque: any) => {
+        if (bloque.asignatura) {
+          const materiaLimpia = this.limpiarTexto(bloque.asignatura);
+          
+          // Si coincide y NO está repetida, la agregamos a las sugerencias
+          if (materiaLimpia.includes(busqueda) && !sugerenciasTemp.includes(bloque.asignatura)) {
+            sugerenciasTemp.push(bloque.asignatura);
+          }
+        }
+      });
+    }
+
+    // 4. Asignamos a la variable visual y obligamos a la app a mostrarla
+    this.materiasSugeridas = sugerenciasTemp;
+    if (this.cdr) this.cdr.detectChanges();
+  } 
+
+
+ // 🌟 FUNCIÓN AL HACER CLIC EN LA MATERIA
+  seleccionarMateriaInteligente(materia: string) {
+    this.materiaInteligente = materia;
+    this.textoBusquedaInteligente = materia; // Llena la caja de texto con la elegida
+    this.materiasSugeridas = []; // Oculta la lista
+    
+    this.diaInteligente = '';
+    this.horaInteligente = '';
+
+    const bloque = this.asignaturasMaster.find((a: any) => a.asignatura === materia);
+    const diasSet = new Set<string>();
+    const horasSet = new Set<string>();
+
+    if (bloque && bloque.tutores) {
+      bloque.tutores.forEach((tutor: any) => {
+        if (tutor.horarios) {
+          Object.keys(tutor.horarios).forEach(clave => {
+            const partes = clave.split('-');
+            if (partes.length >= 2) {
+              diasSet.add(partes[0].trim());
+              const hora = partes.slice(1).join('-').trim();
+              horasSet.add(hora);
+            }
+          });
+        }
+      });
+    }
+
+    this.diasDisponiblesInteligente = Array.from(diasSet);
+    this.horasDisponiblesInteligente = Array.from(horasSet);
+    
+    // Obligamos a la pantalla a mostrar los selectores de día y hora
+    if (this.cdr) this.cdr.detectChanges(); 
+  }
+  // 3. ¡El Match Automático y Aleatorio!
+  async ejecutarMatchInteligente() {
+    if (!this.materiaInteligente || !this.diaInteligente || !this.horaInteligente) {
+      this.mostrarAviso('Por favor, completa todos los campos para buscar tu tutor ideal.', 'advertencia');
+      return;
+    }
+
+    const bloque = this.asignaturasMaster.find((a: any) => a.asignatura === this.materiaInteligente);
+    let tutoresValidos: any[] = [];
+
+    // Filtramos a los tutores que den esa materia y tengan libre ese día y hora exacta
+    if (bloque && bloque.tutores) {
+      bloque.tutores.forEach((tutor: any) => {
+        // Reconstruimos la clave para buscar en sus horarios
+        const claveBuscada = `${this.diaInteligente}-${this.horaInteligente}`;
+        if (tutor.horarios && tutor.horarios[claveBuscada]) {
+          // Validamos que no sea el mismo estudiante queriendo darse tutoría a sí mismo
+          const miCorreo = String(localStorage.getItem('correo')).toLowerCase().trim();
+          const correoTutor = String(tutor.correo || tutor.correo_google).toLowerCase().trim();
+          
+          if (correoTutor !== miCorreo) {
+            tutoresValidos.push(tutor);
+          }
+        }
+      });
+    }
+
+    if (tutoresValidos.length === 0) {
+      this.mostrarAviso('No hay tutores disponibles en ese cruce exacto. Intenta con otra hora.', 'error');
+      return;
+    }
+
+    // 🌟 SELECCIÓN ALEATORIA: Elegimos uno al azar de la lista de válidos
+    const indiceAleatorio = Math.floor(Math.random() * tutoresValidos.length);
+    const tutorElegido = tutoresValidos[indiceAleatorio];
+
+    // Llenamos la variable reservaActual para reutilizar tu función de guardar que ya funciona perfecto
+    this.reservaActual = {
+      tutorNombre: tutorElegido.nombre,
+      correoTutor: tutorElegido.correo || tutorElegido.correo_google,
+      celularTutor: tutorElegido.celular,
+      dia: this.diaInteligente,
+      horas: this.horaInteligente,
+      materia: this.materiaInteligente
+    };
+    
+    this.horaSeleccionada = this.horaInteligente; // Aseguramos que pase la validación
+    
+    // Cerramos el modal inteligente y disparamos tu función nativa de guardado
+    this.cerrarAgendamientoInteligente();
+    await this.confirmarReserva(); 
   }
 }

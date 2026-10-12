@@ -48,7 +48,7 @@
         ¿Qué hacer ahora?
       </h4>
       <ol style="margin: 0; padding-left: 25px; color: #555; font-size: 0.85rem; line-height: 1.6;">
-        <li style="margin-bottom: 6px;"><strong>Desliza</strong> la tarjeta de tu tutoría hacia la izquierda --></li>
+        <li style="margin-bottom: 6px;"><strong>Desliza</strong> la tarjeta de tu tutoría hacia la izquierda o derecha</li>
         <li style="margin-bottom: 6px;">Toca el botón verde de <strong>WhatsApp</strong>.</li>
         <li><strong>Envía el mensaje</strong> pre-cargado para coordinar con tu tutor.</li>
       </ol>
@@ -58,6 +58,17 @@
     <ion-list style="background: transparent;" lines="none" *ngIf="!cargando">
       <ion-item-sliding *ngFor="let t of tutorias" style="background: transparent; margin-bottom: 15px;">
         
+        <!-- 🌟 DESLIZAR HACIA LA DERECHA (side="start") -->
+        <ion-item-options side="start">
+          <ion-item-option *ngIf="t.estado !== 'CANCELADA'" color="success" (click)="contactarWhatsApp(t.celularContacto, t.nombreContacto, t.materia)">
+            <ion-icon slot="icon-only" name="logo-whatsapp" style="font-size: 1.8rem;"></ion-icon>
+          </ion-item-option>
+          <ion-item-option *ngIf="t.estado !== 'CANCELADA'" color="danger" (click)="cancelarTutoria(t)">
+            <ion-icon slot="icon-only" name="trash-outline" style="font-size: 1.8rem;"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+
+        <!-- TARJETA VISIBLE -->
         <ion-item style="--padding-start: 0; --inner-padding-end: 0; --background: transparent;">
           <div class="tarjeta-azul" style="width: 100%; margin: 0;">
             <div class="icono-blanco"><ion-icon name="book-outline"></ion-icon></div>
@@ -70,7 +81,7 @@
           </div>
         </ion-item>
 
-        <!-- OPCIONES AL DESLIZAR -->
+        <!-- 🌟 DESLIZAR HACIA LA IZQUIERDA (side="end") -->
         <ion-item-options side="end">
           <ion-item-option *ngIf="t.estado !== 'CANCELADA'" color="success" (click)="contactarWhatsApp(t.celularContacto, t.nombreContacto, t.materia)">
             <ion-icon slot="icon-only" name="logo-whatsapp" style="font-size: 1.8rem;"></ion-icon>

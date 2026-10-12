@@ -1,5 +1,5 @@
 import { Component, inject, ElementRef, ViewChild } from '@angular/core';
-import { Firestore, collection, query, where, getDocs, addDoc, doc, deleteDoc } from '@angular/fire/firestore';
+import { Firestore, collection, query, where, getDocs, addDoc, doc, deleteDoc,updateDoc } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
 import { CommonModule, KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -7,10 +7,10 @@ import { Router } from '@angular/router';
 import {
   IonContent, IonHeader, IonToolbar, IonButton, IonButtons, IonIcon,
   IonInput, IonTextarea, IonSelect, IonSelectOption,
-  IonDatetime, IonDatetimeButton, IonModal,ToastController,AlertController 
+  IonDatetime, IonDatetimeButton, IonModal,ToastController,AlertController,IonLabel,IonList,IonItem,IonSpinner 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { arrowBackOutline, megaphoneOutline, checkmarkCircleOutline, closeCircleOutline, personOutline, timeOutline, bookOutline, personCircleOutline, documentTextOutline, filterOutline, locationOutline, callOutline, pieChartOutline, mailOutline, closeOutline, checkmarkOutline,chevronDownOutline,chevronUpOutline } from 'ionicons/icons';
+import { arrowBackOutline, megaphoneOutline, checkmarkCircleOutline, closeCircleOutline, personOutline, timeOutline, bookOutline, personCircleOutline, documentTextOutline, filterOutline, locationOutline, callOutline, pieChartOutline, mailOutline, closeOutline, checkmarkOutline,chevronDownOutline,chevronUpOutline, warning, calendarOutline, logoWhatsapp, buildOutline, sadOutline } from 'ionicons/icons';
 import Chart from 'chart.js/auto';
 
 @Component({
@@ -22,7 +22,7 @@ import Chart from 'chart.js/auto';
     CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, IonButton,
     KeyValuePipe, IonButtons, IonIcon, IonInput,
     IonTextarea, IonSelect, IonSelectOption,
-    IonDatetime, IonDatetimeButton, IonModal
+    IonDatetime, IonDatetimeButton, IonModal,IonList,IonLabel,IonItem,IonSpinner
   ],
 })
 export class AdminPostulacionesPage {
@@ -38,6 +38,12 @@ export class AdminPostulacionesPage {
   sedeAdmin: string = ''; 
   filtroSedePostulaciones: string = 'GLOBAL';
   filtroSedeGraficas: string = 'GLOBAL'; 
+  
+  tutoriasEnAlerta: any[] = [];
+  mostrarModalReasignacion: boolean = false;
+  cargandoTutores: boolean = false;
+  tutoriaAReasignar: any = null;
+  tutoresSugeridos: any[] = [];
 
   @ViewChild('barCanvas', { static: false }) private barCanvas!: ElementRef;
   @ViewChild('pieCanvas', { static: false }) private pieCanvas!: ElementRef;
@@ -52,7 +58,7 @@ export class AdminPostulacionesPage {
   };
 
   constructor() {
-    addIcons({arrowBackOutline,personCircleOutline,checkmarkCircleOutline,personOutline,timeOutline,bookOutline,closeCircleOutline,megaphoneOutline, documentTextOutline, filterOutline, locationOutline, callOutline, pieChartOutline, mailOutline, closeOutline, checkmarkOutline,chevronDownOutline,chevronUpOutline});
+    addIcons({arrowBackOutline,personCircleOutline,filterOutline,checkmarkCircleOutline,personOutline,locationOutline,callOutline,mailOutline,documentTextOutline,timeOutline,bookOutline,closeOutline,checkmarkOutline,warning,calendarOutline,logoWhatsapp,buildOutline,sadOutline,pieChartOutline,megaphoneOutline,closeCircleOutline,chevronDownOutline,chevronUpOutline});
   }
 
   async ionViewWillEnter() {
@@ -68,8 +74,137 @@ export class AdminPostulacionesPage {
     this.limpiarAnunciosExpirados();
 
     setTimeout(() => { this.cargarEstadisticas(); }, 500);
+    this.cargarTutoriasEnAlerta();
+  }
+// 🌟 3. AÑADE ESTAS FUNCIONES DE GESTIÓN DE ALERTAS
+  async cargarTutoriasEnAlerta() {
+    try {
+      const q = query(
+        collection(this.firestore, 'Reservas'), 
+        where('estado', '==', 'REQUIERE_ADMIN')
+      );
+      const snapshot = await getDocs(q);
+      
+      this.tutoriasEnAlerta = [];
+      
+      snapshot.forEach(documento => {
+        const data = documento.data();
+        // Verificamos la sede de la tutoría o del estudiante
+        const sedeReserva = (data['sede'] || data['sedeEstudiante'] || '').toUpperCase();
+        
+        // 🌟 REGLA 1: Solo se muestran alertas correspondientes a la sede del Admin actual
+        if (sedeReserva === this.sedeAdmin || sedeReserva === '') {
+          this.tutoriasEnAlerta.push({ id: documento.id, ...data });
+        }
+      });
+    } catch (error) {
+      console.error("Error al cargar alertas:", error);
+    }
+  }
+ async asignarNuevoTutorManual(tutor: any) {
+    if (!this.tutoriaAReasignar) return;
+
+    try {
+      // 1. Se actualiza la base de datos con el nuevo tutor
+      await updateDoc(doc(this.firestore, 'Reservas', this.tutoriaAReasignar.id), {
+        estado: 'PENDIENTE',
+        nombreTutor: tutor.nombre.toUpperCase(),
+        correoTutor: tutor.correo.toLowerCase(),
+        celularTutor: tutor.celular || 'No registrado',
+        notas_admin: 'Rescatado y reasignado por Coordinación.'
+      });
+      
+      // 🌟 2. NUEVO: SE ENVÍA LA NOTIFICACIÓN AL TUTOR ELEGIDO
+      try {
+        if (this.dbService.crearNotificacion) {
+          await this.dbService.crearNotificacion({
+            titulo: '🚨 Nueva Tutoría Asignada',
+            mensaje: `Coordinación te ha asignado una tutoría urgente de ${this.tutoriaAReasignar.materia}. Revisa tu panel para confirmarla.`,
+            tipo: 'TUTORIA',
+            correo_destino: tutor.correo.toLowerCase(),
+            sede_destino: tutor.sede || 'CUENCA',
+            rol_destino: 'TUTOR' 
+          });
+        }
+      } catch (notiError) {
+        console.warn('La tutoría se reasignó, pero la notificación falló.', notiError);
+      }
+
+      // 3. Se cierra el modal y se avisa al admin
+      this.mostrarAviso(`Tutoría reasignada exitosamente a ${tutor.nombre}.`, 'exito');
+      this.mostrarModalReasignacion = false;
+      this.cargarTutoriasEnAlerta(); // Refresca la lista SOS
+      
+    } catch (error) {
+      this.mostrarAviso('Error al intentar reasignar la tutoría.', 'error');
+    }
   }
 
+async eliminarTutoriaHuerfana() {
+    const confirmar = await this.confirmarAccion('¿Dar de baja definitivamente?', 'El estudiante se quedará sin tutoría y esta alerta desaparecerá.');
+    if (!confirmar || !this.tutoriaAReasignar) return;
+
+    try {
+      await deleteDoc(doc(this.firestore, 'Reservas', this.tutoriaAReasignar.id));
+      this.mostrarAviso('Solicitud eliminada.', 'info');
+      this.mostrarModalReasignacion = false;
+      this.cargarTutoriasEnAlerta();
+    } catch (error) {
+      this.mostrarAviso('Error al eliminar.', 'error');
+    }
+  }
+
+  contactarEstudianteAlerta(celular: string, nombre: string) {
+    if (!celular) return;
+    let celFormateado = celular.replace(/\D/g, ''); 
+    if (celFormateado.startsWith('0')) celFormateado = '593' + celFormateado.substring(1);
+    const mensaje = encodeURIComponent(`Hola ${nombre}, te escribimos de Coordinación de Tutorías. Hubo un inconveniente con el tutor asignado, pero ya te estamos buscando un reemplazo para tu clase.`);
+    window.open(`https://wa.me/${celFormateado}?text=${mensaje}`, '_blank');
+  }
+  // Modal para que el Admin resuelva el problema manualmente
+  async resolverAlerta(tutoria: any) {
+    const alert = await this.alertController.create({
+      header: 'Gestión Manual de Tutoría',
+      message: `El sistema no encontró reemplazo para ${tutoria.materia}.Ingresa los datos del tutor que conseguiste manualmente, o da de baja la solicitud si no hubo solución.`,
+      cssClass: 'alerta-premium-gietaes',
+      inputs: [
+        { name: 'nombreNuevo', type: 'text', placeholder: 'Nombre del nuevo tutor' },
+        { name: 'correoNuevo', type: 'email', placeholder: 'Correo del nuevo tutor' }
+      ],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel', cssClass: 'btn-alerta-cancelar' },
+        { 
+          text: 'Dar de Baja (Eliminar)', 
+          cssClass: 'btn-alerta-peligro',
+          handler: async () => {
+            await deleteDoc(doc(this.firestore, 'Reservas', tutoria.id));
+            this.mostrarAviso('La solicitud huérfana ha sido eliminada.', 'info');
+            this.cargarTutoriasEnAlerta();
+          }
+        },
+        { 
+          text: 'Reasignar Tutor', 
+          cssClass: 'btn-alerta-confirmar',
+          handler: async (data) => {
+            if (!data.nombreNuevo || !data.correoNuevo) {
+              this.mostrarAviso('Debes ingresar nombre y correo para reasignar.', 'advertencia');
+              return false;
+            }
+            await updateDoc(doc(this.firestore, 'Reservas', tutoria.id), {
+              estado: 'PENDIENTE',
+              nombreTutor: data.nombreNuevo.toUpperCase(),
+              correoTutor: data.correoNuevo.toLowerCase(),
+              notas_admin: 'Reasignado manualmente por Coordinación.'
+            });
+            this.mostrarAviso('¡Tutoría rescatada y reasignada con éxito!', 'exito');
+            this.cargarTutoriasEnAlerta();
+            return true;
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
   // ==========================================
   // 🌟 CARGA Y AGRUPACIÓN DE POSTULACIONES
   // ==========================================
@@ -126,6 +261,55 @@ export class AdminPostulacionesPage {
     } catch (error) {
       console.error('Error cargando postulaciones:', error);
     }
+  }
+  async abrirModalReasignacion(tutoria: any) {
+    this.tutoriaAReasignar = tutoria;
+    this.mostrarModalReasignacion = true;
+    this.cargandoTutores = true;
+    this.tutoresSugeridos = [];
+
+    try {
+      // Obtenemos todos los tutores activos
+      const q = query(collection(this.firestore, 'Tutores'), where('estado', '==', 'ACTIVO'));
+      const snap = await getDocs(q);
+
+      // Determinamos la modalidad basada en el horario (ej: "07:00 - 09:00 (P)")
+      const horario = tutoria.horas || tutoria.hora_elegida || '';
+      const esPresencial = horario.includes('(P)') || horario.includes('(A)');
+
+      let candidatos: any[] = [];
+
+      snap.forEach(doc => {
+        const tutor = doc.data();
+        // Verificar que el tutor dicte la materia requerida
+        const dictaMateria = tutor['materias'] && tutor['materias'].includes(tutoria.materia);
+
+        if (dictaMateria) {
+          // 🌟 REGLA 3: Si es presencial, debe ser de la misma sede. Si es virtual, cualquiera.
+          let cumpleSede = true;
+          if (esPresencial) {
+            const sedeTutor = (tutor['sede'] || '').toUpperCase();
+            const sedeTutoria = (tutoria.sede || tutoria.sedeEstudiante || this.sedeAdmin).toUpperCase();
+            cumpleSede = sedeTutor === sedeTutoria;
+          }
+
+          if (cumpleSede) {
+            candidatos.push({
+              id: doc.id,
+              nombre: tutor['nombre'],
+              correo: tutor['correo'] || tutor['correo_google'],
+              celular: tutor['celular'],
+              sede: tutor['sede']
+            });
+          }
+        }
+      });
+
+      this.tutoresSugeridos = candidatos;
+    } catch (error) {
+      console.error('Error buscando tutores de reemplazo:', error);
+    }
+    this.cargandoTutores = false;
   }
 
   // ==========================================

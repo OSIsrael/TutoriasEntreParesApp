@@ -11,7 +11,7 @@ import { addIcons } from 'ionicons';
 import { 
   notificationsOutline, bookOutline, logoWhatsapp, 
   personOutline, timeOutline, calendarOutline, trashOutline,
-  checkmarkCircleOutline, closeCircleOutline, closeOutline, helpCircleOutline, informationCircleOutline, documentTextOutline, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, chevronDownOutline, chevronBackOutline,informationCircle,closeCircle, personCircleOutline } from 'ionicons/icons';
+  checkmarkCircleOutline, closeCircleOutline, closeOutline, helpCircleOutline, informationCircleOutline, documentTextOutline, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, chevronDownOutline, chevronBackOutline,informationCircle,closeCircle, personCircleOutline,checkmarkCircle } from 'ionicons/icons';
 import { Firestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc,getDoc } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -76,7 +76,7 @@ export class TutorTutoriasPage implements OnInit {
   tutoriaSeleccionada: any = null;
 
   constructor() {
-    addIcons({personCircleOutline,swapHorizontalOutline,helpCircleOutline,notificationsOutline,calendarOutline,bookOutline,personOutline,timeOutline,chevronDownOutline,chevronBackOutline,logoWhatsapp,trashOutline,informationCircleOutline,checkmarkCircleOutline,documentTextOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,closeCircleOutline,informationCircle,closeCircle});
+    addIcons({personCircleOutline,swapHorizontalOutline,helpCircleOutline,notificationsOutline,calendarOutline,bookOutline,informationCircleOutline,personOutline,timeOutline,chevronDownOutline,logoWhatsapp,trashOutline,checkmarkCircleOutline,documentTextOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,chevronBackOutline,closeCircleOutline,informationCircle,checkmarkCircle,closeCircle});
   }
 
   ngOnInit() { }
@@ -192,11 +192,18 @@ async ionViewWillEnter() {
     this.menuEstadoAbierto = true;
   }
 
-  seleccionarNuevoEstado(nuevoEstado: string, nuevoColor: string) {
-    if (this.tutoriaSeleccionada) {
-      this.actualizarEstadoFirebase(this.tutoriaSeleccionada, nuevoEstado, nuevoColor);
-    }
+seleccionarNuevoEstado(nuevoEstado: string, nuevoColor: string) {
     this.menuEstadoAbierto = false; 
+    
+    if (this.tutoriaSeleccionada) {
+      if (nuevoEstado === 'CANCELADA') {
+        // 🌟 SI ELIGE CANCELAR, ACTIVAMOS LA REASIGNACIÓN INTELIGENTE
+        this.cancelarTutoriaInteligente(this.tutoriaSeleccionada);
+      } else {
+        // Flujo normal para Confirmada o Pendiente
+        this.actualizarEstadoFirebase(this.tutoriaSeleccionada, nuevoEstado, nuevoColor);
+      }
+    }
   }
 
   async actualizarEstadoFirebase(tutoria: any, nuevoEstado: string, nuevoColor: string) {
@@ -317,18 +324,98 @@ async ionViewWillEnter() {
   // ==========================================
   // ==========================================
 
-  async eliminarTutoria(tutoria: any) {
-    const confirmar = await this.confirmarAccion(`¿Estás seguro de eliminar permanentemente el registro de ${tutoria.nombreEstudiante}?`,'');
+ async eliminarTutoria(tutoria: any) {
+    // 🌟 EL BOTÓN DE BASURA AHORA TAMBIÉN PROTEGE AL ESTUDIANTE REASIGNÁNDOLO
+    this.cancelarTutoriaInteligente(tutoria);
+  }
+  // ==========================================
+  // 🌟 LÓGICA DE REASIGNACIÓN INTELIGENTE
+  // ==========================================
+  async cancelarTutoriaInteligente(tutoria: any) {
+    const confirmar = await this.confirmarAccion(
+      '¿Estás seguro de CANCELAR esta clase?',
+      'El sistema buscará automáticamente otro tutor disponible en este mismo horario para no afectar al estudiante. La tutoría desaparecerá de tu panel.'
+    );
     if (!confirmar) return;
 
+    this.procesarCancelacion(tutoria);
+  }
+
+  async procesarCancelacion(tutoria: any) {
     try {
       const tutoriaRef = doc(this.firestore, 'Reservas', tutoria.id);
-      await deleteDoc(tutoriaRef);
-      this.mostrarAviso('Tutoría eliminada de tu panel.','exito');
-      await this.cargarTutoriasPorImpartir();
+      
+      // 1. Verificamos el documento original para ver si ya fue reasignado antes
+      const snap = await getDoc(tutoriaRef);
+      const data = snap.data();
+      const yaReasignada = data ? data['reasignada_automaticamente'] : false;
+
+      if (yaReasignada) {
+        // 🌟 ESCENARIO A: Segunda cancelación (El nuevo tutor también canceló)
+        await updateDoc(tutoriaRef, {
+          estado: 'REQUIERE_ADMIN',
+          notas_admin: 'Cancelada por el segundo tutor asignado. Requiere asignación manual.'
+        });
+        this.mostrarAviso('Esta tutoría ya había sido reasignada. Se ha enviado una alerta a Coordinación.', 'info');
+      } else {
+        // 🌟 ESCENARIO B: Primera cancelación, buscamos reemplazo automático
+        const nuevoTutor = await this.buscarTutorReemplazo(tutoria.materia, tutoria.dia, tutoria.hora, this.correoUsuario);
+
+        if (nuevoTutor) {
+          // Actualizamos el documento con los datos del nuevo héroe
+          await updateDoc(tutoriaRef, {
+            correoTutor: nuevoTutor.correo || nuevoTutor.correo_google,
+            nombreTutor: nuevoTutor.nombre,
+            celularTutor: nuevoTutor.celular || 'No registrado',
+            reasignada_automaticamente: true, // Marca de seguridad
+            estado: 'PENDIENTE'
+          });
+          this.mostrarAviso(`Clase reasignada automáticamente a ${nuevoTutor.nombre}.`, 'exito');
+        } else {
+          // No hay nadie más con esa materia y horario disponible
+          await updateDoc(tutoriaRef, {
+            estado: 'REQUIERE_ADMIN',
+            reasignada_automaticamente: true,
+            notas_admin: 'No se encontró un tutor de reemplazo automático para este cruce de horarios.'
+          });
+          this.mostrarAviso('No hay reemplazo disponible. Se ha enviado al Administrador para gestión manual.', 'advertencia');
+        }
+      }
+
+      // 2. Desaparecemos la tutoría de la pantalla del tutor actual al instante
+      this.tutoriasPorImpartir = this.tutoriasPorImpartir.filter(t => t.id !== tutoria.id);
+
     } catch (error) {
-      this.mostrarAviso('Error al eliminar la tutoría.','error');
+      console.error('Error procesando cancelación:', error);
+      this.mostrarAviso('Error de conexión al procesar la cancelación.', 'error');
     }
+  }
+
+  async buscarTutorReemplazo(materia: string, dia: string, hora: string, correoActual: string) {
+    const q = query(collection(this.firestore, 'Tutores'), where('estado', '==', 'ACTIVO'));
+    const snapshot = await getDocs(q);
+    let tutorReemplazo = null;
+
+    // Buscamos manualmente para poder detenernos al primer Match perfecto
+    for (let i = 0; i < snapshot.docs.length; i++) {
+      const tutor = snapshot.docs[i].data() as any;
+      const correoTutor = (tutor.correo || tutor.correo_google || '').toLowerCase();
+
+      // Descartamos al tutor actual que está cancelando
+      if (correoTutor !== correoActual.toLowerCase()) {
+        
+        // Validamos la materia y el horario exacto
+        const enseñaMateria = tutor.materias && tutor.materias.includes(materia);
+        const claveHorario = `${dia}-${hora}`;
+        const tieneHorario = tutor.horarios && tutor.horarios[claveHorario];
+
+        if (enseñaMateria && tieneHorario) {
+          tutorReemplazo = tutor; 
+          break; // Detenemos la búsqueda al encontrar un reemplazo
+        }
+      }
+    }
+    return tutorReemplazo;
   }
 
   abrirGuia() {
@@ -629,6 +716,13 @@ async confirmarRenovacionTutor() {
         this.horarioSeleccionado[clave] = this.modalidadGlobal; 
       }
     }
+  }
+  // 🌟 FUNCIÓN PARA EL NUEVO BOTÓN (Deslizar a la derecha)
+  verDetallesTutor(tutoria: any) {
+    // Por ahora solo muestra un mensaje, ¡dime qué quieres que haga realmente!
+    this.mostrarAviso(`Deslizaste la tutoría de: ${tutoria.nombreEstudiante}`, 'info');
+    
+    // Aquí podemos abrir un modal con más info, copiar el enlace de zoom, etc.
   }
  
 }

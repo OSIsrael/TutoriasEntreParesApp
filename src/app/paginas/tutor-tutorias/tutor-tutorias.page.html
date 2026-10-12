@@ -43,48 +43,53 @@
       <h4><ion-icon name="book-outline"></ion-icon> Gestión de Estudiantes</h4>
       <ol>
         <li><strong>Toca la bolita de color</strong> para cambiar el estado de la cita.</li>
-        <li><strong>Desliza a la izquierda</strong> para enviar un WhatsApp.</li>
+        <li><strong>Desliza a la izquierda o derecha</strong> para enviar un WhatsApp.</li>
         <li>Si la cita se canceló y no sirve, <strong>desliza y usa el basurero</strong>.</li>
       </ol>
     </div>
 
     <ion-list style="background: transparent;" lines="none" *ngIf="!cargando">
-      <ion-item-sliding *ngFor="let t of tutoriasPorImpartir" style="background: transparent; margin-bottom: 15px;">
+     <ion-item-sliding *ngFor="let t of tutoriasPorImpartir" style="background: transparent; margin-bottom: 15px;">
         
+        <!-- 🌟 DESLIZAR HACIA LA DERECHA (side="start") -->
+        <ion-item-options side="start">
+          <ion-item-option color="success" (click)="contactarEstudiante(t.celularEstudiante, t.nombreEstudiante, t.materia)">
+            <ion-icon slot="icon-only" name="logo-whatsapp" style="font-size: 1.8rem;"></ion-icon>
+          </ion-item-option>
+          <ion-item-option color="danger" (click)="eliminarTutoria(t)">
+            <ion-icon slot="icon-only" name="trash-outline" style="font-size: 1.8rem;"></ion-icon>
+          </ion-item-option>
+        </ion-item-options>
+
+        <!-- TARJETA VISIBLE -->
         <ion-item style="--padding-start: 0; --inner-padding-end: 0; --background: transparent;">
           <div class="tarjeta-azul" style="width: 100%; margin: 0; border-left: 5px solid #EAB308;">
             <div class="icono-blanco" style="color: #003366;"><ion-icon name="person-outline"></ion-icon></div>
             <div class="info-texto">
               <h3 style="font-size: 1.1rem; margin-bottom: 5px;">{{ t.materia }}</h3>
-              
               <p style="color: #003366; font-weight: 900; font-size: 0.9rem; margin-bottom: 5px;">
                 Alumno: {{ t.nombreEstudiante }}
               </p>
-              
               <p style="margin-bottom: 2px;"><ion-icon name="calendar-outline"></ion-icon> {{ t.dia }}</p>
               <p><ion-icon name="time-outline"></ion-icon> {{ t.hora }}</p>
-              
               <p *ngIf="t.codigo" style="font-size: 0.75rem; color: #666; margin-top: 8px; font-weight: bold; background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px; display: inline-block;">
                 CÓDIGO DE CLASE: {{ t.codigo }}
               </p>
             </div>
             
-            <!-- 🌟 CONTENEDOR DERECHO: ESTADO (PÍLDORA) Y DESLIZAMIENTO -->
-<div class="acciones-derecha">
-  
-  <div class="boton-estado-pill" (click)="abrirMenuEstado($event, t)">
-    <div class="punto-color" [style.background]="t.color"></div>
-    <ion-icon name="chevron-down-outline"></ion-icon>
-  </div>
-
-  <div class="indicador-deslizamiento">
-    <ion-icon name="chevron-back-outline"></ion-icon>
-  </div>
-  
-</div>
+            <div class="acciones-derecha">
+              <div class="boton-estado-pill" (click)="abrirMenuEstado($event, t)">
+                <div class="punto-color" [style.background]="t.color"></div>
+                <ion-icon name="chevron-down-outline"></ion-icon>
+              </div>
+              <div class="indicador-deslizamiento">
+                <ion-icon name="swap-horizontal-outline"></ion-icon>
+              </div>
+            </div>
           </div>
         </ion-item>
 
+        <!-- 🌟 DESLIZAR HACIA LA IZQUIERDA (side="end") -->
         <ion-item-options side="end">
           <ion-item-option color="success" (click)="contactarEstudiante(t.celularEstudiante, t.nombreEstudiante, t.materia)">
             <ion-icon slot="icon-only" name="logo-whatsapp" style="font-size: 1.8rem;"></ion-icon>

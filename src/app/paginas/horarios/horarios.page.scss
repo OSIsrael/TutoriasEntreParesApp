@@ -28,7 +28,7 @@
 
   /* Efecto foco sutil (opcional) */
   &:focus-within {
-    border-color: #d97706; /* Color dorado de la línea gráfica */
+    border-color: #EAB308; /* Color dorado de la línea gráfica */
     box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
   }
 }
@@ -493,4 +493,71 @@ th { background: #f1f5f9; color: #003366; font-weight: 800; font-size: 0.7rem; }
 ::ng-deep .popover-horario ion-item.item-radio-checked {
   --color: #d97706;
   font-weight: bold;
+}
+/* --- MODAL AZUL INTELIGENTE --- */
+.modal-azul {
+  background: #003366;
+  padding: 25px;
+  border-radius: 15px;
+  text-align: center;
+  width: 90%;
+  max-width: 350px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  position: relative;
+  border: 2px solid #EAB308;
+}
+
+.btn-blanco {
+  background: white;
+  color: #003366;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 900;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.btn-rojo-texto {
+  background: transparent;
+  color: #fca5a5;
+  box-shadow: none;
+  border: 1px solid rgba(252, 165, 165, 0.3);
+}
+
+/* --- LISTA PREDICTIVA (AUTOCOMPLETAR) --- */
+.lista-sugerencias {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  margin-top: 5px;
+  max-height: 180px;
+  overflow-y: auto;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+  z-index: 999999; /* Asegura que pase por encima de los otros botones */
+  border: 1px solid #cbd5e1;
+}
+
+.item-sugerencia {
+  padding: 12px 15px;
+  font-size: 0.85rem;
+  color: #003366;
+  font-weight: bold;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.item-sugerencia:active {
+  background: #f8fafc;
+  color: #d97706;
 }

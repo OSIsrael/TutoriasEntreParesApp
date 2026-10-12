@@ -400,5 +400,84 @@
       </div>
     </ng-template>
   </ion-modal>
+  <!-- ========================================== -->
+  <!-- 🌟 BOTÓN FLOTANTE PARA AGENDAMIENTO RÁPIDO -->
+  <!-- ========================================== -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" style="margin-bottom: 96px; margin-right: 10px;">
+    <ion-fab-button (click)="abrirAgendamientoInteligente()" style="--background: #EAB308; --color: #003366;">
+      <ion-icon name="flash-outline" style="font-size: 1.6rem;"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+  <!-- ========================================== -->
+  <!-- 🌟 MODAL DE MATCH INTELIGENTE -->
+  <!-- ========================================== -->
+  <div class="overlay" *ngIf="mostrarModalInteligente">
+    <div class="modal-azul animate__animated animate__zoomIn">
+      <h3 style="margin-bottom: 5px; color: white;">
+        <ion-icon name="flash-outline" style="color: #EAB308;"></ion-icon> MATCH AUTOMÁTICO
+      </h3>
+      <p style="color: #cbd5e1; font-size: 0.85rem; margin-top: 0; margin-bottom: 20px;">
+        Selecciona tu materia y horario. Nosotros te asignamos al tutor ideal al instante.
+      </p>
+
+   <!-- 1. Buscador Predictivo de Materia -->
+ <!-- 1. Buscador Predictivo de Materia -->
+<div style="text-align: left; margin-bottom: 15px; position: relative; z-index: 99999;">
+  <label style="color: white; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px; display: block;">1. MATERIA A REFORZAR</label>
+  <div style="background: white; border-radius: 8px; padding: 2px;">
+    
+    <!-- 🌟 CAMBIO CLAVE: Capturamos el evento nativo del teclado -->
+    <ion-input 
+      [value]="textoBusquedaInteligente" 
+      (ionInput)="buscarMateriaInteligente($event)" 
+      placeholder="Escribe la materia..." 
+      style="color: #003366; font-weight: bold; --padding-start: 10px;">
+    </ion-input>
+    
+  </div>
+  
+  <!-- Lista desplegable de sugerencias -->
+  <div *ngIf="materiasSugeridas.length > 0" class="lista-sugerencias">
+    <div class="item-sugerencia" *ngFor="let sugerencia of materiasSugeridas" (click)="seleccionarMateriaInteligente(sugerencia)">
+      {{ sugerencia }}
+    </div>
+  </div>
+</div>
+
+      <!-- 2. Selectores de Día y Hora (Solo se muestran si ya hay materia elegida) -->
+      <div *ngIf="materiaInteligente" style="text-align: left; margin-bottom: 15px;" class="animate__animated animate__fadeIn">
+        
+        <label style="color: white; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px; display: block;">2. DÍA DISPONIBLE</label>
+        <div style="background: white; border-radius: 8px; margin-bottom: 15px; padding: 2px;">
+          <ion-item lines="none" style="--background: transparent;">
+            <ion-select [(ngModel)]="diaInteligente" placeholder="Selecciona un día" interface="popover" style="color: #003366; font-weight: bold; width: 100%;">
+              <ion-select-option *ngFor="let dia of diasDisponiblesInteligente" [value]="dia">{{ dia }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+
+        <label style="color: white; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px; display: block;">3. HORA DISPONIBLE</label>
+        <div style="background: white; border-radius: 8px; padding: 2px;">
+          <ion-item lines="none" style="--background: transparent;">
+            <ion-select [(ngModel)]="horaInteligente" placeholder="Selecciona una hora" interface="popover" style="color: #003366; font-weight: bold; width: 100%;">
+              <ion-select-option *ngFor="let hora of horasDisponiblesInteligente" [value]="hora">{{ hora }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="botones-modal" style="margin-top: 25px;">
+        <button class="btn-blanco" (click)="ejecutarMatchInteligente()" [disabled]="!materiaInteligente || !diaInteligente || !horaInteligente" [style.opacity]="(!materiaInteligente || !diaInteligente || !horaInteligente) ? '0.5' : '1'">
+          <ion-icon name="checkmark-outline"></ion-icon> Asignar Tutor
+        </button>
+        <button class="btn-blanco btn-rojo-texto" (click)="cerrarAgendamientoInteligente()">
+          <ion-icon name="close-outline"></ion-icon> Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
  
 </ion-content>
