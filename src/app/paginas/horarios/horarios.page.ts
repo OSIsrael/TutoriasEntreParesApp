@@ -95,6 +95,12 @@ export class HorariosPage implements OnInit {
   diasDisponiblesInteligente: string[] = [];
   horasDisponiblesInteligente: string[] = [];
 
+  tipoDerivacion: string = '';
+  docenteBuscado: string = '';
+  docentesFiltrados: string[] = [];
+  // Cambia temporalmente tu variable vacía por esta:
+  docentesExcel: string[] = []; 
+
   constructor() {
     addIcons({personCircleOutline,helpCircleOutline,swapHorizontalOutline,notificationsOutline,businessOutline,searchOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,calendarOutline,checkmarkCircleOutline,sendOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,flashOutline,closeCircleOutline,locationOutline,starOutline});
   }
@@ -234,6 +240,8 @@ export class HorariosPage implements OnInit {
     }
     
     await this.verificarEvaluacionesPendientes();
+    this.docentesExcel = await this.dbService.obtenerDocentesDesdeExcel();
+    
     
   }
   
@@ -467,6 +475,10 @@ abrirConfirmacion(tutor: any, dia: string, horas: string, materia: string) {
     } catch (error) {
       console.error("Error al agendar:", error);
       this.mostrarAviso('Hubo un problema al enviar tu solicitud.','error');
+    }
+    if (!this.tipoDerivacion || !this.docenteBuscado) {
+      this.mostrarAviso('Por favor, indica el motivo y el docente para poder agendar.', 'advertencia');
+      return;
     }
   }
   formatearNumeroWA(numero: string): string {
@@ -744,6 +756,9 @@ async confirmarRenovacionEstudiante() {
     this.materiasSugeridas = [];
     this.diasDisponiblesInteligente = [];
     this.horasDisponiblesInteligente = [];
+    this.tipoDerivacion = '';
+    this.docenteBuscado = '';
+    this.docentesFiltrados = [];
   }
 
 // 🌟 FUNCIÓN BLINDADA PARA BUSCAR
@@ -860,7 +875,9 @@ async confirmarRenovacionEstudiante() {
       celularTutor: tutorElegido.celular,
       dia: this.diaInteligente,
       horas: this.horaInteligente,
-      materia: this.materiaInteligente
+      materia: this.materiaInteligente,
+      tipo_derivacion: this.tipoDerivacion,
+      docente: this.docenteBuscado
     };
     
     this.horaSeleccionada = this.horaInteligente; // Aseguramos que pase la validación
@@ -868,5 +885,25 @@ async confirmarRenovacionEstudiante() {
     // Cerramos el modal inteligente y disparamos tu función nativa de guardado
     this.cerrarAgendamientoInteligente();
     await this.confirmarReserva(); 
+  }
+ // ==========================================
+  // 🌟 GESTIÓN DE DOCENTES (BÚSQUEDA NATIVA TIPO ASISTENCIA)
+  // ==========================================
+  filtrarDocentes() {
+    const txt = (this.docenteBuscado || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    
+    if (!txt) { 
+      this.docentesFiltrados = []; 
+      return; 
+    }
+
+    this.docentesFiltrados = this.docentesExcel.filter((d: string) => 
+      d.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(txt)
+    ).slice(0, 5); // Máximo 5 sugerencias
+  }
+
+  seleccionarDocente(docente: string) {
+    this.docenteBuscado = docente;
+    this.docentesFiltrados = []; // Cierra la lista al seleccionar
   }
 }

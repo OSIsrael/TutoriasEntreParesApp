@@ -88,7 +88,7 @@ export class MisTutoriasPage implements OnInit {
     }
   }
 
-  async cargarMisTutorias() {
+ async cargarMisTutorias() {
     this.cargando = true;
     this.tutorias = []; 
 
@@ -110,20 +110,34 @@ export class MisTutoriasPage implements OnInit {
         if (res['fecha_solicitud'] && res['dia_elegido'] !== 'Por definir') {
           const fechaExactaDeLaClase = this.calcularFechaExacta(res['fecha_solicitud'], res['dia_elegido'] || res['dia'], res['hora_elegida'] || res['hora']);
           
-          // Le damos vigencia hasta el último segundo de ese día (23:59:59)
           fechaExactaDeLaClase.setHours(23, 59, 59, 999);
 
-          // Si el día de la tutoría ya pasó, la destruimos de Firebase
           if (fechaExactaDeLaClase.getTime() < hoy.getTime()) {
             await deleteDoc(doc(this.firestore, 'Reservas', documento.id));
             console.log(`Tutoría expirada eliminada automáticamente: ${res['materia']}`);
-            continue; // Saltamos a la siguiente sin mostrarla en pantalla
+            continue; 
           }
         }
 
+        // 🌟 REGLA 1: Si se canceló y no hay reemplazo, NO la mostramos en pantalla
+        if (res['estado'] === 'CANCELADA') {
+          continue; 
+        }
+
         let colorEstado = '#fde047'; 
-        if (res['estado'] === 'CONFIRMADA' || res['estado'] === 'ACEPTADA') colorEstado = '#34d399'; 
-        if (res['estado'] === 'CANCELADA') colorEstado = '#ef4444'; 
+        let nombreTutorMostrar = res['nombreTutor'];
+        let celularTutorMostrar = res['celularTutor'];
+
+        if (res['estado'] === 'CONFIRMADA' || res['estado'] === 'ACEPTADA') {
+          colorEstado = '#34d399'; 
+        }
+
+        // 🌟 REGLA 2: Si está en espera de Coordinación, protegemos los datos
+        if (res['estado'] === 'REQUIERE_ADMIN') {
+          colorEstado = '#f97316'; // Naranja
+          nombreTutorMostrar = 'Buscando tutor...';
+          celularTutorMostrar = null; // Quitamos el celular para que no abra WhatsApp
+        }
 
         const tutoriaFormateada = {
           id: documento.id,
@@ -133,8 +147,8 @@ export class MisTutoriasPage implements OnInit {
           hora: res['hora_elegida'] || res['hora'] || 'Por definir',
           color: colorEstado,
           estado: res['estado'],
-          celularContacto: res['celularTutor'], 
-          nombreContacto: res['nombreTutor'],
+          celularContacto: celularTutorMostrar, 
+          nombreContacto: nombreTutorMostrar,
           correoDestino: res['correoTutor'] 
         };
 
@@ -150,7 +164,6 @@ export class MisTutoriasPage implements OnInit {
 
     this.cargando = false;
   }
-
   // 🌟 FUNCIÓN NUEVA: Calcula la fecha de calendario basándose en el día que se solicitó
   calcularFechaExacta(fechaSolISO: string, diaSemana: string, horaRango: string): Date {
     const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];

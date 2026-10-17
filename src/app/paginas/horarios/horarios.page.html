@@ -1,56 +1,151 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="header-blanco">
-    
     <!-- 🌟 LOGO A LA IZQUIERDA -->
-    <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
+    <img
+      src="assets/logo-tutorias.png"
+      alt="Tutorías entre Pares"
+      class="logo-cabecera"
+      slot="start"
+      onerror="this.src = 'assets/logo-gietaes.png'"
+    />
 
     <!-- 🌟 TODOS LOS ELEMENTOS DE LA DERECHA AGRUPADOS -->
-    <ion-buttons slot="end" style="display: flex; align-items: center; gap: 4px; margin-right: 10px;">
-      
-     
+    <ion-buttons
+      slot="end"
+      style="display: flex; align-items: center; gap: 4px; margin-right: 10px"
+    >
       <!-- ETIQUETA FIJA: ESTUDIANTE -->
-      <div style="background: #f8fafc; border: 1.5px solid #003366; border-radius: 20px; padding: 2px 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: max-content; margin-right: 4px;">
-        <ion-icon name="person-circle-outline" style="color: #003366; font-size: 1.1rem; margin-right: 4px;"></ion-icon>
-        <span style="color: #003366; font-size: 0.65rem; font-weight: 900; white-space: nowrap;">
+      <div
+        style="
+          background: #f8fafc;
+          border: 1.5px solid #003366;
+          border-radius: 20px;
+          padding: 2px 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          min-width: max-content;
+          margin-right: 4px;
+        "
+      >
+        <ion-icon
+          name="person-circle-outline"
+          style="color: #003366; font-size: 1.1rem; margin-right: 4px"
+        ></ion-icon>
+        <span
+          style="
+            color: #003366;
+            font-size: 0.65rem;
+            font-weight: 900;
+            white-space: nowrap;
+          "
+        >
           ROL: ESTUDIANTE
         </span>
       </div>
 
       <!-- BOTÓN GUÍA -->
-      <ion-button (click)="abrirGuia()" style="--background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px;">
-        <ion-icon name="help-circle-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
+      <ion-button
+        (click)="abrirGuia()"
+        style="
+          --background: rgba(0, 51, 102, 0.05);
+          --border-radius: 50%;
+          width: 45px;
+          height: 45px;
+        "
+      >
+        <ion-icon
+          name="help-circle-outline"
+          style="color: #003366; font-size: 1.6rem"
+        ></ion-icon>
       </ion-button>
-      
+
       <!-- BOTÓN CAMBIAR PANEL -->
-      <ion-button (click)="cambiarPanel()" style="--background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px;">
-        <ion-icon name="swap-horizontal-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
+      <ion-button
+        (click)="cambiarPanel()"
+        style="
+          --background: rgba(0, 51, 102, 0.05);
+          --border-radius: 50%;
+          width: 45px;
+          height: 45px;
+        "
+      >
+        <ion-icon
+          name="swap-horizontal-outline"
+          style="color: #003366; font-size: 1.6rem"
+        ></ion-icon>
       </ion-button>
 
       <!-- BOTÓN NOTIFICACIONES -->
-      <ion-button (click)="irANotificaciones()" style="position: relative; --background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px;">
-        <ion-icon name="notifications-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
-        <div *ngIf="hayNotificacionesSinLeer" style="position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background-color: #EAB308; border-radius: 50%; border: 2px solid white;"></div>
+      <ion-button
+        (click)="irANotificaciones()"
+        style="
+          position: relative;
+          --background: rgba(0, 51, 102, 0.05);
+          --border-radius: 50%;
+          width: 45px;
+          height: 45px;
+        "
+      >
+        <ion-icon
+          name="notifications-outline"
+          style="color: #003366; font-size: 1.6rem"
+        ></ion-icon>
+        <div
+          *ngIf="hayNotificacionesSinLeer"
+          style="
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 10px;
+            height: 10px;
+            background-color: #eab308;
+            border-radius: 50%;
+            border: 2px solid white;
+          "
+        ></div>
       </ion-button>
-
     </ion-buttons>
-
   </ion-toolbar>
 
   <div class="linea-separadora"></div>
 </ion-header>
 
 <ion-content class="fondo-app">
-
   <div class="ion-padding ion-text-center">
-    
     <h1 class="titulo-principal">AGENDA UNA TUTORÍA</h1>
-    
-    <div *ngIf="esCoordinadorPanel" style="margin: 15px auto 25px auto; text-align: left; max-width: 500px;">
-      <ion-item lines="none" style="--border-radius: 12px; border: 2px solid #EAB308; --background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-        <ion-icon name="business-outline" slot="start" style="color: #003366; font-size: 1.4rem;"></ion-icon>
-        <ion-label style="font-weight: bold; color: #003366;">Sede de Agenda:</ion-label>
-        <ion-select [(ngModel)]="filtroSedeAgenda" (ionChange)="recargarAgendaSede()" interface="popover" [interfaceOptions]="{ cssClass: 'popover-premium-gietaes' }">
-          <ion-select-option value="GLOBAL">Ver Todas las Sedes (Global)</ion-select-option>
+
+    <div
+      *ngIf="esCoordinadorPanel"
+      style="margin: 15px auto 25px auto; text-align: left; max-width: 500px"
+    >
+      <ion-item
+        lines="none"
+        style="
+          --border-radius: 12px;
+          border: 2px solid #eab308;
+          --background: white;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        "
+      >
+        <ion-icon
+          name="business-outline"
+          slot="start"
+          style="color: #003366; font-size: 1.4rem"
+        ></ion-icon>
+        <ion-label style="font-weight: bold; color: #003366"
+          >Sede de Agenda:</ion-label
+        >
+        <ion-select
+          [(ngModel)]="filtroSedeAgenda"
+          (ionChange)="recargarAgendaSede()"
+          interface="popover"
+          [interfaceOptions]="{ cssClass: 'popover-premium-gietaes' }"
+        >
+          <ion-select-option value="GLOBAL"
+            >Ver Todas las Sedes (Global)</ion-select-option
+          >
           <ion-select-option value="CUENCA">Cuenca</ion-select-option>
           <ion-select-option value="QUITO">Quito</ion-select-option>
           <ion-select-option value="GUAYAQUIL">Guayaquil</ion-select-option>
@@ -58,72 +153,227 @@
       </ion-item>
     </div>
 
-    
-   <div class="buscador-contenedor">
-  <ion-icon name="search-outline" class="icono-lupa"></ion-icon>
-  <input type="text" placeholder="Busca asignatura o tutor..." class="input-busqueda" [(ngModel)]="textoBusqueda" (keyup)="filtrar()">
-</div>
-<br>
-     
-    <div style="margin-bottom: 20px;">
-      <button (click)="toggleCoordinacion()" style="background: #EAB308; color:#003366; border-style: solid;border-color: #003366; padding: 12px 20px; border-radius: 25px; font-weight: bold; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
-        <ion-icon name="people-outline" style="font-size: 1.2rem;"></ion-icon>
-        {{ mostrarCoordinacion ? 'Ocultar Contacto Coordinación' : 'Contactar a Coordinación' }}
+    <div class="buscador-contenedor">
+      <ion-icon name="search-outline" class="icono-lupa"></ion-icon>
+      <input
+        type="text"
+        placeholder="Busca asignatura o tutor..."
+        class="input-busqueda"
+        [(ngModel)]="textoBusqueda"
+        (keyup)="filtrar()"
+      />
+    </div>
+    <br />
+
+    <div style="margin-bottom: 20px">
+      <button
+        (click)="toggleCoordinacion()"
+        style="
+          background: #eab308;
+          color: #003366;
+          border-style: solid;
+          border-color: #003366;
+          padding: 12px 20px;
+          border-radius: 25px;
+          font-weight: bold;
+          font-size: 0.9rem;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+        "
+      >
+        <ion-icon name="people-outline" style="font-size: 1.2rem"></ion-icon>
+        {{ mostrarCoordinacion ? 'Ocultar Contacto Coordinación' : 'Contactar a
+        Coordinación' }}
       </button>
     </div>
-      <div *ngIf="mostrarCoordinacion" class="animate__animated animate__fadeIn" style="background: rgba(255, 255, 255, 0.9); border: 2px solid #d97706; border-radius: 16px; padding: 20px; margin-bottom: 30px; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);">
-      <h3 style="color: #003366; font-weight: bold; margin-top: 0; margin-bottom: 15px; font-size: 1.1rem;">EQUIPO DE COORDINACIÓN GIETAES</h3>
-      <p style="color: #555; font-size: 0.85rem; margin-bottom: 20px;">¿Tienes inconvenientes con algún horario o necesitas asistencia especial? Escríbenos directamente:</p>
-      
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; text-align: left;">
-        <div *ngFor="let coord of equipoCoordinacion" style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+    <div
+      *ngIf="mostrarCoordinacion"
+      class="animate__animated animate__fadeIn"
+      style="
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid #d97706;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 30px;
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+      "
+    >
+      <h3
+        style="
+          color: #003366;
+          font-weight: bold;
+          margin-top: 0;
+          margin-bottom: 15px;
+          font-size: 1.1rem;
+        "
+      >
+        EQUIPO DE COORDINACIÓN GIETAES
+      </h3>
+      <p style="color: #555; font-size: 0.85rem; margin-bottom: 20px">
+        ¿Tienes inconvenientes con algún horario o necesitas asistencia
+        especial? Escríbenos directamente:
+      </p>
+
+      <div
+        style="
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 15px;
+          text-align: left;
+        "
+      >
+        <div
+          *ngFor="let coord of equipoCoordinacion"
+          style="
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+          "
+        >
           <div>
-            <h4 style="margin: 0; color: #003366; font-size: 0.95rem; font-weight: bold;">{{ coord.nombre }}</h4>
-            <span style="font-size: 0.75rem; color: #718096; font-weight: 600; text-transform: uppercase;">{{ coord.rol }}</span>
+            <h4
+              style="
+                margin: 0;
+                color: #003366;
+                font-size: 0.95rem;
+                font-weight: bold;
+              "
+            >
+              {{ coord.nombre }}
+            </h4>
+            <span
+              style="
+                font-size: 0.75rem;
+                color: #718096;
+                font-weight: 600;
+                text-transform: uppercase;
+              "
+              >{{ coord.rol }}</span
+            >
           </div>
-          <a [href]="'mailto:' + coord.correo + '?subject=Consulta%20Tutorias%20GIETAES'" style="margin-top: 10px; font-size: 0.85rem; color: #1d4ed8; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; font-weight: 500;">
+          <a
+            [href]="'mailto:' + coord.correo + '?subject=Consulta%20Tutorias%20GIETAES'"
+            style="
+              margin-top: 10px;
+              font-size: 0.85rem;
+              color: #1d4ed8;
+              text-decoration: none;
+              display: inline-flex;
+              align-items: center;
+              gap: 5px;
+              font-weight: 500;
+            "
+          >
             <ion-icon name="mail-outline"></ion-icon> {{ coord.correo }}
           </a>
         </div>
       </div>
     </div>
 
-
-    <div *ngIf="cargando" style="margin-top: 50px; color: #003366;">
+    <div *ngIf="cargando" style="margin-top: 50px; color: #003366">
       <p>Cargando disponibilidad...</p>
     </div>
 
-    <div id="listaAsignaturas" style="margin-top: 30px;" *ngIf="!cargando">
-      
-      <div class="asignatura-block animate__animated animate__fadeIn" *ngFor="let bloque of asignaturasFiltradas">
+    <div id="listaAsignaturas" style="margin-top: 30px" *ngIf="!cargando">
+      <div
+        class="asignatura-block animate__animated animate__fadeIn"
+        *ngFor="let bloque of asignaturasFiltradas"
+      >
         <section class="seccion-tabla">
           <div class="header-asig-azul">{{ bloque.asignatura }}</div>
           <table>
             <thead>
               <tr>
-                <th style="width:25%">Tutor</th>
-                <th>L</th><th>M</th><th>X</th><th>J</th><th>V</th><th>S</th>
-                <th style="width:10%">WA</th>
+                <th style="width: 25%">Tutor</th>
+                <th>L</th>
+                <th>M</th>
+                <th>X</th>
+                <th>J</th>
+                <th>V</th>
+                <th>S</th>
+                <th style="width: 10%">WA</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let tutor of bloque.tutores">
                 <td class="col-nombre">
                   {{ tutor.nombre }}
-                  <span *ngIf="tutor.rol === 'COORDINADOR'" style="display:block; font-size:0.65rem; color:#d97706; font-weight:900; margin-top: 3px;">
-                    <ion-icon name="star" style="vertical-align: middle;"></ion-icon> COORDINADOR
+                  <span
+                    *ngIf="tutor.rol === 'COORDINADOR'"
+                    style="
+                      display: block;
+                      font-size: 0.65rem;
+                      color: #d97706;
+                      font-weight: 900;
+                      margin-top: 3px;
+                    "
+                  >
+                    <ion-icon
+                      name="star"
+                      style="vertical-align: middle"
+                    ></ion-icon>
+                    COORDINADOR
                   </span>
                 </td>
-                
-                <td (click)="abrirConfirmacion(tutor, 'Lunes', tutor.horarioVisible?.lunes, bloque.asignatura)" [class.celda-llena]="tutor.horarioVisible?.lunes" style="white-space: pre-line;">{{ tutor.horarioVisible?.lunes }}</td>
-                <td (click)="abrirConfirmacion(tutor, 'Martes', tutor.horarioVisible?.martes, bloque.asignatura)" [class.celda-llena]="tutor.horarioVisible?.martes" style="white-space: pre-line;">{{ tutor.horarioVisible?.martes }}</td>
-                <td (click)="abrirConfirmacion(tutor, 'Miércoles', tutor.horarioVisible?.miercoles, bloque.asignatura)" [class.celda-llena]="tutor.horarioVisible?.miercoles" style="white-space: pre-line;">{{ tutor.horarioVisible?.miercoles }}</td>
-                <td (click)="abrirConfirmacion(tutor, 'Jueves', tutor.horarioVisible?.jueves, bloque.asignatura)" [class.celda-llena]="tutor.horarioVisible?.jueves" style="white-space: pre-line;">{{ tutor.horarioVisible?.jueves }}</td>
-                <td (click)="abrirConfirmacion(tutor, 'Viernes', tutor.horarioVisible?.viernes, bloque.asignatura)" [class.celda-llena]="tutor.horarioVisible?.viernes" style="white-space: pre-line;">{{ tutor.horarioVisible?.viernes }}</td>
-                <td (click)="abrirConfirmacion(tutor, 'Sábado', tutor.horarioVisible?.sabado, bloque.asignatura)" [class.celda-llena]="tutor.horarioVisible?.sabado" style="white-space: pre-line;">{{ tutor.horarioVisible?.sabado }}</td>
-                
+
+                <td
+                  (click)="abrirConfirmacion(tutor, 'Lunes', tutor.horarioVisible?.lunes, bloque.asignatura)"
+                  [class.celda-llena]="tutor.horarioVisible?.lunes"
+                  style="white-space: pre-line"
+                >
+                  {{ tutor.horarioVisible?.lunes }}
+                </td>
+                <td
+                  (click)="abrirConfirmacion(tutor, 'Martes', tutor.horarioVisible?.martes, bloque.asignatura)"
+                  [class.celda-llena]="tutor.horarioVisible?.martes"
+                  style="white-space: pre-line"
+                >
+                  {{ tutor.horarioVisible?.martes }}
+                </td>
+                <td
+                  (click)="abrirConfirmacion(tutor, 'Miércoles', tutor.horarioVisible?.miercoles, bloque.asignatura)"
+                  [class.celda-llena]="tutor.horarioVisible?.miercoles"
+                  style="white-space: pre-line"
+                >
+                  {{ tutor.horarioVisible?.miercoles }}
+                </td>
+                <td
+                  (click)="abrirConfirmacion(tutor, 'Jueves', tutor.horarioVisible?.jueves, bloque.asignatura)"
+                  [class.celda-llena]="tutor.horarioVisible?.jueves"
+                  style="white-space: pre-line"
+                >
+                  {{ tutor.horarioVisible?.jueves }}
+                </td>
+                <td
+                  (click)="abrirConfirmacion(tutor, 'Viernes', tutor.horarioVisible?.viernes, bloque.asignatura)"
+                  [class.celda-llena]="tutor.horarioVisible?.viernes"
+                  style="white-space: pre-line"
+                >
+                  {{ tutor.horarioVisible?.viernes }}
+                </td>
+                <td
+                  (click)="abrirConfirmacion(tutor, 'Sábado', tutor.horarioVisible?.sabado, bloque.asignatura)"
+                  [class.celda-llena]="tutor.horarioVisible?.sabado"
+                  style="white-space: pre-line"
+                >
+                  {{ tutor.horarioVisible?.sabado }}
+                </td>
+
                 <td>
-                  <a [href]="'https://wa.me/593' + formatearNumeroWA(tutor.celular)" target="_blank" class="btn-wa-icon" (click)="$event.stopPropagation()">
+                  <a
+                    [href]="'https://wa.me/593' + formatearNumeroWA(tutor.celular)"
+                    target="_blank"
+                    class="btn-wa-icon"
+                    (click)="$event.stopPropagation()"
+                  >
                     <ion-icon name="logo-whatsapp"></ion-icon>
                   </a>
                 </td>
@@ -133,41 +383,92 @@
         </section>
       </div>
 
-      <div *ngIf="asignaturasFiltradas.length === 0" style="margin-top: 50px; color: #666;">
-        <p>No se encontraron tutores activos para esta búsqueda en las materias de tu malla.</p>
+      <div
+        *ngIf="asignaturasFiltradas.length === 0"
+        style="margin-top: 50px; color: #666"
+      >
+        <p>
+          No se encontraron tutores activos para esta búsqueda en las materias
+          de tu malla.
+        </p>
       </div>
-
     </div>
   </div>
 
- <div class="overlay" *ngIf="mostrarModal">
+  <!-- ========================================================== -->
+<!-- 2. MODAL DE AGENDAR NORMAL (*ngIf="mostrarModal") -->
+<!-- ========================================================== -->
+<div class="overlay" *ngIf="mostrarModal">
     <div class="modal-amarillo animate__animated animate__zoomIn">
       <h3>¿ESTÁS SEGURO DE AGENDAR LA TUTORÍA?</h3>
-      
+
       <p style="color: #f4f5f6; font-weight: bold; margin-bottom: 10px; font-size: 1.1rem;">
-        {{ reservaActual?.tutorNombre }} <br><br>
+        {{ reservaActual?.tutorNombre }} <br /><br />
         {{ reservaActual?.dia }}:
       </p>
 
-    <!-- 🌟 BARO A SELECTOR INTERACTIVO -->
-<div style="background: white; border-radius: 8px; margin: 15px 0; padding: 2px;">
-  <ion-item lines="none" style="--background: transparent;">
-    <ion-select [(ngModel)]="horaSeleccionada" placeholder="Selecciona una hora..." interface="popover" [interfaceOptions]="{ cssClass: 'popover-horario' }" style="color: #003366; font-weight: bold; width: 100%;">
-      <ion-select-option *ngFor="let hora of listaHorasDisponibles" [value]="hora">
-        {{ hora }}
-      </ion-select-option>
-    </ion-select>
-  </ion-item>
+      <div style="background: white; border-radius: 8px; margin: 15px 0; padding: 2px;">
+        <ion-item lines="none" style="--background: transparent">
+          <ion-select
+            [(ngModel)]="horaSeleccionada"
+            placeholder="Selecciona una hora..."
+            interface="popover"
+            [interfaceOptions]="{ cssClass: 'popover-horario' }"
+            style="color: #003366; font-weight: bold; width: 100%"
+          >
+            <ion-select-option *ngFor="let hora of listaHorasDisponibles" [value]="hora">
+              {{ hora }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+      </div>
+
+      <div style="text-align: left; margin-top: 15px;">
+        <label style="color: white; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px; display: block;">MOTIVO DE LA TUTORÍA</label>
+        <div style="background: white; border-radius: 8px; padding: 2px; margin-bottom: 15px;">
+          <ion-item lines="none" style="--background: transparent;">
+            <ion-select [(ngModel)]="tipoDerivacion" placeholder="Selecciona una opción" interface="popover" style="color: #003366; font-weight: bold; width: 100%;">
+              <ion-select-option value="DECISIÓN PROPIA">DECISIÓN PROPIA</ion-select-option>
+              <ion-select-option value="PROYECTO LALA">PROYECTO LALA</ion-select-option>
+              <ion-select-option value="CONSEJERÍA ACADÉMICA">CONSEJERÁ ACADÉMICA</ion-select-option>
+              <ion-select-option value="DOCENTE DE LA CARRERA">DOCENTE DE LA CARRERA</ion-select-option>
+              <ion-select-option value="DIRECCIÓN DE CARRERA">DIRECCIÓN DE CARRERA</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+      </div>
+
+      <div style="text-align: left; margin-bottom: 15px; position: relative; z-index: 99998;">
+  <label style="color: white; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px; display: block;">DOCENTE (APELLIDOS Y NOMBRES)</label>
+  <div style="background: white; border-radius: 8px; padding: 2px;">
+    <ion-input 
+      [(ngModel)]="docenteBuscado" 
+      (ngModelChange)="filtrarDocentes()" 
+      placeholder="Ej: PEREZ ZAMBRANO JUAN..." 
+      style="color: #003366; font-weight: bold; --padding-start: 10px;">
+    </ion-input>
+  </div>
+  
+  <div *ngIf="docentesFiltrados.length > 0" class="lista-sugerencias">
+    <div class="item-sugerencia" *ngFor="let doc of docentesFiltrados" (click)="seleccionarDocente(doc)">
+      {{ doc }}
+    </div>
+  </div>
 </div>
 
-      <div style="margin-bottom: 25px;">
-        <p style="color: #f3f4f5; font-size: 0.9rem; font-weight: bold; background: rgba(255,255,255,0.4); padding: 5px 10px; border-radius: 8px; display: inline-block;">
+      <div style="margin-bottom: 25px">
+        <p style="color: #f3f4f5; font-size: 0.9rem; font-weight: bold; background: rgba(255, 255, 255, 0.4); padding: 5px 10px; border-radius: 8px; display: inline-block;">
           {{ reservaActual?.materia }}
         </p>
       </div>
-      
+
       <div class="botones-modal">
-        <button class="btn-azul" (click)="confirmarReserva()">
+        <button 
+          class="btn-azul" 
+          (click)="confirmarReserva()"
+          [disabled]="!horaSeleccionada || !tipoDerivacion || !docenteBuscado"
+          [style.opacity]="(!horaSeleccionada || !tipoDerivacion || !docenteBuscado) ? '0.5' : '1'"
+        >
           <ion-icon name="checkmark-outline"></ion-icon>
         </button>
         <button class="btn-azul btn-rojo" (click)="cerrarConfirmacion()">
@@ -175,24 +476,31 @@
         </button>
       </div>
     </div>
-  </div>
+</div>
 
-  <div class="overlay-modal animate__animated animate__fadeIn" *ngIf="mostrarGuia">
+  <div
+    class="overlay-modal animate__animated animate__fadeIn"
+    *ngIf="mostrarGuia"
+  >
     <div class="modal-premium animate__animated animate__zoomIn">
-      
       <div class="modal-header">
         <ion-icon name="information-circle-outline"></ion-icon>
         <h3>¿CÓMO AGENDAR?</h3>
       </div>
 
       <div class="modal-body text-left">
-        <p class="modal-desc" style="text-align: center;">Sigue estos rápidos pasos para encontrar a tu tutor ideal:</p>
-        
+        <p class="modal-desc" style="text-align: center">
+          Sigue estos rápidos pasos para encontrar a tu tutor ideal:
+        </p>
+
         <div class="step-item">
           <ion-icon name="search-outline"></ion-icon>
           <div>
             <strong>1. Busca tu Materia</strong>
-            <p>Usa la barra superior para filtrar la asignatura en la que necesitas refuerzo.</p>
+            <p>
+              Usa la barra superior para filtrar la asignatura en la que
+              necesitas refuerzo.
+            </p>
           </div>
         </div>
 
@@ -200,7 +508,10 @@
           <ion-icon name="calendar-outline"></ion-icon>
           <div>
             <strong>2. Elige el Horario</strong>
-            <p>Revisa la disponibilidad de los tutores. <b>(P)</b> significa Presencial y <b>(V)</b> Virtual.</p>
+            <p>
+              Revisa la disponibilidad de los tutores. <b>(P)</b> significa
+              Presencial y <b>(V)</b> Virtual.
+            </p>
           </div>
         </div>
 
@@ -208,178 +519,539 @@
           <ion-icon name="checkmark-circle-outline"></ion-icon>
           <div>
             <strong>3. Confirma tu Cita</strong>
-            <p>Toca el horario que prefieras, confirma el envío y espera a que el tutor te contacte.</p>
+            <p>
+              Toca el horario que prefieras, confirma el envío y espera a que el
+              tutor te contacte.
+            </p>
           </div>
         </div>
       </div>
 
       <div class="modal-footer">
-        <ion-button class="btn-enviar" (click)="cerrarGuia()" style="width: 100%;">
+        <ion-button
+          class="btn-enviar"
+          (click)="cerrarGuia()"
+          style="width: 100%"
+        >
           ¡ENTENDIDO!
         </ion-button>
       </div>
-
     </div>
   </div>
 
-<!-- 🌟 MODAL DE EVALUACIÓN OBLIGATORIA (NATIVO SOBRE LOS TABS) -->
-  <ion-modal [isOpen]="mostrarModalEvaluacion" [backdropDismiss]="false" class="modal-gietaes-centrado" style="--max-width: 400px; --max-height: 90%;">
+  <!-- 🌟 MODAL DE EVALUACIÓN OBLIGATORIA (NATIVO SOBRE LOS TABS) -->
+  <ion-modal
+    [isOpen]="mostrarModalEvaluacion"
+    [backdropDismiss]="false"
+    class="modal-gietaes-centrado"
+    style="--max-width: 400px; --max-height: 90%"
+  >
     <ng-template>
-      <div style="display: flex; flex-direction: column; background: #ffffff; height: 100%;">
-        
-        <div class="modal-header" style="background: #f8fafc; padding: 20px; border-bottom: 2px solid #EAB308; text-align: center;">
-          <h3 style="color: #003366; font-size: 1.2rem; font-weight: 900; margin: 0;">CALIFICA TU TUTORÍA</h3>
-          <p style="margin: 5px 0 0 0; color: #475569; font-size: 0.85rem;">Ayúdanos a mejorar evaluando la tutoría recibida.</p>
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          background: #ffffff;
+          height: 100%;
+        "
+      >
+        <div
+          class="modal-header"
+          style="
+            background: #f8fafc;
+            padding: 20px;
+            border-bottom: 2px solid #eab308;
+            text-align: center;
+          "
+        >
+          <h3
+            style="
+              color: #003366;
+              font-size: 1.2rem;
+              font-weight: 900;
+              margin: 0;
+            "
+          >
+            CALIFICA TU TUTORÍA
+          </h3>
+          <p style="margin: 5px 0 0 0; color: #475569; font-size: 0.85rem">
+            Ayúdanos a mejorar evaluando la tutoría recibida.
+          </p>
         </div>
 
-        <div class="modal-body text-left" style="overflow-y: auto; padding: 20px; flex-grow: 1; background: #ffffff;">
-          
-          <div class="tarjeta-pregunta" *ngFor="let pregunta of preguntasEvaluacion; let i = index">
+        <div
+          class="modal-body text-left"
+          style="
+            overflow-y: auto;
+            padding: 20px;
+            flex-grow: 1;
+            background: #ffffff;
+          "
+        >
+          <div
+            class="tarjeta-pregunta"
+            *ngFor="let pregunta of preguntasEvaluacion; let i = index"
+          >
             <h4 class="texto-pregunta">{{ pregunta }}</h4>
-            
+
             <div class="escala-numerica">
-              <div class="opcion-numero" [class.activo]="respuestasEvaluacion[i] === 1" (click)="seleccionarCalificacion(i, 1)">1</div>
-              <div class="opcion-numero" [class.activo]="respuestasEvaluacion[i] === 2" (click)="seleccionarCalificacion(i, 2)">2</div>
-              <div class="opcion-numero" [class.activo]="respuestasEvaluacion[i] === 3" (click)="seleccionarCalificacion(i, 3)">3</div>
-              <div class="opcion-numero" [class.activo]="respuestasEvaluacion[i] === 4" (click)="seleccionarCalificacion(i, 4)">4</div>
-              <div class="opcion-numero" [class.activo]="respuestasEvaluacion[i] === 5" (click)="seleccionarCalificacion(i, 5)">5</div>
+              <div
+                class="opcion-numero"
+                [class.activo]="respuestasEvaluacion[i] === 1"
+                (click)="seleccionarCalificacion(i, 1)"
+              >
+                1
+              </div>
+              <div
+                class="opcion-numero"
+                [class.activo]="respuestasEvaluacion[i] === 2"
+                (click)="seleccionarCalificacion(i, 2)"
+              >
+                2
+              </div>
+              <div
+                class="opcion-numero"
+                [class.activo]="respuestasEvaluacion[i] === 3"
+                (click)="seleccionarCalificacion(i, 3)"
+              >
+                3
+              </div>
+              <div
+                class="opcion-numero"
+                [class.activo]="respuestasEvaluacion[i] === 4"
+                (click)="seleccionarCalificacion(i, 4)"
+              >
+                4
+              </div>
+              <div
+                class="opcion-numero"
+                [class.activo]="respuestasEvaluacion[i] === 5"
+                (click)="seleccionarCalificacion(i, 5)"
+              >
+                5
+              </div>
             </div>
-            
+
             <div class="leyenda-escala">
               <span>Totalmente en desacuerdo</span>
               <span>Totalmente de acuerdo</span>
             </div>
           </div>
-
         </div>
 
-        <div class="modal-footer" style="padding: 15px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
-          <ion-button expand="block" (click)="enviarEvaluacion()" [disabled]="!evaluacionValida || enviandoEvaluacion" class="btn-enviar-calificacion">
+        <div
+          class="modal-footer"
+          style="
+            padding: 15px 20px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+          "
+        >
+          <ion-button
+            expand="block"
+            (click)="enviarEvaluacion()"
+            [disabled]="!evaluacionValida || enviandoEvaluacion"
+            class="btn-enviar-calificacion"
+          >
             <ion-icon name="send-outline" slot="start"></ion-icon>
             {{ enviandoEvaluacion ? 'Enviando...' : 'ENVIAR EVALUACIÓN' }}
           </ion-button>
         </div>
-        
       </div>
     </ng-template>
   </ion-modal>
 
-    
   <!-- 🌟 MODAL DE TÉRMINOS Y CONDICIONES (OBLIGATORIO) -->
-  <div class="overlay-modal animate__animated animate__fadeIn" *ngIf="mostrarModalTerminos" style="z-index: 10000;">
-    <div class="modal-premium animate__animated animate__zoomIn" style="max-height: 90vh; max-width: 400px; display: flex; flex-direction: column;">
-      
-      <div class="modal-header" style="background: #f8fafc; padding: 15px; border-bottom: 2px solid #e2e8f0;">
-        <h3 style="color: #003366; font-size: 1.2rem; font-weight: 900; text-align: center; margin: 0;">Política de Uso de Datos</h3>
+  <div
+    class="overlay-modal animate__animated animate__fadeIn"
+    *ngIf="mostrarModalTerminos"
+    style="z-index: 10000"
+  >
+    <div
+      class="modal-premium animate__animated animate__zoomIn"
+      style="
+        max-height: 90vh;
+        max-width: 400px;
+        display: flex;
+        flex-direction: column;
+      "
+    >
+      <div
+        class="modal-header"
+        style="
+          background: #f8fafc;
+          padding: 15px;
+          border-bottom: 2px solid #e2e8f0;
+        "
+      >
+        <h3
+          style="
+            color: #003366;
+            font-size: 1.2rem;
+            font-weight: 900;
+            text-align: center;
+            margin: 0;
+          "
+        >
+          Política de Uso de Datos
+        </h3>
       </div>
 
-      <div class="modal-body text-left" style="overflow-y: auto; padding: 20px; flex-grow: 1;">
-        <h4 style="text-align: center; margin-top: 0; font-size: 1rem; color: #333;">Términos y condiciones.</h4>
-        
+      <div
+        class="modal-body text-left"
+        style="overflow-y: auto; padding: 20px; flex-grow: 1"
+      >
+        <h4
+          style="
+            text-align: center;
+            margin-top: 0;
+            font-size: 1rem;
+            color: #333;
+          "
+        >
+          Términos y condiciones.
+        </h4>
+
         <div class="caja-texto-legal">
           <p>
-            Autorizo a la Universidad Politécnica Salesiana  y al Equipo de Animación de la Tutoría entre Pares al Estilo Salesiano (TEPes) a recopilar, tratar, utilizar y conservar los datos personales y académicos que proporcione a través de la plataforma GIETAES, exclusivamente para fines relacionados con la gestión, participación y seguimiento de las actividades desarrolladas en el marco del programa, sin fines comerciales ni de lucro.
+            Autorizo a la Universidad Politécnica Salesiana y al Equipo de
+            Animación de la Tutoría entre Pares al Estilo Salesiano (TEPes) a
+            recopilar, tratar, utilizar y conservar los datos personales y
+            académicos que proporcione a través de la plataforma GIETAES,
+            exclusivamente para fines relacionados con la gestión, participación
+            y seguimiento de las actividades desarrolladas en el marco del
+            programa, sin fines comerciales ni de lucro.
           </p>
           <p>
-            El tratamiento de mis datos se realizará bajo principios de confidencialidad, seguridad, respeto a la dignidad humana y protección de la información personal, de conformidad con la normativa vigente y con la Política de Tratamiento y Uso de Datos Personales de la Universidad Politécnica Salesiana. 
+            El tratamiento de mis datos se realizará bajo principios de
+            confidencialidad, seguridad, respeto a la dignidad humana y
+            protección de la información personal, de conformidad con la
+            normativa vigente y con la Política de Tratamiento y Uso de Datos
+            Personales de la Universidad Politécnica Salesiana.
           </p>
           <p>
-            Reconozco mi derecho a acceder, actualizar, rectificar, modificar, cancelar u oponerme al tratamiento de mis datos personales, así como a ejercer los demás derechos reconocidos por la normativa aplicable. Para ello, podré dirigirme al correo electrónico <strong>usodedatos@ups.edu.ec</strong>, indicando la solicitud correspondiente y, cuando sea necesario, adjuntando la documentación que sustente mi petición.
+            Reconozco mi derecho a acceder, actualizar, rectificar, modificar,
+            cancelar u oponerme al tratamiento de mis datos personales, así como
+            a ejercer los demás derechos reconocidos por la normativa aplicable.
+            Para ello, podré dirigirme al correo electrónico
+            <strong>usodedatos@ups.edu.ec</strong>, indicando la solicitud
+            correspondiente y, cuando sea necesario, adjuntando la documentación
+            que sustente mi petición.
           </p>
           <p>
-            La Universidad informará sobre la finalidad del tratamiento, los responsables de la gestión de los datos y las medidas destinadas a garantizar su confidencialidad. Mis datos no serán divulgados ni transferidos a terceros, salvo que exista una base legal que lo permita o una obligación legal que así lo requiera.
+            La Universidad informará sobre la finalidad del tratamiento, los
+            responsables de la gestión de los datos y las medidas destinadas a
+            garantizar su confidencialidad. Mis datos no serán divulgados ni
+            transferidos a terceros, salvo que exista una base legal que lo
+            permita o una obligación legal que así lo requiera.
           </p>
           <p>
-            Una vez finalizada la relación o participación que motive el tratamiento de mis datos, estos serán conservados o eliminados de acuerdo con la normativa aplicable y con la Tabla de Retención Documental de la Universidad.
+            Una vez finalizada la relación o participación que motive el
+            tratamiento de mis datos, estos serán conservados o eliminados de
+            acuerdo con la normativa aplicable y con la Tabla de Retención
+            Documental de la Universidad.
           </p>
           <p>
-            Declaro que he sido informado sobre el tratamiento de mis datos personales, mis derechos y obligaciones, así como sobre la Política de Tratamiento y Uso de Datos Personales de la Universidad Politécnica Salesiana, y manifiesto mi consentimiento libre, informado y voluntario para el tratamiento de los datos proporcionados mediante la plataforma GIETAES.
+            Declaro que he sido informado sobre el tratamiento de mis datos
+            personales, mis derechos y obligaciones, así como sobre la Política
+            de Tratamiento y Uso de Datos Personales de la Universidad
+            Politécnica Salesiana, y manifiesto mi consentimiento libre,
+            informado y voluntario para el tratamiento de los datos
+            proporcionados mediante la plataforma GIETAES.
           </p>
         </div>
-        <div style="margin-top: 15px; text-align: left;">
-          <a href="https://www.ups.edu.ec/politica-privacidad-app" target="_blank" style="color: #0284c7; font-weight: 700; text-decoration: none; font-size: 0.9rem; display: block; margin-bottom: 20px;">
+        <div style="margin-top: 15px; text-align: left">
+          <a
+            href="https://www.ups.edu.ec/politica-privacidad-app"
+            target="_blank"
+            style="
+              color: #0284c7;
+              font-weight: 700;
+              text-decoration: none;
+              font-size: 0.9rem;
+              display: block;
+              margin-bottom: 20px;
+            "
+          >
             Leer documento de política de tratamiento y uso de datos personales.
           </a>
         </div>
 
         <!-- 🌟 CHECKBOX MEJORADO -->
-        <div style="margin-bottom: 5px; display: flex; align-items: center; gap: 12px; padding: 0 5px; cursor: pointer;" (click)="aceptaTerminosCheckbox = !aceptaTerminosCheckbox">
-          <ion-checkbox 
-            [(ngModel)]="aceptaTerminosCheckbox" 
+        <div
+          style="
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 5px;
+            cursor: pointer;
+          "
+          (click)="aceptaTerminosCheckbox = !aceptaTerminosCheckbox"
+        >
+          <ion-checkbox
+            [(ngModel)]="aceptaTerminosCheckbox"
             (click)="$event.stopPropagation()"
-            style="--size: 22px; --background-checked: #003366; --border-color-checked: #003366; --checkmark-color: #ffffff; --border-color: #94a3b8; --border-radius: 4px;">
+            style="
+              --size: 22px;
+              --background-checked: #003366;
+              --border-color-checked: #003366;
+              --checkmark-color: #ffffff;
+              --border-color: #94a3b8;
+              --border-radius: 4px;
+            "
+          >
           </ion-checkbox>
-          <span style="font-size: 0.85rem; color: #1e293b; font-weight: 700; line-height: 1.3;">
+          <span
+            style="
+              font-size: 0.85rem;
+              color: #1e293b;
+              font-weight: 700;
+              line-height: 1.3;
+            "
+          >
             He leído y acepto los "términos y condiciones de uso de datos"
           </span>
         </div>
       </div>
 
       <!-- 🌟 BOTÓN MEJORADO (Texto blanco y negrita) -->
-      <div class="modal-footer" style="padding: 15px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
-        <ion-button expand="block" (click)="aceptarTerminos()" [disabled]="!aceptaTerminosCheckbox || guardandoTerminos" style="width: 100%; --border-radius: 8px; --background: #003366; --background-activated: #002244; --color: #ffffff; font-weight: 800; letter-spacing: 0.5px;">
+      <div
+        class="modal-footer"
+        style="
+          padding: 15px;
+          background: #f8fafc;
+          border-top: 1px solid #e2e8f0;
+        "
+      >
+        <ion-button
+          expand="block"
+          (click)="aceptarTerminos()"
+          [disabled]="!aceptaTerminosCheckbox || guardandoTerminos"
+          style="
+            width: 100%;
+            --border-radius: 8px;
+            --background: #003366;
+            --background-activated: #002244;
+            --color: #ffffff;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+          "
+        >
           <span *ngIf="!guardandoTerminos">CONTINUAR</span>
-          <ion-spinner *ngIf="guardandoTerminos" name="crescent" style="color: white;"></ion-spinner>
+          <ion-spinner
+            *ngIf="guardandoTerminos"
+            name="crescent"
+            style="color: white"
+          ></ion-spinner>
         </ion-button>
       </div>
-
-      
-
     </div>
   </div>
-<!-- 🌟 MODAL DE CAMBIO DE ROL (ESTILO GIETAES PREMIUM) -->
-  <div class="overlay-modal animate__animated animate__fadeIn" *ngIf="mostrarMenuRol" style="z-index: 10000;">
-    <div class="modal-premium animate__animated animate__zoomIn" style="max-height: 90vh; max-width: 350px; width: 90%; display: flex; flex-direction: column; padding: 0;">
-
+  <!-- 🌟 MODAL DE CAMBIO DE ROL (ESTILO GIETAES PREMIUM) -->
+  <div
+    class="overlay-modal animate__animated animate__fadeIn"
+    *ngIf="mostrarMenuRol"
+    style="z-index: 10000"
+  >
+    <div
+      class="modal-premium animate__animated animate__zoomIn"
+      style="
+        max-height: 90vh;
+        max-width: 350px;
+        width: 90%;
+        display: flex;
+        flex-direction: column;
+        padding: 0;
+      "
+    >
       <!-- Cabecera -->
-      <div class="modal-header" style="background: #f8fafc; padding: 15px 20px; border-bottom: 2px solid #EAB308; display: flex; justify-content: space-between; align-items: center; border-radius: 15px 15px 0 0;">
-        <h3 style="color: #003366; font-size: 1.15rem; font-weight: 900; margin: 0;">CAMBIAR DE ROL</h3>
-        <ion-icon name="close-outline" (click)="mostrarMenuRol = false" style="font-size: 1.8rem; color: #94a3b8; cursor: pointer;"></ion-icon>
+      <div
+        class="modal-header"
+        style="
+          background: #f8fafc;
+          padding: 15px 20px;
+          border-bottom: 2px solid #eab308;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-radius: 15px 15px 0 0;
+        "
+      >
+        <h3
+          style="
+            color: #003366;
+            font-size: 1.15rem;
+            font-weight: 900;
+            margin: 0;
+          "
+        >
+          CAMBIAR DE ROL
+        </h3>
+        <ion-icon
+          name="close-outline"
+          (click)="mostrarMenuRol = false"
+          style="font-size: 1.8rem; color: #94a3b8; cursor: pointer"
+        ></ion-icon>
       </div>
 
       <!-- Cuerpo del Menú -->
-      <div class="modal-body text-left" style="overflow-y: auto; padding: 20px; flex-grow: 1; background: #ffffff; border-radius: 0 0 15px 15px;">
-        <p style="margin: 0 0 15px 0; color: #475569; font-size: 0.9rem; text-align: center; font-weight: 500;">Selecciona el panel al que deseas ingresar:</p>
+      <div
+        class="modal-body text-left"
+        style="
+          overflow-y: auto;
+          padding: 20px;
+          flex-grow: 1;
+          background: #ffffff;
+          border-radius: 0 0 15px 15px;
+        "
+      >
+        <p
+          style="
+            margin: 0 0 15px 0;
+            color: #475569;
+            font-size: 0.9rem;
+            text-align: center;
+            font-weight: 500;
+          "
+        >
+          Selecciona el panel al que deseas ingresar:
+        </p>
 
-        <ion-list style="background: transparent; padding: 0;">
-
+        <ion-list style="background: transparent; padding: 0">
           <!-- 🌟 BOTÓN 1: ESTUDIANTE (Siempre visible) -->
-          <ion-item button lines="none" (click)="irAPanel('/tabs/horarios', 'ESTUDIANTE')" style="--background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; --border-radius: 8px; --padding-start: 10px;">
-            <ion-icon name="school-outline" slot="start" style="color: #003366; font-size: 1.6rem; margin-right: 15px;"></ion-icon>
-            <ion-label style="color: #003366; font-weight: 800; font-size: 1.05rem;">Panel Estudiante</ion-label>
+          <ion-item
+            button
+            lines="none"
+            (click)="irAPanel('/tabs/horarios', 'ESTUDIANTE')"
+            style="
+              --background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              margin-bottom: 12px;
+              --border-radius: 8px;
+              --padding-start: 10px;
+            "
+          >
+            <ion-icon
+              name="school-outline"
+              slot="start"
+              style="color: #003366; font-size: 1.6rem; margin-right: 15px"
+            ></ion-icon>
+            <ion-label
+              style="color: #003366; font-weight: 800; font-size: 1.05rem"
+              >Panel Estudiante</ion-label
+            >
           </ion-item>
 
           <!-- 🌟 BOTÓN 2: PANEL TUTOR -->
-          <ion-item *ngIf="tienePanelTutor" button lines="none" (click)="irAPanel('/tabs-tutor/tutorias', 'TUTOR')" style="--background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; --border-radius: 8px; --padding-start: 10px;">
-            <ion-icon name="briefcase-outline" slot="start" style="color: #003366; font-size: 1.6rem; margin-right: 15px;"></ion-icon>
-            <ion-label style="color: #003366; font-weight: 800; font-size: 1.05rem;">Panel Tutor</ion-label>
+          <ion-item
+            *ngIf="tienePanelTutor"
+            button
+            lines="none"
+            (click)="irAPanel('/tabs-tutor/tutorias', 'TUTOR')"
+            style="
+              --background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              margin-bottom: 12px;
+              --border-radius: 8px;
+              --padding-start: 10px;
+            "
+          >
+            <ion-icon
+              name="briefcase-outline"
+              slot="start"
+              style="color: #003366; font-size: 1.6rem; margin-right: 15px"
+            ></ion-icon>
+            <ion-label
+              style="color: #003366; font-weight: 800; font-size: 1.05rem"
+              >Panel Tutor</ion-label
+            >
           </ion-item>
 
           <!-- 🌟 BOTÓN 3: PANEL COORDINACIÓN -->
-          <ion-item *ngIf="tienePanelAdmin" button lines="none" (click)="irAPanel('/tabs-admin/postulaciones', 'COORDINADOR')" style="--background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 5px; --border-radius: 8px; --padding-start: 10px;">
-            <ion-icon name="shield-checkmark-outline" slot="start" style="color: #003366; font-size: 1.6rem; margin-right: 15px;"></ion-icon>
-            <ion-label style="color: #003366; font-weight: 800; font-size: 1.05rem;">Panel Coordinación</ion-label>
+          <ion-item
+            *ngIf="tienePanelAdmin"
+            button
+            lines="none"
+            (click)="irAPanel('/tabs-admin/postulaciones', 'COORDINADOR')"
+            style="
+              --background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              margin-bottom: 5px;
+              --border-radius: 8px;
+              --padding-start: 10px;
+            "
+          >
+            <ion-icon
+              name="shield-checkmark-outline"
+              slot="start"
+              style="color: #003366; font-size: 1.6rem; margin-right: 15px"
+            ></ion-icon>
+            <ion-label
+              style="color: #003366; font-weight: 800; font-size: 1.05rem"
+              >Panel Coordinación</ion-label
+            >
           </ion-item>
-
         </ion-list>
       </div>
-      
     </div>
   </div>
-<!-- 🌟 MODAL DE RENOVACIÓN DE PERIODO (ESTUDIANTE) -->
-  <ion-modal [isOpen]="mostrarModalRenovacionEstudiante" [backdropDismiss]="false" class="modal-gietaes-centrado">
+  <!-- 🌟 MODAL DE RENOVACIÓN DE PERIODO (ESTUDIANTE) -->
+  <ion-modal
+    [isOpen]="mostrarModalRenovacionEstudiante"
+    [backdropDismiss]="false"
+    class="modal-gietaes-centrado"
+  >
     <ng-template>
-      <div style="background: #ffffff; height: 100%; display: flex; flex-direction: column;">
-        <div style="background: #f8fafc; padding: 20px; border-bottom: 2px solid #003366; text-align: center;">
-          <ion-icon name="school-outline" style="font-size: 3rem; color: #003366;"></ion-icon>
-          <h2 style="color: #003366; font-weight: 900; margin: 10px 0 0 0;">¡NUEVO PERIODO {{ periodoApp }}!</h2>
-          <p style="color: #475569; font-size: 0.9rem; margin-top: 5px;">Actualiza tu información para continuar.</p>
+      <div
+        style="
+          background: #ffffff;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+        "
+      >
+        <div
+          style="
+            background: #f8fafc;
+            padding: 20px;
+            border-bottom: 2px solid #003366;
+            text-align: center;
+          "
+        >
+          <ion-icon
+            name="school-outline"
+            style="font-size: 3rem; color: #003366"
+          ></ion-icon>
+          <h2 style="color: #003366; font-weight: 900; margin: 10px 0 0 0">
+            ¡NUEVO PERIODO {{ periodoApp }}!
+          </h2>
+          <p style="color: #475569; font-size: 0.9rem; margin-top: 5px">
+            Actualiza tu información para continuar.
+          </p>
         </div>
-        
-        <div style="padding: 20px; flex-grow: 1;">
-          <label style="font-weight: 700; color: #003366; font-size: 0.9rem;">¿En qué ciclo te encuentras actualmente?</label>
-          <ion-item lines="none" style="--background: #f1f5f9; border-radius: 8px; margin-top: 10px; border: 1px solid #003366;">
-            <ion-select [(ngModel)]="nuevoCicloEstudiante" interface="popover" style="width: 100%; font-weight: 700;color: #003366;">
+
+        <div style="padding: 20px; flex-grow: 1">
+          <label style="font-weight: 700; color: #003366; font-size: 0.9rem"
+            >¿En qué ciclo te encuentras actualmente?</label
+          >
+          <ion-item
+            lines="none"
+            style="
+              --background: #f1f5f9;
+              border-radius: 8px;
+              margin-top: 10px;
+              border: 1px solid #003366;
+            "
+          >
+            <ion-select
+              [(ngModel)]="nuevoCicloEstudiante"
+              interface="popover"
+              style="width: 100%; font-weight: 700; color: #003366"
+            >
               <ion-select-option [value]="1">1er Ciclo</ion-select-option>
               <ion-select-option [value]="2">2do Ciclo</ion-select-option>
               <ion-select-option [value]="3">3er Ciclo</ion-select-option>
@@ -392,8 +1064,18 @@
           </ion-item>
         </div>
 
-        <div style="padding: 20px;">
-          <ion-button expand="block" (click)="confirmarRenovacionEstudiante()" style="--background: #EAB308; --color: #003366; font-weight: 900; height: 50px; --border-radius: 10px;">
+        <div style="padding: 20px">
+          <ion-button
+            expand="block"
+            (click)="confirmarRenovacionEstudiante()"
+            style="
+              --background: #eab308;
+              --color: #003366;
+              font-weight: 900;
+              height: 50px;
+              --border-radius: 10px;
+            "
+          >
             GUARDAR Y CONTINUAR
           </ion-button>
         </div>
@@ -403,74 +1085,118 @@
   <!-- ========================================== -->
   <!-- 🌟 BOTÓN FLOTANTE PARA AGENDAMIENTO RÁPIDO -->
   <!-- ========================================== -->
-  <ion-fab vertical="bottom" horizontal="end" slot="fixed" style="margin-bottom: 96px; margin-right: 10px;">
-    <ion-fab-button (click)="abrirAgendamientoInteligente()" style="--background: #EAB308; --color: #003366;">
-      <ion-icon name="flash-outline" style="font-size: 1.6rem;"></ion-icon>
+  <ion-fab
+    vertical="bottom"
+    horizontal="end"
+    slot="fixed"
+    style="margin-bottom: 96px; margin-right: 10px"
+  >
+    <ion-fab-button
+      (click)="abrirAgendamientoInteligente()"
+      style="--background: #eab308; --color: #003366"
+    >
+      <ion-icon name="flash-outline" style="font-size: 1.6rem"></ion-icon>
     </ion-fab-button>
   </ion-fab>
 
   <!-- ========================================== -->
   <!-- 🌟 MODAL DE MATCH INTELIGENTE -->
   <!-- ========================================== -->
-  <div class="overlay" *ngIf="mostrarModalInteligente">
+  <!-- ========================================================== -->
+<!-- 1. MODAL DE MATCH AUTOMÁTICO (*ngIf="mostrarModalInteligente") -->
+<!-- ========================================================== -->
+<div class="overlay" *ngIf="mostrarModalInteligente">
     <div class="modal-azul animate__animated animate__zoomIn">
-      <h3 style="margin-bottom: 5px; color: white;">
-        <ion-icon name="flash-outline" style="color: #EAB308;"></ion-icon> MATCH AUTOMÁTICO
+      <h3 style="margin-bottom: 5px; color: white">
+        <ion-icon name="flash-outline" style="color: #eab308"></ion-icon> MATCH AUTOMÁTICO
       </h3>
       <p style="color: #cbd5e1; font-size: 0.85rem; margin-top: 0; margin-bottom: 20px;">
         Selecciona tu materia y horario. Nosotros te asignamos al tutor ideal al instante.
       </p>
 
-   <!-- 1. Buscador Predictivo de Materia -->
- <!-- 1. Buscador Predictivo de Materia -->
-<div style="text-align: left; margin-bottom: 15px; position: relative; z-index: 99999;">
-  <label style="color: white; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px; display: block;">1. MATERIA A REFORZAR</label>
-  <div style="background: white; border-radius: 8px; padding: 2px;">
-    
-    <!-- 🌟 CAMBIO CLAVE: Capturamos el evento nativo del teclado -->
-    <ion-input 
-      [value]="textoBusquedaInteligente" 
-      (ionInput)="buscarMateriaInteligente($event)" 
-      placeholder="Escribe la materia..." 
-      style="color: #003366; font-weight: bold; --padding-start: 10px;">
-    </ion-input>
-    
-  </div>
-  
-  <!-- Lista desplegable de sugerencias -->
-  <div *ngIf="materiasSugeridas.length > 0" class="lista-sugerencias">
-    <div class="item-sugerencia" *ngFor="let sugerencia of materiasSugeridas" (click)="seleccionarMateriaInteligente(sugerencia)">
-      {{ sugerencia }}
-    </div>
-  </div>
-</div>
+      <!-- 1. Buscador Predictivo de Materia -->
+      <div style="text-align: left; margin-bottom: 15px; position: relative; z-index: 99999;">
+        <label style="color: white; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px; display: block;">1. MATERIA A REFORZAR</label>
+        <div style="background: white; border-radius: 8px; padding: 2px">
+          <ion-input
+            [value]="textoBusquedaInteligente"
+            (ionInput)="buscarMateriaInteligente($event)"
+            placeholder="Escribe la materia..."
+            style="color: #003366; font-weight: bold; --padding-start: 10px"
+          ></ion-input>
+        </div>
 
-      <!-- 2. Selectores de Día y Hora (Solo se muestran si ya hay materia elegida) -->
-      <div *ngIf="materiaInteligente" style="text-align: left; margin-bottom: 15px;" class="animate__animated animate__fadeIn">
+        <div *ngIf="materiasSugeridas.length > 0" class="lista-sugerencias">
+          <div class="item-sugerencia" *ngFor="let sugerencia of materiasSugeridas" (click)="seleccionarMateriaInteligente(sugerencia)">
+            {{ sugerencia }}
+          </div>
+        </div>
+      </div>
+
+      <!-- 2, 3, 4 y 5. Solo aparecen si ya seleccionó la materia -->
+      <div *ngIf="materiaInteligente" style="text-align: left; margin-bottom: 15px" class="animate__animated animate__fadeIn">
         
         <label style="color: white; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px; display: block;">2. DÍA DISPONIBLE</label>
         <div style="background: white; border-radius: 8px; margin-bottom: 15px; padding: 2px;">
-          <ion-item lines="none" style="--background: transparent;">
-            <ion-select [(ngModel)]="diaInteligente" placeholder="Selecciona un día" interface="popover" style="color: #003366; font-weight: bold; width: 100%;">
+          <ion-item lines="none" style="--background: transparent">
+            <ion-select [(ngModel)]="diaInteligente" placeholder="Selecciona un día" interface="popover" style="color: #003366; font-weight: bold; width: 100%">
               <ion-select-option *ngFor="let dia of diasDisponiblesInteligente" [value]="dia">{{ dia }}</ion-select-option>
             </ion-select>
           </ion-item>
         </div>
 
         <label style="color: white; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px; display: block;">3. HORA DISPONIBLE</label>
-        <div style="background: white; border-radius: 8px; padding: 2px;">
-          <ion-item lines="none" style="--background: transparent;">
-            <ion-select [(ngModel)]="horaInteligente" placeholder="Selecciona una hora" interface="popover" style="color: #003366; font-weight: bold; width: 100%;">
+        <div style="background: white; border-radius: 8px; margin-bottom: 15px; padding: 2px">
+          <ion-item lines="none" style="--background: transparent">
+            <ion-select [(ngModel)]="horaInteligente" placeholder="Selecciona una hora" interface="popover" style="color: #003366; font-weight: bold; width: 100%">
               <ion-select-option *ngFor="let hora of horasDisponiblesInteligente" [value]="hora">{{ hora }}</ion-select-option>
             </ion-select>
           </ion-item>
         </div>
 
+        <label style="color: white; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px; display: block;">4. MOTIVO DE LA TUTORÍA</label>
+        <div style="background: white; border-radius: 8px; padding: 2px; margin-bottom: 15px;">
+          <ion-item lines="none" style="--background: transparent;">
+            <ion-select [(ngModel)]="tipoDerivacion" placeholder="Selecciona una opción" interface="popover" style="color: #003366; font-weight: bold; width: 100%;">
+              <ion-select-option value="DECISIÓN PROPIA">DECISIÓN PROPIA</ion-select-option>
+              <ion-select-option value="PROYECTO LALA">PROYECTO LALA</ion-select-option>
+              <ion-select-option value="CONSEJERÍA ACADÉMICA">CONSEJERIA ACADÉMICA</ion-select-option>
+              <ion-select-option value="DOCENTE DE LA CARRERA">DOCENTE DE LA CARRERA</ion-select-option>
+              <ion-select-option value="DIRECCIÓN DE CARRERA">DIRECCION DE CARRERA</ion-select-option>
+            </ion-select>
+          </ion-item>
+        </div>
+
+        <!-- ========================================== -->
+      <!-- 🌟 BUSCADOR PREDICTIVO DOCENTES (MATCH AUTOMÁTICO) -->
+      <!-- ========================================== -->
+      <div style="text-align: left; margin-bottom: 15px; position: relative; z-index: 99998;">
+        <label style="color: white; font-weight: bold; font-size: 0.8rem; margin-bottom: 5px; display: block;">5. DOCENTE (APELLIDOS Y NOMBRES)</label>
+        <div style="background: white; border-radius: 8px; padding: 2px;">
+          <!-- 🌟 Actualizado al estilo nativo -->
+          <ion-input 
+            [(ngModel)]="docenteBuscado" 
+            (ngModelChange)="filtrarDocentes()" 
+            placeholder="Ej: PEREZ ZAMBRANO JUAN..." 
+            style="color: #003366; font-weight: bold; --padding-start: 10px;">
+          </ion-input>
+        </div>
+        
+        <div *ngIf="docentesFiltrados.length > 0" class="lista-sugerencias">
+          <div class="item-sugerencia" *ngFor="let doc of docentesFiltrados" (click)="seleccionarDocente(doc)">
+            {{ doc }}
+          </div>
+        </div>
+      </div>
       </div>
 
-      <!-- Botones de Acción -->
-      <div class="botones-modal" style="margin-top: 25px;">
-        <button class="btn-blanco" (click)="ejecutarMatchInteligente()" [disabled]="!materiaInteligente || !diaInteligente || !horaInteligente" [style.opacity]="(!materiaInteligente || !diaInteligente || !horaInteligente) ? '0.5' : '1'">
+      <div class="botones-modal" style="margin-top: 25px">
+        <button
+          class="btn-blanco"
+          (click)="ejecutarMatchInteligente()"
+          [disabled]="!materiaInteligente || !diaInteligente || !horaInteligente || !tipoDerivacion || !docenteBuscado"
+          [style.opacity]="(!materiaInteligente || !diaInteligente || !horaInteligente || !tipoDerivacion || !docenteBuscado) ? '0.5' : '1'"
+        >
           <ion-icon name="checkmark-outline"></ion-icon> Asignar Tutor
         </button>
         <button class="btn-blanco btn-rojo-texto" (click)="cerrarAgendamientoInteligente()">
@@ -478,6 +1204,5 @@
         </button>
       </div>
     </div>
-  </div>
- 
+</div>
 </ion-content>

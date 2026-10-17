@@ -130,43 +130,75 @@ async ionViewWillEnter() {
     this.router.navigate(['/notificaciones'], { queryParams: { panel: 'TUTOR' } });
   }
 
+// Importa Router si no lo tienes arriba: import { Router } from '@angular/router';
+
   async cargarTutoriasPorImpartir() {
     this.cargando = true;
     this.tutoriasPorImpartir = [];
 
     try {
-      const qTutor = query(
-        collection(this.firestore, 'Reservas'),
-        where('correoTutor', '==', this.correoUsuario)
-      );
-      
+      const qTutor = query(collection(this.firestore, 'Reservas'), where('correoTutor', '==', this.correoUsuario));
       const snapshot = await getDocs(qTutor);
+
+      const tutoriasAgrupadas = new Map();
+      const tutoriasIndividuales: any[] = [];
 
       snapshot.forEach(documento => {
         const res = documento.data();
         
+        // Ocultamos las canceladas
+        if (res['estado'] === 'CANCELADA') return;
+
         let colorEstado = '#fde047'; 
         if (res['estado'] === 'CONFIRMADA' || res['estado'] === 'ACEPTADA') colorEstado = '#34d399'; 
-        if (res['estado'] === 'CANCELADA') colorEstado = '#ef4444'; 
 
-        this.tutoriasPorImpartir.push({
+        const tutoriaFormateada = {
           id: documento.id,
           materia: res['materia'],
-          codigo: res['codigo'] || 'SIN CÓDIGO',
-          dia: res['dia_elegido'] || 'Por definir',
-          hora: res['hora_elegida'] || 'Por definir',
+          codigo: res['codigo'] || res['codigo_tutoria'] || 'SIN CÓDIGO',
+          dia: res['dia_elegido'] || res['dia'] || 'Por definir',
+          hora: res['hora_elegida'] || res['hora'] || 'Por definir',
           color: colorEstado,
           estado: res['estado'],
           celularEstudiante: res['celularEstudiante'], 
           nombreEstudiante: res['nombreEstudiante'],
-          correoEstudiante: res['correoEstudiante']
-        });
+          correoEstudiante: res['correoEstudiante'],
+          tipoDerivacion: res['tipo_derivacion'] || 'DECISIÓN PROPIA',
+          docente: res['docente'] || ''
+        };
+
+        // 🌟 AGRUPACIÓN INTELIGENTE POR CÓDIGO
+        if (tutoriaFormateada.codigo !== 'SIN CÓDIGO') {
+          if (tutoriasAgrupadas.has(tutoriaFormateada.codigo)) {
+            // Ya existe el Master, añadimos este estudiante a la lista de "Invitados"
+            const master = tutoriasAgrupadas.get(tutoriaFormateada.codigo);
+            master.alumnosExtra.push(tutoriaFormateada);
+          } else {
+            // Es el primero, lo nombramos "Master" e iniciamos su lista de extras
+            tutoriaFormateada.alumnosExtra = [];
+            tutoriasAgrupadas.set(tutoriaFormateada.codigo, tutoriaFormateada);
+          }
+        } else {
+          // Es una tutoría individual 1 a 1
+          tutoriaFormateada.alumnosExtra = [];
+          tutoriasIndividuales.push(tutoriaFormateada);
+        }
       });
+
+      // Unimos las Master con las individuales en una sola lista para la pantalla
+      this.tutoriasPorImpartir = [...Array.from(tutoriasAgrupadas.values()), ...tutoriasIndividuales];
+
     } catch (error) {
       console.error("Error cargando la agenda del tutor:", error);
     }
-
     this.cargando = false;
+  }
+
+  // 🌟 NUEVA FUNCIÓN: ENVÍA LOS DATOS COMPLETOS A LA PÁGINA DE ASISTENCIA
+  irATomarAsistencia(tutoria: any) {
+    this.router.navigate(['/tabs-tutor/asistencia'], {
+      state: { tutoriaMaster: tutoria }
+    });
   }
 
   contactarEstudiante(celular: string, nombre: string, materia: string) {
@@ -341,83 +373,98 @@ seleccionarNuevoEstado(nuevoEstado: string, nuevoColor: string) {
     this.procesarCancelacion(tutoria);
   }
 
-  async procesarCancelacion(tutoria: any) {
+async procesarCancelacion(tutoria: any) {
+    // Eliminación visual inmediata de la pantalla
+    this.tutoriasPorImpartir = [...this.tutoriasPorImpartir.filter(t => t.id !== tutoria.id)];
+
     try {
       const tutoriaRef = doc(this.firestore, 'Reservas', tutoria.id);
       
-      // 1. Verificamos el documento original para ver si ya fue reasignado antes
       const snap = await getDoc(tutoriaRef);
       const data = snap.data();
       const yaReasignada = data ? data['reasignada_automaticamente'] : false;
 
       if (yaReasignada) {
-        // 🌟 ESCENARIO A: Segunda cancelación (El nuevo tutor también canceló)
+        // Segunda cancelación
         await updateDoc(tutoriaRef, {
           estado: 'REQUIERE_ADMIN',
+          correoTutor: 'POR_ASIGNAR', // 🌟 BORRAMOS TU CORREO PARA QUE NO TE VUELVA A SALIR
           notas_admin: 'Cancelada por el segundo tutor asignado. Requiere asignación manual.'
         });
-        this.mostrarAviso('Esta tutoría ya había sido reasignada. Se ha enviado una alerta a Coordinación.', 'info');
+        this.mostrarAviso('Esta tutoría ya había sido reasignada antes. Se ha enviado una alerta a Coordinación.', 'info');
       } else {
-        // 🌟 ESCENARIO B: Primera cancelación, buscamos reemplazo automático
+        // Primera cancelación: Buscamos un nuevo héroe
         const nuevoTutor = await this.buscarTutorReemplazo(tutoria.materia, tutoria.dia, tutoria.hora, this.correoUsuario);
 
         if (nuevoTutor) {
-          // Actualizamos el documento con los datos del nuevo héroe
+          // Asignamos al nuevo tutor
           await updateDoc(tutoriaRef, {
-            correoTutor: nuevoTutor.correo || nuevoTutor.correo_google,
-            nombreTutor: nuevoTutor.nombre,
+            correoTutor: String(nuevoTutor.correo || nuevoTutor.correo_google).toLowerCase().trim(), // 🌟 AQUÍ YA SE BORRABA TU CORREO
+            nombreTutor: nuevoTutor.nombre.toUpperCase(),
             celularTutor: nuevoTutor.celular || 'No registrado',
-            reasignada_automaticamente: true, // Marca de seguridad
+            reasignada_automaticamente: true, 
             estado: 'PENDIENTE'
           });
-          this.mostrarAviso(`Clase reasignada automáticamente a ${nuevoTutor.nombre}.`, 'exito');
+          this.mostrarAviso(`Tutoría cancelada. El sistema ha encontrado a otro tutor y se la ha reasignado.`, 'exito');
         } else {
-          // No hay nadie más con esa materia y horario disponible
+          // No hubo más tutores
           await updateDoc(tutoriaRef, {
             estado: 'REQUIERE_ADMIN',
+            correoTutor: 'POR_ASIGNAR', // 🌟 BORRAMOS TU CORREO PARA QUE NO TE VUELVA A SALIR
             reasignada_automaticamente: true,
             notas_admin: 'No se encontró un tutor de reemplazo automático para este cruce de horarios.'
           });
-          this.mostrarAviso('No hay reemplazo disponible. Se ha enviado al Administrador para gestión manual.', 'advertencia');
+          this.mostrarAviso('No hay reemplazo automático disponible. Se ha enviado al Administrador.', 'advertencia');
         }
       }
 
-      // 2. Desaparecemos la tutoría de la pantalla del tutor actual al instante
-      this.tutoriasPorImpartir = this.tutoriasPorImpartir.filter(t => t.id !== tutoria.id);
-
     } catch (error) {
       console.error('Error procesando cancelación:', error);
-      this.mostrarAviso('Error de conexión al procesar la cancelación.', 'error');
+      this.mostrarAviso('Ocurrió un error al procesar la cancelación.', 'error');
     }
   }
 
-  async buscarTutorReemplazo(materia: string, dia: string, hora: string, correoActual: string) {
+// ==========================================
+  // 🌟 BUSCADOR ALEATORIO DE REEMPLAZO 
+  // ==========================================
+  async buscarTutorReemplazo(materia: string, dia: string, hora: string, correoCancelador: string) {
     const q = query(collection(this.firestore, 'Tutores'), where('estado', '==', 'ACTIVO'));
     const snapshot = await getDocs(q);
-    let tutorReemplazo = null;
+    
+    let candidatosValidos: any[] = []; // Aquí meteremos a todos los que puedan dar la clase
 
-    // Buscamos manualmente para poder detenernos al primer Match perfecto
-    for (let i = 0; i < snapshot.docs.length; i++) {
-      const tutor = snapshot.docs[i].data() as any;
-      const correoTutor = (tutor.correo || tutor.correo_google || '').toLowerCase();
+    // Limpiamos el correo del tutor que está cancelando para evitar fallos de mayúsculas/espacios
+    const correoCanceladorLimpio = String(correoCancelador || '').toLowerCase().trim();
 
-      // Descartamos al tutor actual que está cancelando
-      if (correoTutor !== correoActual.toLowerCase()) {
+    snapshot.forEach(doc => {
+      const tutor = doc.data() as any;
+      const correoTutorLimpio = String(tutor.correo || tutor.correo_google || '').toLowerCase().trim();
+
+      // 🌟 REGLA DE ORO: Si es el mismo tutor que canceló, lo ignoramos completamente
+      if (correoTutorLimpio !== correoCanceladorLimpio) {
         
-        // Validamos la materia y el horario exacto
+        // Verificamos si domina la materia
         const enseñaMateria = tutor.materias && tutor.materias.includes(materia);
+        
+        // Verificamos si tiene libre ese exacto cruce de día y hora
         const claveHorario = `${dia}-${hora}`;
         const tieneHorario = tutor.horarios && tutor.horarios[claveHorario];
 
         if (enseñaMateria && tieneHorario) {
-          tutorReemplazo = tutor; 
-          break; // Detenemos la búsqueda al encontrar un reemplazo
+          candidatosValidos.push(tutor); // Lo añadimos a la lista de candidatos
         }
       }
-    }
-    return tutorReemplazo;
-  }
+    });
 
+    // 🌟 SELECCIÓN ALEATORIA DE LA BOLSA DE CANDIDATOS
+    if (candidatosValidos.length > 0) {
+      const indiceAlAzar = Math.floor(Math.random() * candidatosValidos.length);
+      return candidatosValidos[indiceAlAzar];
+    }
+
+    // Si la lista de candidatos se quedó en 0, retornamos nulo
+    return null; 
+  }
   abrirGuia() {
     this.mostrarGuiaTutor = true;
   }

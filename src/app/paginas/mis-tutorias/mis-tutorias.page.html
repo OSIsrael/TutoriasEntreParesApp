@@ -56,14 +56,14 @@
 
     <!-- TARJETAS DESLIZABLES -->
     <ion-list style="background: transparent;" lines="none" *ngIf="!cargando">
-      <ion-item-sliding *ngFor="let t of tutorias" style="background: transparent; margin-bottom: 15px;">
+  <ion-item-sliding *ngFor="let t of tutorias" style="background: transparent; margin-bottom: 15px;">
         
         <!-- 🌟 DESLIZAR HACIA LA DERECHA (side="start") -->
         <ion-item-options side="start">
-          <ion-item-option *ngIf="t.estado !== 'CANCELADA'" color="success" (click)="contactarWhatsApp(t.celularContacto, t.nombreContacto, t.materia)">
+          <ion-item-option *ngIf="t.celularContacto && t.estado !== 'REQUIERE_ADMIN'" color="success" (click)="contactarWhatsApp(t.celularContacto, t.nombreContacto, t.materia)">
             <ion-icon slot="icon-only" name="logo-whatsapp" style="font-size: 1.8rem;"></ion-icon>
           </ion-item-option>
-          <ion-item-option *ngIf="t.estado !== 'CANCELADA'" color="danger" (click)="cancelarTutoria(t)">
+          <ion-item-option *ngIf="t.estado !== 'REQUIERE_ADMIN'" color="danger" (click)="cancelarTutoria(t)">
             <ion-icon slot="icon-only" name="trash-outline" style="font-size: 1.8rem;"></ion-icon>
           </ion-item-option>
         </ion-item-options>
@@ -71,9 +71,23 @@
         <!-- TARJETA VISIBLE -->
         <ion-item style="--padding-start: 0; --inner-padding-end: 0; --background: transparent;">
           <div class="tarjeta-azul" style="width: 100%; margin: 0;">
-            <div class="icono-blanco"><ion-icon name="book-outline"></ion-icon></div>
+            <div class="icono-blanco">
+                <!-- Cambia el ícono a una lupa si el admin está buscando tutor -->
+                <ion-icon [name]="t.estado === 'REQUIERE_ADMIN' ? 'search-outline' : 'book-outline'"></ion-icon>
+            </div>
             <div class="info-texto">
-              <h3>{{ t.materia }} <span *ngIf="t.codigo">( {{ t.codigo }} )</span></h3>
+              <h3>{{ t.materia }} <span *ngIf="t.codigo && t.codigo !== 'SIN CÓDIGO'">( {{ t.codigo }} )</span></h3>
+              
+              <!-- 🌟 Muestra el nombre del tutor o "Buscando tutor..." en naranja -->
+              <p style="color: #003366; font-weight: 900; font-size: 0.9rem; margin-bottom: 5px;">
+                Tutor: <span [style.color]="t.estado === 'REQUIERE_ADMIN' ? '#f97316' : '#003366'">{{ t.nombreContacto }}</span>
+              </p>
+
+              <!-- 🌟 Mensaje explicativo para el estudiante -->
+              <p *ngIf="t.estado === 'REQUIERE_ADMIN'" style="font-size: 0.75rem; color: #ef4444; font-style: italic; margin-bottom: 5px;">
+                * Tu solicitud está en revisión por Coordinación.
+              </p>
+
               <p>{{ t.dia }}</p>
               <p>{{ t.hora }}</p>
             </div>
@@ -83,10 +97,10 @@
 
         <!-- 🌟 DESLIZAR HACIA LA IZQUIERDA (side="end") -->
         <ion-item-options side="end">
-          <ion-item-option *ngIf="t.estado !== 'CANCELADA'" color="success" (click)="contactarWhatsApp(t.celularContacto, t.nombreContacto, t.materia)">
+          <ion-item-option *ngIf="t.celularContacto && t.estado !== 'REQUIERE_ADMIN'" color="success" (click)="contactarWhatsApp(t.celularContacto, t.nombreContacto, t.materia)">
             <ion-icon slot="icon-only" name="logo-whatsapp" style="font-size: 1.8rem;"></ion-icon>
           </ion-item-option>
-          <ion-item-option *ngIf="t.estado !== 'CANCELADA'" color="danger" (click)="cancelarTutoria(t)">
+          <ion-item-option *ngIf="t.estado !== 'REQUIERE_ADMIN'" color="danger" (click)="cancelarTutoria(t)">
             <ion-icon slot="icon-only" name="trash-outline" style="font-size: 1.8rem;"></ion-icon>
           </ion-item-option>
         </ion-item-options>
