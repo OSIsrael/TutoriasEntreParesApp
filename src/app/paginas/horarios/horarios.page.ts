@@ -430,12 +430,22 @@ abrirConfirmacion(tutor: any, dia: string, horas: string, materia: string) {
     this.horaSeleccionada = '';
   }
 
-  async confirmarReserva() {
+async confirmarReserva() {
     if (!this.reservaActual) return;
 
     // 🌟 VALIDAMOS QUE EL ESTUDIANTE HAYA ELEGIDO UNA HORA
     if (!this.horaSeleccionada) {
       this.mostrarAviso('Por favor, selecciona una hora específica para la tutoría.', 'advertencia');
+      return;
+    }
+
+    // 🌟 MOVIDO AQUÍ: VALIDAMOS QUE HAYA DERIVACIÓN Y DOCENTE *ANTES* DE GUARDAR
+    if (!this.tipoDerivacion && !this.reservaActual.tipo_derivacion) {
+      this.mostrarAviso('Por favor, indica el motivo de la tutoría.', 'advertencia');
+      return;
+    }
+    if (!this.docenteBuscado && !this.reservaActual.docente) {
+      this.mostrarAviso('Por favor, busca y selecciona un docente.', 'advertencia');
       return;
     }
 
@@ -449,8 +459,12 @@ abrirConfirmacion(tutor: any, dia: string, horas: string, materia: string) {
         celularTutor: this.reservaActual.celularTutor || 'No registrado',
         materia: this.reservaActual.materia,
         dia_elegido: this.reservaActual.dia,
-        hora_elegida: this.horaSeleccionada, // 🌟 ENVIAMOS LA HORA EXACTA SELECCIONADA
-        codigo: this.dbService.generarCodigoTutoria(this.reservaActual.materia)
+        hora_elegida: this.horaSeleccionada, 
+        codigo: this.dbService.generarCodigoTutoria(this.reservaActual.materia),
+        
+        // 🌟 AÑADIMOS LAS NUEVAS VARIABLES AL PAQUETE QUE VA A FIREBASE Y TU HOJA DE CÁLCULO
+        tipo_derivacion: this.tipoDerivacion || this.reservaActual.tipo_derivacion || 'DECISIÓN PROPIA',
+        docente: this.docenteBuscado || this.reservaActual.docente || 'No especificado'
       };
       
       await this.dbService.agendarTutoria(datosReserva);
@@ -459,7 +473,7 @@ abrirConfirmacion(tutor: any, dia: string, horas: string, materia: string) {
         if (this.dbService.crearNotificacion) {
           await this.dbService.crearNotificacion({
             titulo: 'Nueva Solicitud de Tutoría',
-            mensaje: `${this.nombreUsuario} ha solicitado una clase de ${this.reservaActual.materia} el día ${this.reservaActual.dia} a las ${this.horaSeleccionada}.`, // 🌟 INCLUIMOS LA HORA EN LA NOTIFICACIÓN
+            mensaje: `${this.nombreUsuario} ha solicitado una clase de ${this.reservaActual.materia} el día ${this.reservaActual.dia} a las ${this.horaSeleccionada}.`, 
             tipo: 'TUTORIA',
             correo_destino: this.reservaActual.correoTutor,
             sede_destino: 'GLOBAL',
@@ -472,13 +486,15 @@ abrirConfirmacion(tutor: any, dia: string, horas: string, materia: string) {
 
       this.cerrarConfirmacion();
       this.mostrarAviso('¡Tutoría agendada con éxito! Revisa la pestaña de Mis Tutorías.','exito');
+      
+      // 🌟 LIMPIAMOS LAS VARIABLES PARA QUE EL MODAL QUEDE EN BLANCO LA PRÓXIMA VEZ
+      this.tipoDerivacion = '';
+      this.docenteBuscado = '';
+      this.docentesFiltrados = [];
+      
     } catch (error) {
       console.error("Error al agendar:", error);
       this.mostrarAviso('Hubo un problema al enviar tu solicitud.','error');
-    }
-    if (!this.tipoDerivacion || !this.docenteBuscado) {
-      this.mostrarAviso('Por favor, indica el motivo y el docente para poder agendar.', 'advertencia');
-      return;
     }
   }
   formatearNumeroWA(numero: string): string {
@@ -833,8 +849,9 @@ async confirmarRenovacionEstudiante() {
     if (this.cdr) this.cdr.detectChanges(); 
   }
   // 3. ¡El Match Automático y Aleatorio!
-  async ejecutarMatchInteligente() {
-    if (!this.materiaInteligente || !this.diaInteligente || !this.horaInteligente) {
+async ejecutarMatchInteligente() {
+    // 🌟 Agregamos también la validación aquí por seguridad
+    if (!this.materiaInteligente || !this.diaInteligente || !this.horaInteligente || !this.tipoDerivacion || !this.docenteBuscado) {
       this.mostrarAviso('Por favor, completa todos los campos para buscar tu tutor ideal.', 'advertencia');
       return;
     }
@@ -842,13 +859,10 @@ async confirmarRenovacionEstudiante() {
     const bloque = this.asignaturasMaster.find((a: any) => a.asignatura === this.materiaInteligente);
     let tutoresValidos: any[] = [];
 
-    // Filtramos a los tutores que den esa materia y tengan libre ese día y hora exacta
     if (bloque && bloque.tutores) {
       bloque.tutores.forEach((tutor: any) => {
-        // Reconstruimos la clave para buscar en sus horarios
         const claveBuscada = `${this.diaInteligente}-${this.horaInteligente}`;
         if (tutor.horarios && tutor.horarios[claveBuscada]) {
-          // Validamos que no sea el mismo estudiante queriendo darse tutoría a sí mismo
           const miCorreo = String(localStorage.getItem('correo')).toLowerCase().trim();
           const correoTutor = String(tutor.correo || tutor.correo_google).toLowerCase().trim();
           
@@ -864,11 +878,9 @@ async confirmarRenovacionEstudiante() {
       return;
     }
 
-    // 🌟 SELECCIÓN ALEATORIA: Elegimos uno al azar de la lista de válidos
     const indiceAleatorio = Math.floor(Math.random() * tutoresValidos.length);
     const tutorElegido = tutoresValidos[indiceAleatorio];
 
-    // Llenamos la variable reservaActual para reutilizar tu función de guardar que ya funciona perfecto
     this.reservaActual = {
       tutorNombre: tutorElegido.nombre,
       correoTutor: tutorElegido.correo || tutorElegido.correo_google,
@@ -880,11 +892,12 @@ async confirmarRenovacionEstudiante() {
       docente: this.docenteBuscado
     };
     
-    this.horaSeleccionada = this.horaInteligente; // Aseguramos que pase la validación
+    this.horaSeleccionada = this.horaInteligente; 
     
-    // Cerramos el modal inteligente y disparamos tu función nativa de guardado
-    this.cerrarAgendamientoInteligente();
+    // 🌟 CAMBIO CLAVE: Primero mandamos a guardar, y LUEGO cerramos el modal.
+    // Si cerrábamos el modal primero, se borraban las variables antes de guardarlas.
     await this.confirmarReserva(); 
+    this.cerrarAgendamientoInteligente();
   }
  // ==========================================
   // 🌟 GESTIÓN DE DOCENTES (BÚSQUEDA NATIVA TIPO ASISTENCIA)

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit,ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
@@ -6,15 +6,17 @@ import {
   bookOutline, logoWhatsapp, addOutline, checkmarkOutline, closeOutline, 
   personCircleOutline, mailOutline, businessOutline, settingsOutline, 
   logOutOutline, peopleOutline, filterOutline, notificationsOutline, trashOutline,
-  chatbubblesOutline, informationCircle, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, helpCircleOutline } from 'ionicons/icons';
+  chatbubblesOutline, informationCircle, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, helpCircleOutline,
+  qrCodeOutline, scanOutline, keypadOutline, closeCircleOutline } from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
 import { Router } from '@angular/router'; 
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Firestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { 
   IonContent, IonIcon, IonHeader, IonToolbar, IonButtons, IonButton,
-  IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonList,IonModal,IonLabel,ToastController,AlertController
+  IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonList,IonModal,IonLabel,ToastController,AlertController, ActionSheetController
 } from '@ionic/angular/standalone';
+import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 
 @Component({
   selector: 'app-mis-tutorias',
@@ -34,9 +36,8 @@ export class MisTutoriasPage implements OnInit {
 
   private toastController = inject(ToastController);
   private alertController = inject(AlertController);
+  private actionSheetCtrl = inject(ActionSheetController);
 
-
-  // 🌟 VARIABLES PARA EL MENÚ DE ROLES
   mostrarMenuRol: boolean = false;
   tienePanelTutor: boolean = false;
   tienePanelAdmin: boolean = false;
@@ -44,6 +45,10 @@ export class MisTutoriasPage implements OnInit {
   mostrarModalCodigo: boolean = false;
   codigoIngresado: string = '';
   
+  // 🌟 Variables para el Código QR
+  mostrarModalMiQR: boolean = false;
+  codigoQRGenerado: string = '';
+
   tutorias: any[] = [];
   cargando: boolean = true;
   correoUsuario: string = '';
@@ -52,9 +57,10 @@ export class MisTutoriasPage implements OnInit {
 
   hayNotificacionesSinLeer: boolean = false;
 
+  scanActive: boolean = false;
+
   constructor() {
-    // 🌟 Añadimos los iconos para nuestras guías visuales
-    addIcons({personCircleOutline,helpCircleOutline,swapHorizontalOutline,notificationsOutline,chatbubblesOutline,bookOutline,logoWhatsapp,trashOutline,addOutline,informationCircle,checkmarkOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,mailOutline,businessOutline,settingsOutline,logOutOutline,peopleOutline,filterOutline});
+    addIcons({personCircleOutline,helpCircleOutline,swapHorizontalOutline,notificationsOutline,chatbubblesOutline,bookOutline,logoWhatsapp,trashOutline,addOutline,informationCircle,checkmarkOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,mailOutline,businessOutline,settingsOutline,logOutOutline,peopleOutline,filterOutline, qrCodeOutline, scanOutline, keypadOutline, closeCircleOutline});
   }
 
   ngOnInit() {
@@ -101,12 +107,11 @@ export class MisTutoriasPage implements OnInit {
       const snapshot = await getDocs(qEstudiante);
       
       const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0); // Medianoche exacta
+      hoy.setHours(0, 0, 0, 0); 
 
       for (const documento of snapshot.docs) {
         const res = documento.data();
         
-        // 🌟 CONSERJE AUTOMÁTICO: Filtro de expiración
         if (res['fecha_solicitud'] && res['dia_elegido'] !== 'Por definir') {
           const fechaExactaDeLaClase = this.calcularFechaExacta(res['fecha_solicitud'], res['dia_elegido'] || res['dia'], res['hora_elegida'] || res['hora']);
           
@@ -114,12 +119,10 @@ export class MisTutoriasPage implements OnInit {
 
           if (fechaExactaDeLaClase.getTime() < hoy.getTime()) {
             await deleteDoc(doc(this.firestore, 'Reservas', documento.id));
-            console.log(`Tutoría expirada eliminada automáticamente: ${res['materia']}`);
             continue; 
           }
         }
 
-        // 🌟 REGLA 1: Si se canceló y no hay reemplazo, NO la mostramos en pantalla
         if (res['estado'] === 'CANCELADA') {
           continue; 
         }
@@ -132,11 +135,10 @@ export class MisTutoriasPage implements OnInit {
           colorEstado = '#34d399'; 
         }
 
-        // 🌟 REGLA 2: Si está en espera de Coordinación, protegemos los datos
         if (res['estado'] === 'REQUIERE_ADMIN') {
-          colorEstado = '#f97316'; // Naranja
+          colorEstado = '#f97316'; 
           nombreTutorMostrar = 'Buscando tutor...';
-          celularTutorMostrar = null; // Quitamos el celular para que no abra WhatsApp
+          celularTutorMostrar = null; 
         }
 
         const tutoriaFormateada = {
@@ -164,7 +166,7 @@ export class MisTutoriasPage implements OnInit {
 
     this.cargando = false;
   }
-  // 🌟 FUNCIÓN NUEVA: Calcula la fecha de calendario basándose en el día que se solicitó
+
   calcularFechaExacta(fechaSolISO: string, diaSemana: string, horaRango: string): Date {
     const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const diaBuscado = diaSemana.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
@@ -174,12 +176,10 @@ export class MisTutoriasPage implements OnInit {
     const horaStr = horaRango.split('-')[0].trim();
     const [hora, min] = horaStr.split(':').map(Number);
 
-    // Partimos desde el día exacto en que se hizo la reserva
     const fecha = new Date(fechaSolISO);
     fecha.setHours(hora, min, 0, 0);
 
     let dif = diaIndex - fecha.getDay();
-    // Encontramos la fecha del próximo (o actual) día de la semana que coincide
     if (dif < 0 || (dif === 0 && fecha.getTime() < new Date(fechaSolISO).getTime())) {
       dif += 7; 
     }
@@ -226,7 +226,6 @@ export class MisTutoriasPage implements OnInit {
     }
   }
 
-// 🌟 CONVIERTE EL ID DE FIREBASE EN NÚMERO PARA LAS ALARMAS
   generarIdNumerico(idString: string): number {
     let hash = 0;
     if (!idString) return Math.floor(Math.random() * 100000);
@@ -237,7 +236,6 @@ export class MisTutoriasPage implements OnInit {
     return Math.abs(hash);
   }
 
-  // 🌟 LAS 2 ALARMAS EXACTAS PARA EL ESTUDIANTE
   async programarRecordatorios(tutoria: any) {
     if(tutoria.dia === 'Por definir' || tutoria.hora === 'Por definir') return;
 
@@ -246,7 +244,6 @@ export class MisTutoriasPage implements OnInit {
     const notificaciones = [];
     const idBase = this.generarIdNumerico(tutoria.id);
 
-    // 1. Alarma: Exactamente 1 hora antes de la clase
     const tiempo1Hora = fechaTutoria.getTime() - (60 * 60 * 1000);
     if (tiempo1Hora > ahora) {
       notificaciones.push({
@@ -257,12 +254,10 @@ export class MisTutoriasPage implements OnInit {
       });
     }
 
-    // 2. Alarma: A las 08:00 AM del mismo día de la clase
     const fechaMismoDia = new Date(fechaTutoria);
     fechaMismoDia.setHours(8, 0, 0, 0);
     const tiempoMismoDia = fechaMismoDia.getTime();
 
-    // Solo la programa si aún no son las 8 AM de ese día y si no choca con la de 1 hora
     if (tiempoMismoDia > ahora && tiempoMismoDia < tiempo1Hora) {
       notificaciones.push({
         id: idBase + 1, 
@@ -272,7 +267,6 @@ export class MisTutoriasPage implements OnInit {
       });
     }
 
-    // Programar en el dispositivo
     if (notificaciones.length > 0) {
       const { LocalNotifications } = await import('@capacitor/local-notifications');
       let permStatus = await LocalNotifications.checkPermissions();
@@ -284,6 +278,7 @@ export class MisTutoriasPage implements OnInit {
       }
     }
   }
+
   calcularProximaFechaDesdeHoy(diaSemana: string, horaRango: string): Date {
     const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     const diaBuscado = diaSemana.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
@@ -303,6 +298,97 @@ export class MisTutoriasPage implements OnInit {
     }
     fecha.setDate(ahora.getDate() + dif);
     return fecha;
+  }
+
+  // ==========================================
+  // 🌟 MENÚ FLOTANTE PARA UNIRSE A TUTORÍA (ACTION SHEET)
+  // ==========================================
+  async abrirOpcionesUnirse() {
+    const actionSheet = await this.actionSheetCtrl.create({
+      header: 'Unirse a una Tutoría',
+      cssClass: 'action-sheet-gietaes', 
+      buttons: [
+        {
+          text: 'Escanear Código QR',
+          icon: 'scan-outline',
+          handler: () => {
+            this.abrirEscanerQR();
+          }
+        },
+        {
+          text: 'Ingresar Código Manual',
+          icon: 'keypad-outline',
+          handler: () => {
+            this.mostrarModalCodigo = true; 
+          }
+        },
+        {
+          text: 'Cancelar',
+          icon: 'close',
+          role: 'cancel'
+        }
+      ]
+    });
+    await actionSheet.present();
+  }
+
+ async abrirEscanerQR() {
+    try {
+      // 1. Pedimos permiso para usar la cámara
+      const status = await BarcodeScanner.checkPermission({ force: true });
+
+      if (status.granted) {
+        // 2. Ocultamos el fondo blanco de tu app para poder ver la cámara (que está por detrás)
+        this.scanActive = true;
+        document.querySelector('body')?.classList.add('scanner-active');
+        await BarcodeScanner.hideBackground();
+
+        // 3. Encendemos la cámara y esperamos a que lea algo
+        const result = await BarcodeScanner.startScan();
+
+        // 4. Si escaneó algo exitosamente, apagamos la cámara y procesamos el código
+        if (result.hasContent) {
+          this.detenerEscaner();
+          this.codigoIngresado = result.content;
+          this.unirsePorCodigo(); // 🌟 Llama a tu función automáticamente con el código leído
+        }
+      } else {
+        this.mostrarAviso('Necesitas dar permiso a la cámara para escanear el QR.', 'error');
+      }
+    } catch (error) {
+      console.error('Error con el escáner:', error);
+      this.detenerEscaner();
+      this.mostrarAviso('El escáner de cámara solo funciona en un celular físico, no en la web.', 'info');
+    }
+  }
+  detenerEscaner() {
+    BarcodeScanner.showBackground();
+    BarcodeScanner.stopScan();
+    document.querySelector('body')?.classList.remove('scanner-active');
+    this.scanActive = false;
+  }
+  ngOnDestroy() {
+    if (this.scanActive) {
+      this.detenerEscaner();
+    }
+  }
+
+  // ==========================================
+  // 🌟 MOSTRAR MI CÓDIGO QR PARA INVITAR COMPAÑEROS
+  // ==========================================
+  mostrarMiQR(tutoria: any) {
+    if (!tutoria.codigo || tutoria.codigo === 'SIN CÓDIGO') {
+      this.mostrarAviso('Esta tutoría no tiene un código grupal generado.', 'advertencia');
+      return;
+    }
+    
+    this.codigoQRGenerado = tutoria.codigo;
+    this.mostrarModalMiQR = true;
+  }
+
+  cerrarModalMiQR() {
+    this.mostrarModalMiQR = false;
+    this.codigoQRGenerado = '';
   }
 
   abrirModalCodigo() { this.mostrarModalCodigo = true; }
@@ -330,9 +416,7 @@ export class MisTutoriasPage implements OnInit {
       this.cargando = false; 
     }
   }
-  // ==========================================
-  // 🌟 CAMBIO DE PANELES (MULTI-COLECCIÓN)
-  // ==========================================
+
   async cambiarPanel() {
     const correo = localStorage.getItem('correo') || '';
     this.tienePanelTutor = false;
@@ -340,7 +424,6 @@ export class MisTutoriasPage implements OnInit {
 
     if (correo) {
       try {
-        // 1. BUSCAMOS EN ESTUDIANTES
         const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
         const snapEst = await getDocs(qEst);
         
@@ -354,7 +437,6 @@ export class MisTutoriasPage implements OnInit {
           }
         }
 
-        // 2. BUSCAMOS EN TUTORES SI AÚN NO LO ES
         if (!this.tienePanelTutor) {
           const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
           const snapTut = await getDocs(qTut);
@@ -380,9 +462,6 @@ export class MisTutoriasPage implements OnInit {
       this.router.navigate([ruta]); 
     }, 150); 
   }
-  // ==========================================
-  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
-  // ==========================================
   
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
@@ -402,7 +481,7 @@ export class MisTutoriasPage implements OnInit {
     const toast = await this.toastController.create({
       message: mensaje,
       duration: 3000,
-      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
+      position: 'top', 
       icon: icono,
       cssClass: `toast-premium-gietaes ${claseCss}`,
       mode: 'ios' 
@@ -418,17 +497,8 @@ export class MisTutoriasPage implements OnInit {
         cssClass: 'alerta-premium-gietaes',
         mode: 'md', 
         buttons: [
-          {
-            text: 'Cancelar',
-            role: 'cancel',
-            cssClass: 'btn-alerta-cancelar',
-            handler: () => resolve(false)
-          },
-          {
-            text: 'Sí, Continuar',
-            cssClass: 'btn-alerta-confirmar',
-            handler: () => resolve(true)
-          }
+          { text: 'Cancelar', role: 'cancel', cssClass: 'btn-alerta-cancelar', handler: () => resolve(false) },
+          { text: 'Sí, Continuar', cssClass: 'btn-alerta-confirmar', handler: () => resolve(true) }
         ]
       });
       await alert.present();

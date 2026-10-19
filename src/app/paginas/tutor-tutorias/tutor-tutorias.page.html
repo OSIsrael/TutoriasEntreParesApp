@@ -68,15 +68,22 @@
             <div class="info-texto">
               <h3 style="font-size: 1.1rem; margin-bottom: 5px;">{{ t.materia }}</h3>
               <p style="color: #003366; font-weight: 900; font-size: 0.9rem; margin-bottom: 5px;">
-                Alumno: {{ t.nombreEstudiante }}
+                Alumno: {{ t.nombreEstudiante }} <span *ngIf="t.alumnosExtra && t.alumnosExtra.length > 0" style="color: #d97706;">(+{{ t.alumnosExtra.length }})</span>
               </p>
               <p style="margin-bottom: 2px;"><ion-icon name="calendar-outline"></ion-icon> {{ t.dia }}</p>
               <p><ion-icon name="time-outline"></ion-icon> {{ t.hora }}</p>
-              <p *ngIf="t.codigo" style="font-size: 0.75rem; color: #666; margin-top: 8px; font-weight: bold; background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px; display: inline-block;">
+              <p *ngIf="t.codigo && t.codigo !== 'SIN CÓDIGO'" style="font-size: 0.75rem; color: #666; margin-top: 8px; font-weight: bold; background: rgba(0,0,0,0.05); padding: 4px 8px; border-radius: 4px; display: inline-block;">
                 CÓDIGO DE CLASE: {{ t.codigo }}
               </p>
+
+              <!-- 🌟 NUEVO: BOTÓN DIRECTO EN LA TARJETA -->
+              <div style="margin-top: 10px;">
+                <ion-button fill="solid" size="small" (click)="irATomarAsistencia(t)" style="--background: #003366; --color: white; font-weight: bold; --border-radius: 6px; height: 30px;">
+                  <ion-icon name="list-outline" slot="start"></ion-icon>
+                  Tomar Asistencia
+                </ion-button>
+              </div>
             </div>
-            
             <div class="acciones-derecha">
               <div class="boton-estado-pill" (click)="abrirMenuEstado($event, t)">
                 <div class="punto-color" [style.background]="t.color"></div>

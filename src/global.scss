@@ -510,3 +510,7 @@ ion-tab-button:active ion-icon {
   transform: scale(1.05);
   transition: transform 0.1s ease;
 }
+body.scanner-active {
+  background: transparent !important;
+  --background: transparent !important;
+}
