@@ -67,6 +67,7 @@ export class TutorEstadisticasPage implements OnInit {
   materiasDisponibles: string[] = [];
   materiasSeleccionadas: string[] = [];
   horariosActualesTutor: any = {};
+  
 
   constructor() {
     addIcons({notificationsOutline,personCircleOutline,mailOutline,businessOutline,barChartOutline,addCircleOutline,personOutline,logOutOutline,settingsOutline,bookOutline,warningOutline,peopleOutline,schoolOutline,closeOutline,checkmarkOutline});

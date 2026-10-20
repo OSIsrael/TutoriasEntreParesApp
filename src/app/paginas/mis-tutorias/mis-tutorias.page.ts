@@ -58,6 +58,7 @@ export class MisTutoriasPage implements OnInit {
   hayNotificacionesSinLeer: boolean = false;
 
   scanActive: boolean = false;
+  mostrarOpcionesUnirse: boolean = false;
 
   constructor() {
     addIcons({personCircleOutline,helpCircleOutline,swapHorizontalOutline,notificationsOutline,chatbubblesOutline,bookOutline,logoWhatsapp,trashOutline,addOutline,informationCircle,checkmarkOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,mailOutline,businessOutline,settingsOutline,logOutOutline,peopleOutline,filterOutline, qrCodeOutline, scanOutline, keypadOutline, closeCircleOutline});
@@ -300,36 +301,23 @@ export class MisTutoriasPage implements OnInit {
     return fecha;
   }
 
-  // ==========================================
-  // 🌟 MENÚ FLOTANTE PARA UNIRSE A TUTORÍA (ACTION SHEET)
-  // ==========================================
-  async abrirOpcionesUnirse() {
-    const actionSheet = await this.actionSheetCtrl.create({
-      header: 'Unirse a una Tutoría',
-      cssClass: 'action-sheet-gietaes', 
-      buttons: [
-        {
-          text: 'Escanear Código QR',
-          icon: 'scan-outline',
-          handler: () => {
-            this.abrirEscanerQR();
-          }
-        },
-        {
-          text: 'Ingresar Código Manual',
-          icon: 'keypad-outline',
-          handler: () => {
-            this.mostrarModalCodigo = true; 
-          }
-        },
-        {
-          text: 'Cancelar',
-          icon: 'close',
-          role: 'cancel'
-        }
-      ]
-    });
-    await actionSheet.present();
+
+abrirOpcionesUnirse() {
+    this.mostrarOpcionesUnirse = true;
+  }
+
+  cerrarOpcionesUnirse() {
+    this.mostrarOpcionesUnirse = false;
+  }
+
+  opcionEscanearQRElegida() {
+    this.cerrarOpcionesUnirse();
+    this.abrirEscanerQR();
+  }
+
+  opcionCodigoManualElegido() {
+    this.cerrarOpcionesUnirse();
+    this.mostrarModalCodigo = true;
   }
 
  async abrirEscanerQR() {

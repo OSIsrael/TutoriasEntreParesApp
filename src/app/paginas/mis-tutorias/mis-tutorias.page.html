@@ -216,3 +216,49 @@
     Cancelar Escaneo
   </ion-button>
 </div>
+
+<!-- ========================================== -->
+  <!-- 🌟 MODAL: OPCIONES PARA UNIRSE (Reemplazo del Action Sheet negro) -->
+  <!-- ========================================== -->
+  <ion-modal [isOpen]="mostrarOpcionesUnirse" (didDismiss)="cerrarOpcionesUnirse()" class="modal-gietaes-centrado">
+    <ng-template>
+      <div style="display: flex; flex-direction: column; background: #ffffff; height: 100%; border-radius: 20px;">
+        
+        <!-- Cabecera -->
+        <div class="modal-header" style="background: #003366; padding: 15px 20px; border-bottom: 3px solid #EAB308; display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="color: #ffffff; font-size: 1.15rem; font-weight: 900; margin: 0;">UNIRSE A UNA CLASE</h3>
+          <ion-icon name="close-outline" (click)="cerrarOpcionesUnirse()" style="font-size: 1.8rem; color: #ffffff; cursor: pointer;"></ion-icon>
+        </div>
+
+        <!-- Cuerpo del Menú -->
+        <div class="modal-body text-left" style="overflow-y: auto; padding: 25px; flex-grow: 1; background: #f8fafc;">
+          <p style="margin: 0 0 20px 0; color: #475569; font-size: 0.95rem; text-align: center; font-weight: 500;">
+            ¿Cómo deseas ingresar a la tutoría de tu compañero?
+          </p>
+
+          <ion-list style="background: transparent; padding: 0;">
+            
+            <!-- Opción 1: Escanear QR -->
+            <ion-item button lines="none" (click)="opcionEscanearQRElegida()" style="--background: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; --padding-start: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+              <ion-icon name="scan-outline" slot="start" style="color: #003366; font-size: 1.8rem; margin-right: 15px;"></ion-icon>
+              <ion-label>
+                <h2 style="color: #003366; font-weight: 900; font-size: 1.05rem;">Escanear Código QR</h2>
+                <p style="color: #64748b; font-size: 0.8rem; margin-top: 2px;">Usa la cámara de tu celular</p>
+              </ion-label>
+            </ion-item>
+
+            <!-- Opción 2: Código Manual -->
+            <ion-item button lines="none" (click)="opcionCodigoManualElegido()" style="--background: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; --padding-start: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+              <ion-icon name="keypad-outline" slot="start" style="color: #003366; font-size: 1.8rem; margin-right: 15px;"></ion-icon>
+              <ion-label>
+                <h2 style="color: #003366; font-weight: 900; font-size: 1.05rem;">Ingresar Código</h2>
+                <p style="color: #64748b; font-size: 0.8rem; margin-top: 2px;">Escribe el código manualmente</p>
+              </ion-label>
+            </ion-item>
+
+          </ion-list>
+        </div>
+
+      </div>
+    </ng-template>
+  </ion-modal>

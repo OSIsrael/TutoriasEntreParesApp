@@ -100,6 +100,7 @@ export class HorariosPage implements OnInit {
   docentesFiltrados: string[] = [];
   // Cambia temporalmente tu variable vacía por esta:
   docentesExcel: string[] = []; 
+  sedeUsuario: string = '';
 
   constructor() {
     addIcons({personCircleOutline,helpCircleOutline,swapHorizontalOutline,notificationsOutline,businessOutline,searchOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,calendarOutline,checkmarkCircleOutline,sendOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,flashOutline,closeCircleOutline,locationOutline,starOutline});
@@ -114,9 +115,21 @@ export class HorariosPage implements OnInit {
     this.router.navigate(['/notificaciones']);
   }
 
-  async ionViewWillEnter() {
+async ionViewWillEnter() {
     const correo = localStorage.getItem('correo') || '';
-    this.rolUsuario = localStorage.getItem('rol') || 'ESTUDIANTE';
+    
+    // 🌟 MOAMBUE: Ñemoñepyrũma pe rolUsuario ha sedeUsuario
+    const rolActual = (localStorage.getItem('rol') || '').toUpperCase();
+    this.rolUsuario = rolActual; 
+    this.sedeUsuario = (localStorage.getItem('sede') || 'CUENCA').toUpperCase();
+    
+    this.esCoordinadorPanel = (rolActual === 'ADMIN' || rolActual === 'COORDINADOR');
+
+    // 🌟 PROTECCIÓN DE JURISDICCIÓN: Oĩrõ Coordinador, oñemomba'e pe sedeUsuario-pe
+    if (this.rolUsuario === 'COORDINADOR') {
+      this.filtroSedeAgenda = this.sedeUsuario;
+    }
+
     // 🌟 1. CARGAMOS EL PERIODO GLOBAL ANTES DE NADA
     await this.dbService.cargarConfiguracionGlobal(true);
     this.periodoApp = this.dbService.periodo_actual;
@@ -144,17 +157,13 @@ export class HorariosPage implements OnInit {
         console.error("Error al verificar Firebase:", e);
       }
     }
-    const rol = localStorage.getItem('rol') || 'ESTUDIANTE';
-    const sede = localStorage.getItem('sede') || 'CUENCA';
 
-    await this.verificarNotificaciones(correo, rol, sede);
+    // Pe sede ha rol ojejuhu ymaiterei
+    await this.verificarNotificaciones(correo, this.rolUsuario, this.sedeUsuario);
+    
     this.cargando = true;
     this.textoBusqueda = ''; 
-    
-    const rolActual = (localStorage.getItem('rol') || '').toUpperCase();
-    this.esCoordinadorPanel = (rolActual === 'ADMIN' || rolActual === 'COORDINADOR');
 
-    const sedeEstudiante = (localStorage.getItem('sede') || 'CUENCA').toUpperCase();
     const carreraEstudiante = (localStorage.getItem('carrera') || '').toUpperCase();
 
     const snapshotTutores = await getDocs(collection(this.firestore, 'Tutores'));
@@ -174,10 +183,16 @@ export class HorariosPage implements OnInit {
       }
     });
 
+    // 🌟 MOAMBUE: Equipo de Coordinación - Ohechaukáta g̃uarã umi Coordinador hembiapo umi sedépe oĩhágui
     const coordinadoresDinamicos = todosLosEstudiantes
       .filter(e => {
         const rolUsuarioDB = String(e['rol'] || '').toUpperCase();
-        return rolUsuarioDB === 'COORDINADOR' || rolUsuarioDB === 'ADMIN';
+        const sedeCoord = String(e['sede'] || '').toUpperCase();
+        
+        // 🌟 REGLA DE SEDE: Pe Admin ohecha opaite mba'e, Coordinador ohecha hembiapo añónte oĩva isedépe.
+        const cumpleSede = (this.rolUsuario === 'ADMIN') || (sedeCoord === this.sedeUsuario);
+
+        return (rolUsuarioDB === 'COORDINADOR' || rolUsuarioDB === 'ADMIN') && cumpleSede;
       })
       .map(c => ({
         nombre: c['nombre_completo'] || c['nombre'] || 'Sin Nombre',
@@ -230,7 +245,7 @@ export class HorariosPage implements OnInit {
       tutoresProcesados.push(tutor);
     }
 
-    this.agruparPorMateria(tutoresProcesados, sedeEstudiante, this.esCoordinadorPanel);
+    this.agruparPorMateria(tutoresProcesados, this.sedeUsuario, this.esCoordinadorPanel);
     this.cargando = false;
     
     const guiaVista = localStorage.getItem('guia_horarios_vista');
@@ -241,8 +256,6 @@ export class HorariosPage implements OnInit {
     
     await this.verificarEvaluacionesPendientes();
     this.docentesExcel = await this.dbService.obtenerDocentesDesdeExcel();
-    
-    
   }
   
   async verificarNotificaciones(correo: string, rol: string, sede: string) {

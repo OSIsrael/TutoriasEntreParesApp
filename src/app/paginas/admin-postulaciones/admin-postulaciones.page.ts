@@ -49,6 +49,8 @@ export class AdminPostulacionesPage {
   @ViewChild('pieCanvas', { static: false }) private pieCanvas!: ElementRef;
   graficoBarras: any;
   graficoPastel: any;
+  rolUsuario: string = '';
+  sedeUsuario: string = '';
 
   nuevoAnuncio = {
     titulo: '',
@@ -62,38 +64,46 @@ export class AdminPostulacionesPage {
   }
 
   async ionViewWillEnter() {
-    const rolActual = localStorage.getItem('rol') || '';
-    this.sedeAdmin = (localStorage.getItem('sede') || 'CUENCA').toUpperCase();
+    this.rolUsuario = String(localStorage.getItem('rol') || 'ESTUDIANTE').toUpperCase(); 
+    this.sedeUsuario = String(localStorage.getItem('sede') || 'CUENCA').toUpperCase();
+    this.sedeAdmin = this.sedeUsuario;
 
-    if (rolActual !== 'ADMIN' && rolActual !== 'COORDINADOR') {
+    if (this.rolUsuario === 'COORDINADOR') {
+      this.filtroSedePostulaciones = this.sedeUsuario;
+      this.filtroSedeGraficas = this.sedeUsuario;
+      this.nuevoAnuncio.sede_destino = this.sedeUsuario;
+    }
+
+    if (this.rolUsuario !== 'ADMIN' && this.rolUsuario !== 'COORDINADOR') {
       this.router.navigate(['/login']);
       return;
     }
 
     await this.cargarPostulaciones();
     this.limpiarAnunciosExpirados();
-
-    setTimeout(() => { this.cargarEstadisticas(); }, 500);
     this.cargarTutoriasEnAlerta();
   }
-// 🌟 3. AÑADE ESTAS FUNCIONES DE GESTIÓN DE ALERTAS
+
+  // 🌟 CAMBIO CLAVE: Esperamos a que la pantalla sea 100% visible para dibujar las gráficas
+  ionViewDidEnter() {
+    this.cargarEstadisticas();
+  }
+
   async cargarTutoriasEnAlerta() {
     try {
-      const q = query(
-        collection(this.firestore, 'Reservas'), 
-        where('estado', '==', 'REQUIERE_ADMIN')
-      );
+      const q = query(collection(this.firestore, 'Reservas'), where('estado', '==', 'REQUIERE_ADMIN'));
       const snapshot = await getDocs(q);
       
       this.tutoriasEnAlerta = [];
+      const esSuperAdmin = this.rolUsuario === 'ADMIN';
       
       snapshot.forEach(documento => {
         const data = documento.data();
-        // Verificamos la sede de la tutoría o del estudiante
-        const sedeReserva = (data['sede'] || data['sedeEstudiante'] || '').toUpperCase();
+        const sedeReserva = String(data['sede'] || data['sedeEstudiante'] || '').toUpperCase();
         
-        // 🌟 REGLA 1: Solo se muestran alertas correspondientes a la sede del Admin actual
-        if (sedeReserva === this.sedeAdmin || sedeReserva === '') {
+        const cumpleSede = esSuperAdmin || sedeReserva === this.sedeUsuario;
+
+        if (cumpleSede) {
           this.tutoriasEnAlerta.push({ id: documento.id, ...data });
         }
       });
@@ -101,11 +111,11 @@ export class AdminPostulacionesPage {
       console.error("Error al cargar alertas:", error);
     }
   }
- async asignarNuevoTutorManual(tutor: any) {
+
+  async asignarNuevoTutorManual(tutor: any) {
     if (!this.tutoriaAReasignar) return;
 
     try {
-      // 1. Se actualiza la base de datos con el nuevo tutor
       await updateDoc(doc(this.firestore, 'Reservas', this.tutoriaAReasignar.id), {
         estado: 'PENDIENTE',
         nombreTutor: tutor.nombre.toUpperCase(),
@@ -114,7 +124,6 @@ export class AdminPostulacionesPage {
         notas_admin: 'Rescatado y reasignado por Coordinación.'
       });
       
-      // 🌟 2. NUEVO: SE ENVÍA LA NOTIFICACIÓN AL TUTOR ELEGIDO
       try {
         if (this.dbService.crearNotificacion) {
           await this.dbService.crearNotificacion({
@@ -130,17 +139,16 @@ export class AdminPostulacionesPage {
         console.warn('La tutoría se reasignó, pero la notificación falló.', notiError);
       }
 
-      // 3. Se cierra el modal y se avisa al admin
       this.mostrarAviso(`Tutoría reasignada exitosamente a ${tutor.nombre}.`, 'exito');
       this.mostrarModalReasignacion = false;
-      this.cargarTutoriasEnAlerta(); // Refresca la lista SOS
+      this.cargarTutoriasEnAlerta(); 
       
     } catch (error) {
       this.mostrarAviso('Error al intentar reasignar la tutoría.', 'error');
     }
   }
 
-async eliminarTutoriaHuerfana() {
+  async eliminarTutoriaHuerfana() {
     const confirmar = await this.confirmarAccion('¿Dar de baja definitivamente?', 'El estudiante se quedará sin tutoría y esta alerta desaparecerá.');
     if (!confirmar || !this.tutoriaAReasignar) return;
 
@@ -161,11 +169,11 @@ async eliminarTutoriaHuerfana() {
     const mensaje = encodeURIComponent(`Hola ${nombre}, te escribimos de Coordinación de Tutorías. Hubo un inconveniente con el tutor asignado, pero ya te estamos buscando un reemplazo para tu clase.`);
     window.open(`https://wa.me/${celFormateado}?text=${mensaje}`, '_blank');
   }
-  // Modal para que el Admin resuelva el problema manualmente
+
   async resolverAlerta(tutoria: any) {
     const alert = await this.alertController.create({
       header: 'Gestión Manual de Tutoría',
-      message: `El sistema no encontró reemplazo para ${tutoria.materia}.Ingresa los datos del tutor que conseguiste manualmente, o da de baja la solicitud si no hubo solución.`,
+      message: `El sistema no encontró reemplazo para ${tutoria.materia}. Ingresa los datos del tutor que conseguiste manualmente, o da de baja la solicitud si no hubo solución.`,
       cssClass: 'alerta-premium-gietaes',
       inputs: [
         { name: 'nombreNuevo', type: 'text', placeholder: 'Nombre del nuevo tutor' },
@@ -205,17 +213,14 @@ async eliminarTutoriaHuerfana() {
     });
     await alert.present();
   }
-  // ==========================================
-  // 🌟 CARGA Y AGRUPACIÓN DE POSTULACIONES
-  // ==========================================
+
   async cargarPostulaciones() {
     try {
       let q;
-      if (this.filtroSedePostulaciones === 'GLOBAL') {
-        q = query(
-          collection(this.firestore, 'Postulaciones'),
-          where('estado_aprobacion', '==', 'PENDIENTE')
-        );
+      const esSuperAdmin = this.rolUsuario === 'ADMIN';
+
+      if (this.filtroSedePostulaciones === 'GLOBAL' && esSuperAdmin) {
+        q = query(collection(this.firestore, 'Postulaciones'), where('estado_aprobacion', '==', 'PENDIENTE'));
       } else {
         q = query(
           collection(this.firestore, 'Postulaciones'),
@@ -225,7 +230,6 @@ async eliminarTutoriaHuerfana() {
       }
       
       const snapshot = await getDocs(q);
-      
       const rawPostulaciones = snapshot.docs.map((doc) => {
         const data = doc.data() as any; 
         return { id: doc.id, ...data };
@@ -233,9 +237,12 @@ async eliminarTutoriaHuerfana() {
 
       const diccionarioEstudiantes: { [correo: string]: any } = {};
 
-     rawPostulaciones.forEach((post: any) => {
+      rawPostulaciones.forEach((post: any) => {
         const correo = post['correo'];
+        const sedePost = String(post['sede'] || '').toUpperCase();
         
+        if (!esSuperAdmin && sedePost !== this.sedeUsuario) return;
+
         if (!diccionarioEstudiantes[correo]) {
           diccionarioEstudiantes[correo] = {
             nombre: post['nombre'],
@@ -248,11 +255,10 @@ async eliminarTutoriaHuerfana() {
             permanencia: post['permanencia'],
             horarios: post['disponibilidad_horaria'], 
             url_documento: post['url_documento_rendimiento'] || null, 
-            expandido: false, // 🌟 NUEVO: CONTROL DEL ACORDEÓN
+            expandido: false,
             materias_postuladas: [] 
           };
         }
-        
         diccionarioEstudiantes[correo].materias_postuladas.push(post);
       });
 
@@ -262,6 +268,7 @@ async eliminarTutoriaHuerfana() {
       console.error('Error cargando postulaciones:', error);
     }
   }
+
   async abrirModalReasignacion(tutoria: any) {
     this.tutoriaAReasignar = tutoria;
     this.mostrarModalReasignacion = true;
@@ -269,11 +276,9 @@ async eliminarTutoriaHuerfana() {
     this.tutoresSugeridos = [];
 
     try {
-      // Obtenemos todos los tutores activos
       const q = query(collection(this.firestore, 'Tutores'), where('estado', '==', 'ACTIVO'));
       const snap = await getDocs(q);
 
-      // Determinamos la modalidad basada en el horario (ej: "07:00 - 09:00 (P)")
       const horario = tutoria.horas || tutoria.hora_elegida || '';
       const esPresencial = horario.includes('(P)') || horario.includes('(A)');
 
@@ -281,15 +286,13 @@ async eliminarTutoriaHuerfana() {
 
       snap.forEach(doc => {
         const tutor = doc.data();
-        // Verificar que el tutor dicte la materia requerida
         const dictaMateria = tutor['materias'] && tutor['materias'].includes(tutoria.materia);
 
         if (dictaMateria) {
-          // 🌟 REGLA 3: Si es presencial, debe ser de la misma sede. Si es virtual, cualquiera.
           let cumpleSede = true;
           if (esPresencial) {
-            const sedeTutor = (tutor['sede'] || '').toUpperCase();
-            const sedeTutoria = (tutoria.sede || tutoria.sedeEstudiante || this.sedeAdmin).toUpperCase();
+            const sedeTutor = String(tutor['sede'] || '').toUpperCase();
+            const sedeTutoria = String(tutoria.sede || tutoria.sedeEstudiante || this.sedeAdmin).toUpperCase();
             cumpleSede = sedeTutor === sedeTutoria;
           }
 
@@ -312,28 +315,19 @@ async eliminarTutoriaHuerfana() {
     this.cargandoTutores = false;
   }
 
-  // ==========================================
-  // 🌟 ABRIR DOCUMENTO PDF
-  // ==========================================
   verDocumento(url: string) {
     if (!url) {
       this.mostrarAviso('El estudiante no adjuntó un documento válido.', 'advertencia');
       return;
     }
-    // Abre el PDF en una nueva pestaña (funciona en PWA, Navegador y dispositivos móviles)
     window.open(url, '_blank');
   }
 
-  // ==========================================
-  // 🌟 ACEPTAR Y RECHAZAR (CON NOTIFICACIONES)
-  // ==========================================
- async aceptar(post: any) {
-    // 🌟 AGREGAMOS LA CONFIRMACIÓN ANTES DE PROCEDER
+  async aceptar(post: any) {
     const confirmar = await this.confirmarAccion(`¿Estás seguro de APROBAR a ${post.nombre} para dictar ${post.materia_postulada}?`,'');
-    if (!confirmar) return; // Si el administrador cancela, se detiene aquí
+    if (!confirmar) return; 
 
     try {
-      // Las peticiones a la base de datos se ejecutan inmediatamente tras la confirmación
       await this.dbService.aceptarTutor(post.id, post);
       
       try {
@@ -391,17 +385,24 @@ async eliminarTutoriaHuerfana() {
     this.router.navigate(['/tabs/perfil']); 
   }
 
+  // ==========================================
+  // 🌟 ESTADÍSTICAS (ROBUSTAS)
+  // ==========================================
   async cargarEstadisticas() {
     try {
       const querySnapshot = await getDocs(collection(this.firestore, 'Tutores'));
       const conteoCarreras: { [key: string]: number } = {};
+      const esSuperAdmin = this.rolUsuario === 'ADMIN';
 
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        const sedeTutor = (data['sede'] || '').toUpperCase();
+        const sedeTutor = String(data['sede'] || '').toUpperCase();
+        const estadoTutor = String(data['estado'] || '').toUpperCase(); // 🌟 Ignora tildes o minúsculas
 
-        if (this.filtroSedeGraficas === 'GLOBAL' || sedeTutor === this.filtroSedeGraficas) {
-          if (data['estado'] === 'ACTIVO') {
+        const tienePermisoSede = esSuperAdmin || sedeTutor === this.sedeUsuario;
+
+        if (tienePermisoSede && (this.filtroSedeGraficas === 'GLOBAL' || sedeTutor === this.filtroSedeGraficas)) {
+          if (estadoTutor === 'ACTIVO') {
             const carrera = data['carrera'] || 'NO ASIGNADA';
             conteoCarreras[carrera] = (conteoCarreras[carrera] || 0) + 1;
           }
@@ -411,8 +412,12 @@ async eliminarTutoriaHuerfana() {
       const nombresCarreras = Object.keys(conteoCarreras);
       const cantidadPorCarrera = Object.values(conteoCarreras);
 
-      this.generarGraficoBarras(nombresCarreras, cantidadPorCarrera);
-      this.generarGraficoPastel(nombresCarreras, cantidadPorCarrera);
+      // Usamos setTimeout minúsculo para darle a Angular tiempo de pintar los Canvas
+      setTimeout(() => {
+        this.generarGraficoBarras(nombresCarreras, cantidadPorCarrera);
+        this.generarGraficoPastel(nombresCarreras, cantidadPorCarrera);
+      }, 150);
+
     } catch (error) {
       console.error('Error al cargar estadísticas:', error);
     }
@@ -420,43 +425,46 @@ async eliminarTutoriaHuerfana() {
 
   generarGraficoBarras(labels: string[], data: number[]) {
     if (this.graficoBarras) this.graficoBarras.destroy();
-    if (!this.barCanvas) return;
+    if (!this.barCanvas || !this.barCanvas.nativeElement) return; // 🌟 Evita que el código colapse si el canvas no se ha dibujado
+
     this.graficoBarras = new Chart(this.barCanvas.nativeElement, {
       type: 'bar',
       data: {
         labels: labels,
         datasets: [{ label: 'Tutores Activos', data: data, backgroundColor: '#003366', borderRadius: 4 }],
       },
-      options: { responsive: true, plugins: { legend: { display: false } } },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }, // maintainAspectRatio false evita que la gráfica se encoja o desaparezca
     });
   }
 
   generarGraficoPastel(labels: string[], data: number[]) {
     if (this.graficoPastel) this.graficoPastel.destroy();
-    if (!this.pieCanvas) return;
+    if (!this.pieCanvas || !this.pieCanvas.nativeElement) return; 
+
     this.graficoPastel = new Chart(this.pieCanvas.nativeElement, {
       type: 'pie',
       data: {
         labels: labels,
         datasets: [{ data: data, backgroundColor: ['#003366', '#d97706', '#10b981', '#ef4444', '#8b5cf6'] }],
       },
-      options: { responsive: true },
+      options: { responsive: true, maintainAspectRatio: false },
     });
   }
 
-async publicarAnuncio() {
+  async publicarAnuncio() {
     if (!this.nuevoAnuncio.titulo || !this.nuevoAnuncio.descripcion) {
       this.mostrarAviso('Por favor, llena el título y la descripción del comunicado.','advertencia');
       return;
     }
 
-    // 🌟 SE AGREGAN CAMPOS "estado" Y "tipo" PARA EVITAR QUE LA APP LOS IGNORE
+    const destinoSeguro = this.rolUsuario === 'ADMIN' ? this.nuevoAnuncio.sede_destino.toUpperCase() : this.sedeUsuario;
+
     const payload = {
       titulo: this.nuevoAnuncio.titulo.toUpperCase(),
       descripcion: this.nuevoAnuncio.descripcion,
       fecha_evento: this.nuevoAnuncio.fecha_evento || 'Sin fecha',
       fecha_publicacion: new Date().toISOString(),
-      sede_destino: this.nuevoAnuncio.sede_destino.toUpperCase(),
+      sede_destino: destinoSeguro,
       autor: localStorage.getItem('nombre') || 'COORDINACIÓN',
       estado: 'ACTIVO', 
       tipo: 'AVISO'     
@@ -470,7 +478,7 @@ async publicarAnuncio() {
         mensaje: this.nuevoAnuncio.titulo.toUpperCase(),
         tipo: 'AVISO',
         rol_destino: 'TODOS',
-        sede_destino: this.nuevoAnuncio.sede_destino.toUpperCase() 
+        sede_destino: destinoSeguro 
       });
 
       this.mostrarAviso('¡Comunicado oficial publicado con éxito!','exito');
@@ -481,6 +489,7 @@ async publicarAnuncio() {
       this.mostrarAviso('Error al publicar el comunicado.','error');
     }
   }
+
   async limpiarAnunciosExpirados() {
     try {
       const q = query(collection(this.firestore, 'Anuncios'));
@@ -516,9 +525,6 @@ async publicarAnuncio() {
     }
   }
 
-  // ==========================================
-  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
-  // ==========================================
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
     let claseCss = 'toast-exito';

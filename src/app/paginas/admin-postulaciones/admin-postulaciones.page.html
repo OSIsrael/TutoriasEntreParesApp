@@ -7,10 +7,10 @@
     </ion-buttons>
     <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" style="margin-left: -10px;" onerror="this.src='assets/logo-gietaes.png'">
     
-    <!-- ETIQUETA FIJA: ADMINISTRADOR -->
+    <!-- 🌟 ETIQUETA DINÁMICA: Cambia según si es ADMIN o COORDINADOR -->
     <div slot="end" class="badge-admin-header">
       <ion-icon name="person-circle-outline"></ion-icon>
-      <span>ROL: ADMINISTRADOR</span>
+      <span>ROL: {{ rolUsuario }}</span>
     </div>
   </ion-toolbar>
   <div class="linea-separadora"></div>
@@ -20,8 +20,8 @@
   
   <h2 class="titulo-seccion">Bandeja de Postulaciones</h2>
 
-  <!-- 🌟 NUEVO FILTRO MODERNO -->
-  <div class="contenedor-filtro">
+  <!-- 🌟 FILTRO OCULTO PARA COORDINADORES: Solo el ADMIN puede cambiar de sede -->
+  <div class="contenedor-filtro" *ngIf="rolUsuario === 'ADMIN'">
     <div class="filtro-icono">
       <ion-icon name="filter-outline"></ion-icon>
     </div>
@@ -40,10 +40,9 @@
   <div *ngIf="postulacionesAgrupadas.length === 0" class="estado-vacio animate__animated animate__fadeIn">
     <ion-icon name="checkmark-circle-outline"></ion-icon>
     <h3>¡Bandeja vacía!</h3>
-    <p>No existen solicitudes pendientes para el filtro seleccionado.</p>
+    <p>No existen solicitudes pendientes para tu sede.</p>
   </div>
 
-  <!-- 🌟 TARJETAS DE ESTUDIANTES REDISEÑADAS -->
   <!-- 🌟 TARJETAS DE ESTUDIANTES COLAPSABLES (ACORDEÓN) -->
   <div *ngFor="let estudiante of postulacionesAgrupadas" class="card-estudiante premium-card animate__animated animate__fadeInUp">
     
@@ -116,7 +115,8 @@
   </div>
 
   <hr class="separador">
- <!-- ============================================= -->
+  
+  <!-- ============================================= -->
   <!-- 🌟 SECCIÓN SOS: TUTORÍAS QUE REQUIEREN ADMIN -->
   <!-- ============================================= -->
   <div *ngIf="tutoriasEnAlerta.length > 0" class="animate__animated animate__fadeInDown" style="margin-bottom: 30px;">
@@ -132,7 +132,6 @@
     <div *ngFor="let tutoria of tutoriasEnAlerta" class="card-alerta-roja">
       <div class="header-alerta">
         <span class="badge-materia">{{ tutoria.materia }}</span>
-        <!-- 🌟 REGLA 2: Se agregó el DÍA antes de la hora -->
         <span class="fecha-alerta">
           <ion-icon name="calendar-outline"></ion-icon> 
           {{ tutoria.dia || tutoria.dia_elegido }} | {{ tutoria.horas || tutoria.hora_elegida }}
@@ -148,7 +147,6 @@
         <ion-button fill="outline" color="success" size="small" (click)="contactarEstudianteAlerta(tutoria.celularEstudiante, tutoria.nombreEstudiante)" style="font-weight: bold;">
           <ion-icon name="logo-whatsapp" slot="start"></ion-icon> Avisarle
         </ion-button>
-        <!-- Dispara el nuevo modal -->
         <ion-button color="danger" size="small" (click)="abrirModalReasignacion(tutoria)" style="font-weight: bold;">
           <ion-icon name="build-outline" slot="start"></ion-icon> Gestionar Solución
         </ion-button>
@@ -218,7 +216,8 @@
 
   <h2 class="titulo-seccion">Métricas de Rendimiento</h2>
   
-  <div class="contenedor-filtro">
+  <!-- 🌟 FILTRO OCULTO PARA COORDINADORES -->
+  <div class="contenedor-filtro" *ngIf="rolUsuario === 'ADMIN'">
     <div class="filtro-icono"><ion-icon name="pie-chart-outline"></ion-icon></div>
     <div class="filtro-contenido">
       <label>Filtrar Estadísticas</label>
@@ -294,13 +293,22 @@
 
       <div class="input-group">
         <label>Destino (Segmentación)</label>
-        <ion-select class="gietaes-input" [(ngModel)]="nuevoAnuncio.sede_destino" interface="popover" [interfaceOptions]="{ cssClass: 'popover-blanco' }">
+        
+        <!-- 🌟 SELECTOR HABILITADO SOLO PARA EL ADMIN -->
+        <ion-select *ngIf="rolUsuario === 'ADMIN'" class="gietaes-input" [(ngModel)]="nuevoAnuncio.sede_destino" interface="popover" [interfaceOptions]="{ cssClass: 'popover-blanco' }">
           <ion-select-option value="GLOBAL">Todas las Sedes (Global)</ion-select-option>
           <ion-select-option value="CUENCA">Solo Sede Cuenca</ion-select-option>
           <ion-select-option value="QUITO">Solo Sede Quito</ion-select-option>
           <ion-select-option value="GUAYAQUIL">Solo Sede Guayaquil</ion-select-option>
         </ion-select>
+
+        <!-- 🌟 TEXTO FIJO PARA EL COORDINADOR -->
+        <div *ngIf="rolUsuario === 'COORDINADOR'" class="gietaes-input" style="display: flex; align-items: center; background: #f1f5f9; color: #475569; padding: 12px; border-radius: 8px; font-weight: bold; border: 1px solid #cbd5e1;">
+          <ion-icon name="location-outline" style="margin-right: 8px; font-size: 1.2rem; color: #003366;"></ion-icon>
+          Notificación para Sede {{ sedeUsuario }}
+        </div>
       </div>
+
       <ion-button expand="block" class="btn-publicar mt-4" (click)="publicarAnuncio()">
         <ion-icon slot="start" name="megaphone-outline"></ion-icon>
         EMITIR COMUNICADO OFICIAL
