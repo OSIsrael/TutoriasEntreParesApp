@@ -6,16 +6,16 @@ import {
   IonContent, IonHeader, IonToolbar, IonIcon, IonButton, IonButtons,
   NavController, IonGrid, IonRow, IonCol, IonSelect, IonSelectOption,
   IonSpinner, ToastController, AlertController,
-  IonSegment, IonSegmentButton, IonLabel // 🌟 NUEVOS IMPORTADOS
+  IonSegment, IonSegmentButton, IonLabel 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   personCircleOutline, mailOutline, businessOutline, schoolOutline,
   bookOutline, logOutOutline, peopleOutline, notificationsOutline, 
   barChartOutline, personOutline, settingsOutline, addCircleOutline,
-  closeOutline, checkmarkOutline, warningOutline } from 'ionicons/icons';
+  closeOutline, checkmarkOutline, warningOutline, timeOutline } from 'ionicons/icons';
 import { Auth, signOut } from '@angular/fire/auth';
-import { Firestore, collection, query, where, getDocs, addDoc } from '@angular/fire/firestore';
+import { Firestore, collection, query, where, getDocs, addDoc, doc, updateDoc, getDoc } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
 import Chart from 'chart.js/auto';
 
@@ -28,11 +28,12 @@ import Chart from 'chart.js/auto';
     IonContent, IonHeader, IonToolbar, CommonModule, FormsModule,
     IonButtons, IonButton, IonIcon, IonGrid, IonRow, IonCol,
     IonSelect, IonSelectOption, IonSpinner,
-    IonSegment, IonSegmentButton, IonLabel // 🌟 AÑADIDOS AQUÍ
+    IonSegment, IonSegmentButton, IonLabel
   ]
 })
 export class TutorEstadisticasPage implements OnInit {
-  private firestore = inject(DatabaseService).firestore;
+  // 🌟 CORRECCIÓN DE INYECCIÓN DE FIRESTORE
+  private firestore = inject(Firestore);
   private dbService = inject(DatabaseService);
   private router = inject(Router);
   private auth = inject(Auth);
@@ -50,27 +51,30 @@ export class TutorEstadisticasPage implements OnInit {
   menuAbierto: boolean = false;
   hayNotificacionesSinLeer: boolean = false;
 
-  // 🌟 VARIABLES PARA EL DASHBOARD
   totalClasesDadas: number = 0;
   totalAlumnosAtendidos: number = 0;
   
   @ViewChild('barCanvas', { static: false }) private barCanvas!: ElementRef;
   graficoBarras: any;
 
-  // 🌟 VARIABLES PARA FILTRO DE PERIODO
   filtroPeriodo: string = 'ACTUAL';
   periodoActualApp: string = '';
 
-  // 🌟 VARIABLES PARA INCREMENTO DE MATERIAS
   mostrarModalMaterias: boolean = false;
   cargandoMaterias: boolean = false;
   materiasDisponibles: string[] = [];
   materiasSeleccionadas: string[] = [];
   horariosActualesTutor: any = {};
   
+  mostrarModalHorarios: boolean = false;
+  guardandoHorario: boolean = false;
+  diassemana = ['Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
+// 🌟 AÑADIMOS EL CERO A LAS 7 Y A LAS 9 PARA QUE COINCIDAN PERFECTAMENTE
+  franjasHorarias = ['07:00 - 09:00','09:00 - 11:00','11:00 - 13:00','14:00 - 16:00','16:00 - 18:00','18:00 - 20:00','20:00 - 22:00'];  horarioSeleccionado: { [key: string]: string } = {}; 
+  modalidadGlobal: string = 'PRESENCIAL';
 
   constructor() {
-    addIcons({notificationsOutline,personCircleOutline,mailOutline,businessOutline,barChartOutline,addCircleOutline,personOutline,logOutOutline,settingsOutline,bookOutline,warningOutline,peopleOutline,schoolOutline,closeOutline,checkmarkOutline});
+    addIcons({notificationsOutline,personCircleOutline,mailOutline,businessOutline,barChartOutline,addCircleOutline,personOutline,logOutOutline,settingsOutline,bookOutline,warningOutline,peopleOutline,schoolOutline,closeOutline,checkmarkOutline,timeOutline});
   }
 
   ngOnInit() {}
@@ -78,7 +82,6 @@ export class TutorEstadisticasPage implements OnInit {
   async ionViewWillEnter() {
     this.menuAbierto = false;
     
-    // 🌟 1. CARGAMOS EL PERIODO ACTUAL
     await this.dbService.cargarConfiguracionGlobal();
     this.periodoActualApp = this.dbService.periodo_actual;
 
@@ -132,7 +135,6 @@ export class TutorEstadisticasPage implements OnInit {
     }
   }
 
-  // 🌟 FUNCIÓN DE ESTADÍSTICAS TUTOR (Ahora filtra localmente por periodo)
   async cargarEstadisticas() {
     try {
       const qClases = query(collection(this.firestore, 'Asistencias'), where('correoTutor', '==', this.usuario.correo.toLowerCase()));
@@ -159,7 +161,7 @@ export class TutorEstadisticasPage implements OnInit {
       if (Object.keys(conteoMaterias).length > 0) {
         this.generarGrafico(conteoMaterias);
       } else {
-        if (this.graficoBarras) this.graficoBarras.destroy(); // Limpia gráfico si está vacío
+        if (this.graficoBarras) this.graficoBarras.destroy(); 
       }
     } catch (error) {
       console.error("Error al cargar estadísticas:", error);
@@ -191,9 +193,6 @@ export class TutorEstadisticasPage implements OnInit {
     });
   }
 
-  // ==========================================
-  // 🌟 INCREMENTO DE ASIGNATURAS
-  // ==========================================
   async abrirModalMaterias() {
     this.menuAbierto = false;
     this.mostrarModalMaterias = true;
@@ -201,14 +200,16 @@ export class TutorEstadisticasPage implements OnInit {
     this.materiasSeleccionadas = [];
 
     try {
-      const qTutor = query(collection(this.firestore, 'Tutores'), where('correo', '==', this.usuario.correo.toLowerCase()));
-      const snapTutor = await getDocs(qTutor);
+      const idTutor = await this.obtenerDocIdTutor();
       
       let materiasQueYaTiene: string[] = [];
-      if (!snapTutor.empty) {
-        const dataTutor = snapTutor.docs[0].data();
-        materiasQueYaTiene = (dataTutor['materias'] || []).map((m:string) => m.toUpperCase());
-        this.horariosActualesTutor = dataTutor['horarios'] || { "Aviso": "Mantiene horario registrado" };
+      if (idTutor) {
+        const docSnap = await getDoc(doc(this.firestore, 'Tutores', idTutor));
+        if (docSnap.exists()) {
+          const dataTutor = docSnap.data();
+          materiasQueYaTiene = (dataTutor['materias'] || []).map((m:string) => m.toUpperCase());
+          this.horariosActualesTutor = dataTutor['horarios'] || { "Aviso": "Mantiene horario registrado" };
+        }
       }
 
       const catalogos = await this.dbService.obtenerCatalogosDesdeExcel();
@@ -271,6 +272,171 @@ export class TutorEstadisticasPage implements OnInit {
     }
   }
 
+  // ==========================================
+  // 🌟 CAMBIO DE HORARIOS (NUEVO Y BLINDADO)
+  // ==========================================
+
+  // 🌟 BUSCADOR INFALIBLE: Prioriza el perfil ACTIVO del tutor
+  async obtenerDocIdTutor(): Promise<string | null> {
+    const correo = this.usuario.correo.toLowerCase().trim();
+    
+    // 1. Buscamos en 'correo_google' asegurando que esté ACTIVO
+    let q = query(collection(this.firestore, 'Tutores'), where('correo_google', '==', correo), where('estado', '==', 'ACTIVO'));
+    let snap = await getDocs(q);
+    if (!snap.empty) return snap.docs[0].id;
+    
+    // 2. Buscamos en 'correo' asegurando que esté ACTIVO
+    q = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo), where('estado', '==', 'ACTIVO'));
+    snap = await getDocs(q);
+    if (!snap.empty) return snap.docs[0].id;
+
+    // 3. Respaldo por si perdió el estado activo por accidente
+    q = query(collection(this.firestore, 'Tutores'), where('correo_google', '==', correo));
+    snap = await getDocs(q);
+    if (!snap.empty) return snap.docs[0].id;
+
+    q = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
+    snap = await getDocs(q);
+    if (!snap.empty) return snap.docs[0].id;
+
+    return null;
+  }
+
+async abrirModalHorarios() {
+    this.menuAbierto = false;
+    this.mostrarModalHorarios = true;
+    this.horarioSeleccionado = {};
+
+    try {
+      const idTutor = await this.obtenerDocIdTutor();
+      if (idTutor) {
+        const docSnap = await getDoc(doc(this.firestore, 'Tutores', idTutor));
+        if (docSnap.exists()) {
+          const horariosDb = docSnap.data()['horarios'] || {};
+          
+          // 🌟 NORMALIZAMOS LAS LLAVES VIEJAS ("7:00" a "07:00") PARA QUE SE REFLEJEN EN LA TABLA
+          for(let k in horariosDb) {
+            let nuevaClave = k.replace('7:00', '07:00').replace('9:00', '09:00');
+            this.horarioSeleccionado[nuevaClave] = horariosDb[k];
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error al cargar horarios:", error);
+    }
+  }
+
+  seleccionarModalidadGlobal(mod: string) { 
+    this.modalidadGlobal = mod; 
+  }
+
+  esBloqueDeshabilitado(dia: string, franja: string): boolean {
+    const diaLimpio = dia.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    if (diaLimpio === 'sabado') {
+      const horaStr = franja.split(':')[0].trim();
+      const horaInicio = parseInt(horaStr, 10);
+      if (horaInicio >= 13) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  seleccionarBloque(dia: string, franja: string) {
+    if (this.esBloqueDeshabilitado(dia, franja)) {
+      this.mostrarAviso('Los sábados solo se permiten tutorías hasta las 13:00.', 'advertencia');
+      return;
+    }
+
+    const clave = `${dia}-${franja}`;
+    const diaLimpio = dia.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+    if (this.horarioSeleccionado[clave]) {
+      delete this.horarioSeleccionado[clave]; 
+    } else {
+      if (diaLimpio === 'sabado') {
+        this.horarioSeleccionado[clave] = 'VIRTUAL';
+      } else {
+        this.horarioSeleccionado[clave] = this.modalidadGlobal; 
+      }
+    }
+    
+    // 🌟 FORZAMOS EL REDIBUJADO VISUAL
+    this.horarioSeleccionado = { ...this.horarioSeleccionado };
+  }
+
+  async guardarNuevoHorario() {
+    if (Object.keys(this.horarioSeleccionado).length === 0) {
+      this.mostrarAviso('Por favor, selecciona al menos un bloque de horario.', 'advertencia');
+      return;
+    }
+    this.guardandoHorario = true;
+
+    try {
+      // 🌟 LIMPIEZA DE FANTASMAS: Filtramos solo las llaves que existen en la cuadrícula actual
+      const horarioLimpio: any = {};
+      for (let dia of this.diassemana) {
+        for (let franja of this.franjasHorarias) {
+          const clave = `${dia}-${franja}`;
+          if (this.horarioSeleccionado[clave]) {
+            horarioLimpio[clave] = this.horarioSeleccionado[clave];
+          }
+        }
+      }
+
+      // Buscamos si el tutor tiene perfiles duplicados en la base de datos
+      const correo = this.usuario.correo.toLowerCase().trim();
+      const q1 = query(collection(this.firestore, 'Tutores'), where('correo_google', '==', correo), where('estado', '==', 'ACTIVO'));
+      const q2 = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo), where('estado', '==', 'ACTIVO'));
+      
+      const snaps1 = await getDocs(q1);
+      const snaps2 = await getDocs(q2);
+      
+      const docsAActualizar = new Map();
+      snaps1.forEach(d => docsAActualizar.set(d.id, d.data()));
+      snaps2.forEach(d => docsAActualizar.set(d.id, d.data()));
+
+      if (docsAActualizar.size > 0) {
+        let datosTutorParaExcel: any = null;
+
+        // 🌟 ACTUALIZAMOS TODOS LOS PERFILES DEL TUTOR (borrando los horarios viejos)
+        for (let [id, datosTutor] of docsAActualizar) {
+          await updateDoc(doc(this.firestore, 'Tutores', id), { horarios: horarioLimpio });
+          if (!datosTutorParaExcel) datosTutorParaExcel = datosTutor;
+        }
+
+        const horariosFormateados = this.dbService.formatearHorariosParaExcel(horarioLimpio);
+        const payloadExcel = {
+          opcion: 'aceptarTutorOficial', 
+          nombre: datosTutorParaExcel['nombre'] || this.usuario.nombre,
+          cedula: datosTutorParaExcel['cedula'] || '',
+          ciclo: datosTutorParaExcel['ciclo'] || this.cicloUsuario,
+          carrera: datosTutorParaExcel['carrera'] || this.carreraUsuario,
+          materias: Array.isArray(datosTutorParaExcel['materias']) ? datosTutorParaExcel['materias'].join(', ') : (datosTutorParaExcel['materias'] || ''),
+          correo: datosTutorParaExcel['correo'] || datosTutorParaExcel['correo_google'] || this.usuario.correo,
+          celular: datosTutorParaExcel['celular'] || this.celularUsuario,
+          permanencia: datosTutorParaExcel['permanencia'] || 'TUTOR ACTIVO',
+          horarios: horariosFormateados,
+          periodo: datosTutorParaExcel['ultimo_periodo_activo'] || this.periodoActualApp
+        };
+        await this.dbService.enviarAExcel(payloadExcel);
+
+        this.mostrarAviso('¡Tu horario ha sido actualizado exitosamente!', 'exito');
+        this.mostrarModalHorarios = false;
+      } else {
+        this.mostrarAviso('No pudimos localizar tu perfil en la base de datos.', 'error');
+      }
+    } catch (error) {
+      console.error("Error al guardar horario:", error);
+      this.mostrarAviso('Ocurrió un error al guardar tu nuevo horario.', 'error');
+    } finally {
+      this.guardandoHorario = false;
+    }
+  }
+
+  // ==========================================
+  // 🌟 ALERTAS NATIVAS
+  // ==========================================
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
     let claseCss = 'toast-exito';

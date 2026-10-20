@@ -226,3 +226,104 @@
 ion-content {
   --padding-bottom: 120px; /* Evita que el FAB quede tapado por los tabs */
 }
+/* ========================================== */
+/* 🌟 CALENDARIO INTERACTIVO Y MODALIDAD      */
+/* ========================================== */
+
+.btn-modalidad {
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-weight: 800;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+}
+.btn-modalidad.activo {
+  background: #e0f2fe;
+  color: #0369a1;
+  border-color: #38bdf8;
+  box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2);
+}
+
+.calendario-scroll {
+  overflow-x: auto;
+  margin-top: 10px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+
+.tabla-horarios {
+  width: 100%;
+  min-width: 500px; /* Obliga a que tenga un ancho mínimo para hacer scroll en celulares */
+  border-collapse: collapse;
+  background: white;
+
+  th {
+    background: #003366;
+    color: white;
+    padding: 12px 5px;
+    font-size: 0.8rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    text-align: center;
+    border: 1px solid #0f172a;
+  }
+
+  td {
+    border: 1px solid #e2e8f0;
+    text-align: center;
+    padding: 0;
+    height: 45px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  td:not(.columna-hora):hover {
+    background: #f8fafc;
+  }
+
+  .columna-hora {
+    background: #f1f5f9;
+    color: #334155;
+    font-weight: 900;
+    font-size: 0.7rem;
+    width: 90px;
+    cursor: default;
+  }
+
+  td.seleccionado {
+    background: #003366 !important; /* Azul institucional */
+    box-shadow: inset 0 0 0 3px #EAB308; /* Contorno dorado interior */
+  }
+
+  td.seleccionado .texto-modalidad {
+    color: #ffffff !important; /* Letras blancas */
+  }
+
+  td.bloqueado {
+    background: #fee2e2; /* Rojo claro para bloqueos */
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  .celda-contenido {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+  }
+
+  .texto-modalidad {
+    color: white;
+    font-weight: 900;
+    font-size: 1rem;
+  }
+}

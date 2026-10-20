@@ -36,22 +36,18 @@
       </div>
     </div>
   </div>
-<!-- 🌟 SELECTOR DINÁMICO DE PERIODO (DISEÑO CORREGIDO) -->
-    <div style="padding: 0 15px; margin-bottom: 25px;">
-      <ion-segment [(ngModel)]="filtroPeriodo" (ionChange)="cargarEstadisticas()" mode="ios" style="background: #e2e8f0; border-radius: 10px; padding: 4px;">
-        
-        <!-- Botón Periodo -->
-        <ion-segment-button value="ACTUAL" style="--color: #64748b; --color-checked: #ffffff; --indicator-color: #003366;">
-          <ion-label style="font-weight: 800; font-size: 0.8rem; letter-spacing: 0.5px;">PERIODO {{ periodoActualApp }}</ion-label>
-        </ion-segment-button>
-        
-        <!-- Botón Histórico -->
-        <ion-segment-button value="HISTORICO" style="--color: #64748b; --color-checked: #ffffff; --indicator-color: #003366;">
-          <ion-label style="font-weight: 800; font-size: 0.8rem; letter-spacing: 0.5px;">HISTÓRICO</ion-label>
-        </ion-segment-button>
-        
-      </ion-segment>
-    </div>
+
+  <!-- 🌟 SELECTOR DINÁMICO DE PERIODO -->
+  <div style="padding: 0 15px; margin-bottom: 25px;">
+    <ion-segment [(ngModel)]="filtroPeriodo" (ionChange)="cargarEstadisticas()" mode="ios" style="background: #e2e8f0; border-radius: 10px; padding: 4px;">
+      <ion-segment-button value="ACTUAL" style="--color: #64748b; --color-checked: #ffffff; --indicator-color: #003366;">
+        <ion-label style="font-weight: 800; font-size: 0.8rem; letter-spacing: 0.5px;">PERIODO {{ periodoActualApp }}</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="HISTORICO" style="--color: #64748b; --color-checked: #ffffff; --indicator-color: #003366;">
+        <ion-label style="font-weight: 800; font-size: 0.8rem; letter-spacing: 0.5px;">HISTÓRICO</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </div>
 
   <div class="ion-padding animate__animated animate__fadeIn">
     <h3 class="subtitulo-seccion"><ion-icon name="bar-chart-outline"></ion-icon> Mi Dashboard de Rendimiento</h3>
@@ -81,7 +77,12 @@
   <div class="fab-container">
     <div class="fab-menu" *ngIf="menuAbierto">
       
-      <!-- 🌟 NUEVO BOTÓN PARA INCREMENTO -->
+      <!-- NUEVO BOTÓN PARA CAMBIAR HORARIO -->
+      <button class="fab-item" (click)="abrirModalHorarios()">
+        CAMBIAR HORARIOS <ion-icon name="time-outline"></ion-icon>
+      </button>
+
+      <!-- BOTÓN PARA INCREMENTO -->
       <button class="fab-item" (click)="abrirModalMaterias()">
         AÑADIR MATERIAS <ion-icon name="add-circle-outline"></ion-icon>
       </button>
@@ -101,55 +102,93 @@
     </button>
   </div>
 
- <!-- 🌟 MODAL DE INCREMENTO DE MATERIAS (DISEÑO NATIVO PREMIUM) -->
+  <!-- 🌟 MODAL DE INCREMENTO DE MATERIAS -->
   <div class="overlay-modal animate__animated animate__fadeIn" *ngIf="mostrarModalMaterias">
     <div class="modal-premium animate__animated animate__zoomIn">
-      
-      <!-- Cabecera del Modal -->
       <div class="modal-header">
         <ion-icon name="book-outline"></ion-icon>
         <h3>INCREMENTO DE MATERIAS</h3>
       </div>
-
-      <!-- Cuerpo del Modal -->
       <div class="modal-body">
-        <p class="modal-desc">
-          Selecciona qué materias nuevas de tu carrera deseas empezar a impartir.
-        </p>
-
-        <!-- Spinner de Carga -->
+        <p class="modal-desc">Selecciona qué materias nuevas de tu carrera deseas empezar a impartir.</p>
         <div *ngIf="cargandoMaterias" class="cargando-box">
           <ion-spinner name="crescent"></ion-spinner>
           <p style="margin-top: 5px;">Cargando catálogo...</p>
         </div>
-
-        <!-- Selector de Materias -->
-        <!-- Selector de Materias (AHORA COMO POPOVER LIMPIO) -->
         <div *ngIf="!cargandoMaterias && materiasDisponibles.length > 0" class="input-moderno mb-3">
-          <ion-select multiple="true" [(ngModel)]="materiasSeleccionadas" 
-                      placeholder="Selecciona materias..." 
-                      interface="popover" 
-                      [interfaceOptions]="{ cssClass: 'popover-premium-gietaes' }" 
-                      style="width: 100%;">
+          <ion-select multiple="true" [(ngModel)]="materiasSeleccionadas" placeholder="Selecciona materias..." interface="popover" [interfaceOptions]="{ cssClass: 'popover-premium-gietaes' }" style="width: 100%;">
             <ion-select-option *ngFor="let m of materiasDisponibles" [value]="m">{{m}}</ion-select-option>
           </ion-select>
         </div>
-
-        <!-- Mensaje si no hay materias -->
         <div *ngIf="!cargandoMaterias && materiasDisponibles.length === 0" class="alerta-error">
           <ion-icon name="warning-outline"></ion-icon>
           No hay materias disponibles en ciclos inferiores a tu ciclo actual.
         </div>
       </div>
-
-      <!-- Botones de Acción -->
       <div class="modal-footer">
-        <ion-button fill="outline" class="btn-cancelar" (click)="mostrarModalMaterias = false" [disabled]="cargandoMaterias">
-          CANCELAR
-        </ion-button>
-        <ion-button class="btn-enviar" (click)="enviarSolicitudMaterias()" [disabled]="cargandoMaterias || materiasSeleccionadas.length === 0">
-          ENVIAR SOLICITUD
-        </ion-button>
+        <ion-button fill="outline" class="btn-cancelar" (click)="mostrarModalMaterias = false" [disabled]="cargandoMaterias">CANCELAR</ion-button>
+        <ion-button class="btn-enviar" (click)="enviarSolicitudMaterias()" [disabled]="cargandoMaterias || materiasSeleccionadas.length === 0">ENVIAR SOLICITUD</ion-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🌟 NUEVO MODAL DE CAMBIO DE HORARIO (AMPLIADO Y CENTRADO) -->
+  <div class="overlay-modal animate__animated animate__fadeIn" *ngIf="mostrarModalHorarios">
+    
+    <div class="modal-premium animate__animated animate__zoomIn" style="width: 95%; max-width: 800px; max-height: 90vh; display: flex; flex-direction: column;">
+      
+      <div class="modal-header" style="flex-shrink: 0;">
+        <ion-icon name="time-outline"></ion-icon>
+        <h3>CAMBIAR HORARIO</h3>
+      </div>
+
+      <div class="modal-body" style="padding: 20px; text-align: left; overflow-y: auto; flex-grow: 1;">
+        <p class="modal-desc" style="margin-bottom: 10px; font-size: 0.95rem; text-align: center;">
+          Modifica tu disponibilidad. Toca los cuadros para agregar o quitar horas.
+        </p>
+
+        <!-- Botones de Modalidad (Presencial, Virtual, Ambas) -->
+        <div style="display: flex; gap: 10px; margin-top: 15px; justify-content: center;">
+          <div class="btn-modalidad" [class.activo]="modalidadGlobal === 'PRESENCIAL'" (click)="seleccionarModalidadGlobal('PRESENCIAL')">Presencial</div>
+          <div class="btn-modalidad" [class.activo]="modalidadGlobal === 'VIRTUAL'" (click)="seleccionarModalidadGlobal('VIRTUAL')">Virtual</div>
+          <div class="btn-modalidad" [class.activo]="modalidadGlobal === 'AMBAS'" (click)="seleccionarModalidadGlobal('AMBAS')">Ambas</div>
+        </div>
+
+        <p style="font-size: 0.85rem; color: #d97706; font-weight: bold; margin: 15px 0 15px 0; text-align: center;">
+          * Sábados obligatoriamente VIRTUAL (Máximo hasta las 13:00).
+        </p>
+
+        <!-- Cuadrícula de Horarios con Scroll horizontal -->
+        <div class="calendario-scroll">
+          <table class="tabla-horarios">
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th *ngFor="let dia of diassemana">{{ dia.substring(0,3) }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let franja of franjasHorarias">
+                <td class="columna-hora" style="font-size: 0.75rem; font-weight: bold;">{{ franja }}</td>
+                <td *ngFor="let dia of diassemana" 
+                    [class.seleccionado]="horarioSeleccionado[dia + '-' + franja]"
+                    [class.bloqueado]="esBloqueDeshabilitado(dia, franja)"
+                    (click)="seleccionarBloque(dia, franja)">
+                  <div class="celda-contenido">
+                    <span *ngIf="horarioSeleccionado[dia + '-' + franja]" class="texto-modalidad">
+                      {{ horarioSeleccionado[dia + '-' + franja] === 'PRESENCIAL' ? 'P' : (horarioSeleccionado[dia + '-' + franja] === 'VIRTUAL' ? 'V' : 'P/V') }}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="flex-shrink: 0;">
+        <ion-button fill="outline" class="btn-cancelar" (click)="mostrarModalHorarios = false" [disabled]="guardandoHorario">CANCELAR</ion-button>
+        <ion-button class="btn-enviar" (click)="guardarNuevoHorario()" [disabled]="guardandoHorario">GUARDAR HORARIO</ion-button>
       </div>
 
     </div>

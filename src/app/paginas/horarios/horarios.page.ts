@@ -275,10 +275,19 @@ async ionViewWillEnter() {
     await this.ionViewWillEnter();
   }
 
-  agruparPorMateria(tutores: any[], sedeUsuario: string, esAdmin: boolean = false) {
+agruparPorMateria(tutores: any[], sedeUsuario: string, esAdmin: boolean = false) {
     const diccionario: { [materia: string]: any[] } = {};
 
-    tutores.forEach(tutor => {
+    // 🌟 EVITAMOS QUE EL TUTOR APAREZCA DUPLICADO SI TIENE VARIOS PERFILES EN FIREBASE
+    const tutoresUnicos = new Map();
+    tutores.forEach(t => {
+      const correo = (t.correo || t.correo_google || '').toLowerCase().trim();
+      if (!tutoresUnicos.has(correo)) {
+        tutoresUnicos.set(correo, t);
+      }
+    });
+
+    tutoresUnicos.forEach(tutor => {
       let materiasArray = tutor.materiasFiltradas || [];
       if (materiasArray.length === 0 && esAdmin) {
         if (Array.isArray(tutor.materias)) {
@@ -294,7 +303,14 @@ async ionViewWillEnter() {
       let hVisible: any = { lunes: '', martes: '', miercoles: '', jueves: '', viernes: '', sabado: '' };
 
       if (tutor.horarios) {
-        for (let clave in tutor.horarios) {
+        // 🌟 ORDENAMOS LAS HORAS CRONOLÓGICAMENTE ("07:00" siempre irá antes que "11:00")
+        const clavesOrdenadas = Object.keys(tutor.horarios).sort((a, b) => {
+          const horaA = a.split('-')[1]?.trim() || '';
+          const horaB = b.split('-')[1]?.trim() || '';
+          return horaA.localeCompare(horaB);
+        });
+
+        for (let clave of clavesOrdenadas) {
           let dashIndex = clave.indexOf('-');
           
           if (dashIndex > -1) {
@@ -309,7 +325,7 @@ async ionViewWillEnter() {
             if (esPermitido) {
               let etiqueta = '(P)';
               if (modalidad === 'VIRTUAL') etiqueta = '(V)';
-              if (modalidad === 'AMBAS') etiqueta = '(P)(V)';
+              if (modalidad === 'AMBAS') etiqueta = '(P/V)';
 
               if (hVisible[diaClave] !== undefined) {
                 hVisible[diaClave] += `${horaCruda.trim()} ${etiqueta}\n`;

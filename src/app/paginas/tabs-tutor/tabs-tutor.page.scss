@@ -1,4 +1,4 @@
-/* 🌟 1. LA CÁPSULA FLOTANTE (Fondo claro del diseño) */
+/* 🌟 1. LA CÁPSULA FLOTANTE (Fondo claro del diseño GIETAES) */
 ion-tab-bar {
   position: absolute;
   bottom: 20px; /* Flota por encima del borde inferior */
@@ -7,7 +7,7 @@ ion-tab-bar {
   border-radius: 50px; /* Bordes totalmente redondeados */
   
   /* El color beige/crema muy clarito de tu imagen */
-  --background: #f2f2e9; 
+  --background: #cfcfc6cb; 
   --border: none; /* Adiós a la línea molesta de arriba */
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Sombra elegante para que resalte */
   padding: 6px;
@@ -48,6 +48,7 @@ ion-tab-button {
     letter-spacing: 0.3px;
   }
 }
+
 /* 🌟 ESTILOS DEL BOTÓN FLOTANTE UNIVERSAL */
 .fab-amarillo {
   --background: #EAB308;
