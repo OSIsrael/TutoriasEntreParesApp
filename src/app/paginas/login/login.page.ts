@@ -9,7 +9,7 @@ import {
 import { addIcons } from 'ionicons';
 import { logoGoogle, arrowBackOutline,checkmarkCircleOutline,warningOutline } from 'ionicons/icons'; 
 import { DatabaseService } from '../../services/database';
-import { Auth, GoogleAuthProvider, signInWithPopup } from '@angular/fire/auth';
+import { Auth, GoogleAuthProvider, signInWithPopup, signOut } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, updateDoc } from '@angular/fire/firestore'; 
 
 @Component({
@@ -42,6 +42,9 @@ export class LoginPage implements OnInit {
   cedula: string = '';
   ciclo: string = '';
   beca: string = '';
+  
+  // 🌟 NUEVAS VARIABLES PARA TELÉFONO
+  codigoPais: string = '+593';
   celular: string = '';
 
   carreraSeleccionada: string = '';
@@ -75,10 +78,19 @@ export class LoginPage implements OnInit {
     return { texto: val.mensaje, color: 'error' };
   }
 
+  // 🌟 VALIDACIÓN DE CELULAR ADAPTATIVA SEGÚN EL PAÍS
   get estadoCelular(): { texto: string, color: string } | null {
     if (!this.celular) return null;
-    if (this.validarCelular(this.celular)) return { texto: 'Número celular válido', color: 'exito' };
-    return { texto: 'Debe tener 10 dígitos y empezar con 09', color: 'error' };
+    
+    if (this.validarCelular(this.celular, this.codigoPais)) {
+      return { texto: 'Número de celular válido', color: 'exito' };
+    }
+
+    if (this.codigoPais === '+593') {
+      return { texto: 'Ecuador: Debe tener 10 dígitos (Ej: 09XXXXXXXX)', color: 'error' };
+    } else {
+      return { texto: 'Ingrese un número válido (Mínimo 8 dígitos)', color: 'error' };
+    }
   }
 
   get estadoCarrera(): { texto: string, color: string } | null {
@@ -110,18 +122,15 @@ export class LoginPage implements OnInit {
     this.busquedaCarrera = '';
     this.ciclo = '';
     this.beca = '';
+    this.codigoPais = '+593'; // Restaurar a Ecuador por defecto
     this.celular = '';
     this.carrerasFiltradas = [];
   }
 
-  // ==========================================
-  // 🌟 LÓGICA DE VALIDACIÓN (CÉDULA / PASAPORTE)
-  // ==========================================
   validarDocumento(docId: string): { valido: boolean, mensaje: string } {
     if (!docId) return { valido: false, mensaje: 'El documento está vacío.' };
     const docLimpio = docId.trim().toUpperCase();
 
-    // 1. Si el usuario escribe exactamente 10 números, asumimos que es Cédula y aplicamos tu fórmula
     if (/^[0-9]{10}$/.test(docLimpio)) {
       if (this.validarCedulaLogica(docLimpio)) {
         return { valido: true, mensaje: 'Cédula ecuatoriana válida' };
@@ -130,17 +139,14 @@ export class LoginPage implements OnInit {
       }
     }
 
-    // 2. Si tiene letras o una longitud distinta (entre 6 y 15 caracteres), lo validamos como Pasaporte
     const regexPasaporte = /^[A-Z0-9]{6,15}$/;
     if (regexPasaporte.test(docLimpio)) {
       return { valido: true, mensaje: 'Pasaporte válido' };
     }
 
-    // 3. Si no cumple ninguna de las dos reglas
     return { valido: false, mensaje: 'Ingrese una cédula (10 números) o pasaporte (6-15 caracteres alfanuméricos)' };
   }
 
-  // Tu fórmula matemática para la cédula (ahora actúa en segundo plano)
   validarCedulaLogica(cedula: string): boolean {
     const provincia = parseInt(cedula.substring(0, 2), 10);
     if (provincia < 1 || (provincia > 24 && provincia !== 30)) return false;
@@ -158,11 +164,19 @@ export class LoginPage implements OnInit {
     return digitoVerificador === parseInt(cedula.charAt(9), 10);
   }
 
-  validarCelular(celular: string): boolean {
-    return celular.length === 10 && celular.startsWith('09');
+  // 🌟 NUEVA LÓGICA DE VALIDACIÓN CELULAR
+  validarCelular(celular: string, codigoPais: string): boolean {
+    let limpio = celular.replace(/\D/g, ''); // Quitamos todo menos números
+    
+    if (codigoPais === '+593') {
+      // Ecuador: Acepta "09XXXX..." (10 dígitos) o "9XXXX..." (9 dígitos)
+      return (limpio.length === 10 && limpio.startsWith('09')) || (limpio.length === 9 && limpio.startsWith('9'));
+    } else {
+      // Internacional: Al menos 8 dígitos, máximo 15
+      return limpio.length >= 8 && limpio.length <= 15;
+    }
   }
 
-  // 🌟 PUNTO 3: FILTRO ESTRICTO (DOS NOMBRES Y DOS APELLIDOS)
   validarNombreCompleto(nombre: string): { valido: boolean, mensaje: string, nombreLimpio: string } {
     if (!nombre) return { valido: false, mensaje: "El nombre está vacío.", nombreLimpio: "" };
 
@@ -231,7 +245,11 @@ export class LoginPage implements OnInit {
       if (respuestaBdd.existe) {
        this.iniciarSesionLocal(respuestaBdd.datos, respuestaBdd.rol || 'ESTUDIANTE');
       } else {
-        this.nombreCompleto = ''; 
+        if (this.correoGoogle.endsWith('@est.ups.edu.ec') || this.correoGoogle.endsWith('@ups.edu.ec')) {
+          this.correoInstitucional = this.correoGoogle;
+        }
+        
+        this.nombreCompleto = usuarioGoogle.displayName ? usuarioGoogle.displayName.toUpperCase() : ''; 
         this.modoRegistro = true;
         this.cargando = false;
       }
@@ -255,7 +273,6 @@ export class LoginPage implements OnInit {
       return;
     }
 
-    // Validación Nombre
     const validacionNombre = this.validarNombreCompleto(this.nombreCompleto);
     if (!validacionNombre.valido) {
       this.mostrarAviso(validacionNombre.mensaje,'info');
@@ -263,17 +280,21 @@ export class LoginPage implements OnInit {
     }
     this.nombreCompleto = validacionNombre.nombreLimpio; 
 
-    // 🌟 NUEVA Validación Cédula/Pasaporte
     const valDoc = this.validarDocumento(this.cedula);
     if (!valDoc.valido) {
       this.mostrarAviso("El documento de identidad ingresado no es válido.", 'error'); 
       return;
     }
-    this.cedula = this.cedula.trim().toUpperCase(); // Guardar en mayúsculas
+    this.cedula = this.cedula.trim().toUpperCase(); 
 
-    // Validación Celular
-    if (!this.validarCelular(this.celular)) {
-      this.mostrarAviso("El número de celular debe empezar con 09 y tener 10 dígitos.",'info'); return;
+    // 🌟 VALIDAMOS Y ESTANDARIZAMOS EL CELULAR
+    if (!this.validarCelular(this.celular, this.codigoPais)) {
+      this.mostrarAviso("El número de celular ingresado no es válido para su país.",'info'); return;
+    }
+
+    let celularEstandar = this.celular.replace(/\D/g, '');
+    if (!celularEstandar.startsWith('0')) {
+      celularEstandar = '0' + celularEstandar; // Forzamos el cero inicial para estandarizar
     }
 
     this.cargando = true;
@@ -326,12 +347,13 @@ export class LoginPage implements OnInit {
       correo_google: this.correoGoogle,    
       correo: correoLimpio,                
       nombre_completo: this.nombreCompleto, 
-      cedula: this.cedula, // Ya validado como cédula o pasaporte
+      cedula: this.cedula, 
       sede: this.sede,               
       carrera: this.carreraSeleccionada, 
       ciclo: this.ciclo,
       beca: this.beca,
-      celular: this.celular,
+      codigo_pais: this.codigoPais, // 🌟 GUARDAMOS EL PAÍS
+      celular: celularEstandar,     // 🌟 GUARDAMOS EL CELULAR CON EL CERO INICIAL
       estado: 'ACTIVO',
       rol: 'ESTUDIANTE',
       fecha_registro: new Date().toISOString()
@@ -349,14 +371,15 @@ export class LoginPage implements OnInit {
     localStorage.setItem('carrera', datos.carrera || ''); 
     localStorage.setItem('ciclo', datos.ciclo);
     localStorage.setItem('cedula', datos.cedula);
+    
+    // 🌟 GUARDAMOS EL CELULAR Y EL CÓDIGO EN LOCALSTORAGE PARA FUTUROS USOS
     localStorage.setItem('celular', datos.celular);
+    localStorage.setItem('codigo_pais', datos.codigo_pais || '+593');
+
     this.cargando = false;
     this.router.navigate(['/tabs/horarios']);
   }
 
-  // ==========================================
-  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
-  // ==========================================
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
     let claseCss = 'toast-exito';
@@ -381,30 +404,5 @@ export class LoginPage implements OnInit {
       mode: 'ios' 
     });
     await toast.present();
-  }
-
-  async confirmarAccion(cabecera: string, mensaje: string): Promise<boolean> {
-    return new Promise(async (resolve) => {
-      const alert = await this.alertController.create({
-        header: cabecera,
-        message: mensaje,
-        cssClass: 'alerta-premium-gietaes',
-        mode: 'md', 
-        buttons: [
-          {
-            text: 'Cancelar',
-            role: 'cancel',
-            cssClass: 'btn-alerta-cancelar',
-            handler: () => resolve(false)
-          },
-          {
-            text: 'Sí, Continuar',
-            cssClass: 'btn-alerta-confirmar',
-            handler: () => resolve(true)
-          }
-        ]
-      });
-      await alert.present();
-    });
   }
 }

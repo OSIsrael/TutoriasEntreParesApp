@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { 
   IonContent, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, 
   IonList, IonItemSliding, IonItem, IonItemOptions, IonItemOption,
-  IonPopover, IonLabel, IonModal,ToastController,AlertController
+  IonLabel, IonModal,ToastController,AlertController,IonPopover
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
@@ -15,7 +15,7 @@ import {
 import { Firestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc,getDoc } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
 import { LocalNotifications } from '@capacitor/local-notifications';
-
+import { Auth, signOut } from '@angular/fire/auth';
 @Component({
   selector: 'app-tutor-tutorias',
   templateUrl: './tutor-tutorias.page.html',
@@ -32,6 +32,7 @@ export class TutorTutoriasPage implements OnInit {
   private firestore = inject(Firestore);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private auth = inject(Auth);
 
   mostrarModalRenovacionTutor: boolean = false;
   decisionTutor: string = '';
@@ -64,9 +65,34 @@ export class TutorTutoriasPage implements OnInit {
   hayNotificacionesSinLeer: boolean = false;
   mostrarGuiaTutor: boolean = false;
   
+  // 🌟 VARIABLES NECESARIAS PARA EL POPOVER DE PERFIL
+  nombreUsuario: string = '';
+
   @ViewChild('popoverEstado') popoverEstado!: IonPopover;
   menuEstadoAbierto: boolean = false;
   tutoriaSeleccionada: any = null;
+
+  // 🌟 VARIABLES PARA MENÚS DESPLEGABLES
+  menuRolAbierto: boolean = false;
+  eventoRol: any = null;
+  menuPerfilAbierto: boolean = false;
+  eventoPerfil: any = null;
+
+// 🌟 GETTERS PARA LA CABECERA DINÁMICA
+  get iconoRolActual(): string {
+    if (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR') return 'shield-checkmark-outline';
+    if (this.rolUsuario === 'TUTOR') return 'briefcase-outline';
+    return 'school-outline';
+  }
+
+  get nombrePanelActual(): string {
+    if (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR') return 'COORDINACIÓN';
+    if (this.rolUsuario === 'TUTOR') return 'TUTOR';
+    return 'ESTUDIANTE';
+  }
+
+  // Métodos de los menús
+
 
   constructor() {
     addIcons({personCircleOutline,swapHorizontalOutline,helpCircleOutline,notificationsOutline,calendarOutline,bookOutline,informationCircleOutline,personOutline,timeOutline,chevronDownOutline,logoWhatsapp,trashOutline,checkmarkCircleOutline,documentTextOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,chevronBackOutline,closeCircleOutline,informationCircle,checkmarkCircle,closeCircle});
@@ -76,7 +102,8 @@ export class TutorTutoriasPage implements OnInit {
 
   async ionViewWillEnter() {
     this.correoUsuario = localStorage.getItem('correo') || '';
-    this.rolUsuario = localStorage.getItem('rol') || 'TUTOR';
+    this.rolUsuario = (localStorage.getItem('rol') || 'ESTUDIANTE').toUpperCase();
+    await this.cargarPermisosPaneles(this.correoUsuario);
 
     await this.dbService.cargarConfiguracionGlobal(true);
     this.periodoApp = this.dbService.periodo_actual;
@@ -151,6 +178,7 @@ export class TutorTutoriasPage implements OnInit {
           color: colorEstado,
           estado: res['estado'],
           celularEstudiante: res['celularEstudiante'], 
+          codigoPaisEstudiante: res['codigoPaisEstudiante'] || '+593', // 🌟 AÑADE ESTA LÍNEA
           nombreEstudiante: res['nombreEstudiante'],
           correoEstudiante: res['correoEstudiante'],
           tipoDerivacion: res['tipo_derivacion'] || 'DECISIÓN PROPIA',
@@ -184,19 +212,25 @@ export class TutorTutoriasPage implements OnInit {
     });
   }
 
-  contactarEstudiante(celular: string, nombre: string, materia: string) {
+contactarEstudiante(celular: string, codigoPais: string, nombre: string, materia: string) {
     if (!celular || celular === 'No registrado' || celular.trim() === '') {
       this.mostrarAviso("El estudiante no registró su número celular.",'error');
       return;
     }
+    
     let celFormateado = celular.replace(/\D/g, ''); 
-    if (celFormateado.startsWith('0')) celFormateado = '593' + celFormateado.substring(1);
+    if (celFormateado.startsWith('0')) {
+      celFormateado = celFormateado.substring(1);
+    }
+    
+    // 🌟 Formateo de la extensión del país
+    let prefijo = (codigoPais || '+593').replace(/\D/g, ''); 
+    const numeroFinal = prefijo + celFormateado;
     
     const mensaje = encodeURIComponent(`Hola ${nombre}, soy tu tutor para la materia de ${materia}. Te escribo para coordinar nuestra sesión.`);
-    const urlWa = `https://wa.me/${celFormateado}?text=${mensaje}`;
+    const urlWa = `https://wa.me/${numeroFinal}?text=${mensaje}`;
     window.open(urlWa, '_blank');
   }
-
   abrirMenuEstado(evento: any, tutoria: any) {
     evento.stopPropagation(); 
     this.tutoriaSeleccionada = tutoria;
@@ -454,14 +488,7 @@ export class TutorTutoriasPage implements OnInit {
     if (this.cdr) this.cdr.detectChanges();
   }
 
-  irAPanel(ruta: string, rolDestino: string) {
-    this.mostrarMenuRol = false; 
-    localStorage.setItem('rol', rolDestino); 
-    setTimeout(() => {
-      this.router.navigate([ruta]); 
-    }, 150); 
-  }
-  
+ 
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
     let claseCss = 'toast-exito';
@@ -664,6 +691,58 @@ export class TutorTutoriasPage implements OnInit {
       } else {
         this.horarioSeleccionado[clave] = this.modalidadGlobal; 
       }
+    }
+  }
+  // ==========================================
+  // 🌟 MÉTODOS PARA MENÚS DE CABECERA
+  // ==========================================
+  async cargarPermisosPaneles(correo: string) {
+    this.tienePanelTutor = false;
+    this.tienePanelAdmin = false;
+    if (!correo) return;
+    try {
+      const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
+      const snapEst = await getDocs(qEst);
+      if (!snapEst.empty) {
+        const rolDB = String(snapEst.docs[0].data()['rol'] || snapEst.docs[0].data()['Rol'] || '').toUpperCase().trim();
+        if (rolDB === 'TUTOR') this.tienePanelTutor = true;
+        if (rolDB === 'COORDINADOR' || rolDB === 'ADMIN') {
+          this.tienePanelTutor = true;
+          this.tienePanelAdmin = true;
+        }
+      }
+      if (!this.tienePanelTutor) {
+        const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
+        const snapTut = await getDocs(qTut);
+        if (!snapTut.empty) this.tienePanelTutor = true;
+      }
+    } catch (error) { console.error("Error permisos:", error); }
+    if (this.cdr) this.cdr.detectChanges(); 
+  }
+
+  abrirMenuRol(evento: any) { this.eventoRol = evento; this.menuRolAbierto = true; }
+  abrirMenuPerfil(evento: any) { this.eventoPerfil = evento; this.menuPerfilAbierto = true; }
+
+  irAPanel(ruta: string, rolDestino: string) {
+    this.menuRolAbierto = false; 
+    localStorage.setItem('rol', rolDestino); 
+    setTimeout(() => { this.router.navigate([ruta]); }, 150); 
+  }
+
+  irAPerfil() {
+    this.menuPerfilAbierto = false;
+    this.router.navigate(['/tabs/perfil']); 
+  }
+
+  async cerrarSesion() {
+    this.menuPerfilAbierto = false;
+    try {
+      await signOut(this.auth);
+      localStorage.clear();
+      this.router.navigate(['/login']);
+    } catch (error) {
+      localStorage.clear();
+      this.router.navigate(['/login']);
     }
   }
 }

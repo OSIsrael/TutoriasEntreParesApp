@@ -1,23 +1,41 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="header-blanco">
+
+    <!-- 🌟 LOGO A LA IZQUIERDA -->
     <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
 
-    <ion-buttons slot="end" style="margin-right: 10px;">
-      <!-- ETIQUETA FIJA: ESTUDIANTE -->
-      <div style="background: #f8fafc; border: 1.5px solid #003366; border-radius: 20px; padding: 2px 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: max-content; margin-right: 4px;">
-        <ion-icon name="person-circle-outline" style="color: #003366; font-size: 1.1rem; margin-right: 4px;"></ion-icon>
-        <span style="color: #003366; font-size: 0.65rem; font-weight: 900; white-space: nowrap;">
-          ROL: ESTUDIANTE
-        </span>
-      </div>
-      <ion-button (click)="irANotificaciones()" style="position: relative; --background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 45px; height: 45px;">
-        <ion-icon name="notifications-outline" style="color: #003366; font-size: 1.6rem;"></ion-icon>
+    <!-- 🌟 BOTONES AGRUPADOS A LA DERECHA -->
+    <ion-buttons slot="end" style="display: flex; align-items: center; gap: 8px; margin-right: 10px;">
+
+     <!-- 🌟 1. SELECTOR DE PANEL DINÁMICO (Con lógica infalible) -->
+      <div (click)="(tienePanelTutor || tienePanelAdmin || rolUsuario !== 'ESTUDIANTE') ? abrirMenuRol($event) : null" 
+           [style.cursor]="(tienePanelTutor || tienePanelAdmin || rolUsuario !== 'ESTUDIANTE') ? 'pointer' : 'default'" 
+           style="background: #f8fafc; border: 1.5px solid #003366; border-radius: 20px; padding: 4px 10px; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
         
+        <ion-icon [name]="iconoRolActual" style="color: #003366; font-size: 1.2rem; margin-right: 6px;"></ion-icon>
+        
+        <span style="color: #003366; font-size: 0.7rem; font-weight: 900; white-space: nowrap; margin-right: 4px; text-transform: uppercase;">
+          PANEL: {{ nombrePanelActual }}
+        </span>
+        
+        <!-- 🌟 Muestra la flecha si tiene permisos extra o si está en un panel superior -->
+        <ion-icon *ngIf="tienePanelTutor || tienePanelAdmin || rolUsuario !== 'ESTUDIANTE'" name="chevron-down-outline" style="color: #003366; font-size: 0.9rem;"></ion-icon>
+      </div>
+
+      <!-- 🌟 2. NOTIFICACIONES -->
+      <ion-button (click)="irANotificaciones()" style="position: relative; --background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 42px; height: 42px;">
+        <ion-icon name="notifications-outline" style="color: #003366; font-size: 1.5rem;"></ion-icon>
         <div *ngIf="hayNotificacionesSinLeer" style="position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background-color: #EAB308; border-radius: 50%; border: 2px solid white;"></div>
       </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
 
+      <!-- 🌟 3. PERFIL DESPLEGABLE -->
+      <ion-button (click)="abrirMenuPerfil($event)" style="--background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 42px; height: 42px;">
+        <ion-icon name="person-circle-outline" style="color: #003366; font-size: 1.8rem;"></ion-icon>
+      </ion-button>
+
+    </ion-buttons>
+
+  </ion-toolbar>
   <div class="linea-separadora"></div>
 </ion-header>
 
@@ -33,28 +51,30 @@
           <ion-icon name="school-outline"></ion-icon>SEDE: {{ usuario.sede }}
         </p>
         <p style="font-size: 0.8rem; color: #666; margin-top: 8px; font-weight: bold; text-transform: uppercase; background: rgba(0,0,0,0.05); padding: 4px 10px; border-radius: 6px; display: inline-block;">
-          Rol: {{ rolUsuario }}
+          Rol Base: {{ rolUsuario }}
         </p>
       </div>
     </div>
   </div>
-<!-- 🌟 SELECTOR DINÁMICO DE PERIODO (DISEÑO CORREGIDO) -->
-    <div style="padding: 0 15px; margin-bottom: 25px;">
-      <ion-segment [(ngModel)]="filtroPeriodo" (ionChange)="cargarEstadisticasEstudiante()" mode="ios" style="background: #e2e8f0; border-radius: 10px; padding: 4px;">
-        
-        <!-- Botón Periodo -->
-        <ion-segment-button value="ACTUAL" style="--color: #64748b; --color-checked: #ffffff; --indicator-color: #003366;">
-          <ion-label style="font-weight: 800; font-size: 0.8rem; letter-spacing: 0.5px;">PERIODO {{ periodoActualApp }}</ion-label>
-        </ion-segment-button>
-        
-        <!-- Botón Histórico -->
-        <ion-segment-button value="HISTORICO" style="--color: #64748b; --color-checked: #ffffff; --indicator-color: #003366;">
-          <ion-label style="font-weight: 800; font-size: 0.8rem; letter-spacing: 0.5px;">HISTÓRICO</ion-label>
-        </ion-segment-button>
-        
-      </ion-segment>
-    </div>
-  <div class="ion-padding" style="margin-top: 5px;">
+
+  <!-- 🌟 SELECTOR DINÁMICO DE PERIODO (DISEÑO CORREGIDO) -->
+  <div style="padding: 0 15px; margin-bottom: 25px;">
+    <ion-segment [(ngModel)]="filtroPeriodo" (ionChange)="cargarEstadisticasEstudiante()" mode="ios" style="background: #e2e8f0; border-radius: 10px; padding: 4px;">
+      
+      <!-- Botón Periodo -->
+      <ion-segment-button value="ACTUAL" style="--color: #64748b; --color-checked: #ffffff; --indicator-color: #003366;">
+        <ion-label style="font-weight: 800; font-size: 0.8rem; letter-spacing: 0.5px;">PERIODO {{ periodoActualApp }}</ion-label>
+      </ion-segment-button>
+      
+      <!-- Botón Histórico -->
+      <ion-segment-button value="HISTORICO" style="--color: #64748b; --color-checked: #ffffff; --indicator-color: #003366;">
+        <ion-label style="font-weight: 800; font-size: 0.8rem; letter-spacing: 0.5px;">HISTÓRICO</ion-label>
+      </ion-segment-button>
+      
+    </ion-segment>
+  </div>
+
+  <div class="ion-padding" style="margin-top: 5px; padding-bottom: 5px;">
     <h3 style="color: #003366; font-weight: 900; margin-bottom: 15px; font-size: 1.1rem; text-align: center;">
       MI RENDIMIENTO ACADÉMICO
     </h3>
@@ -74,28 +94,72 @@
       <p style="color: #64748b; font-size: 0.9rem; margin-top: 10px; font-weight: 500;">Aún no tienes estadísticas.<br>¡Agenda tu primera tutoría para ver tu progreso!</p>
     </div>
   </div>
-  <div class="fab-container">
-    <div class="fab-menu" *ngIf="menuAbierto">
-      
-      <button class="fab-item" *ngIf="puedePostularse" (click)="irAPostulacion()">
-        POSTULARSE <ion-icon name="book-outline"></ion-icon>
-      </button>
 
-      <button class="fab-item" *ngIf="esTutor" (click)="irAPanelTutor()">
-        PANEL TUTOR <ion-icon name="school-outline"></ion-icon>
-      </button>
-
-      <button class="fab-item" *ngIf="esAdmin" (click)="irAAdministracion()">
-        PANEL ADMIN <ion-icon name="settings-outline"></ion-icon>
-      </button>
-
-      <button class="fab-item" (click)="cerrarSesion()">
-        CERRAR SESIÓN <ion-icon name="log-out-outline"></ion-icon>
-      </button>
-
-    </div>
-    <button class="fab-amarillo" (click)="toggleMenu()">
-      <ion-icon name="people-outline"></ion-icon>
-    </button>
+  <!-- 🌟 NUEVO BOTÓN DIRECTO PARA POSTULARSE -->
+  <div class="ion-padding" *ngIf="puedePostularse" style="padding-top: 0; padding-bottom: 80px;">
+    <ion-button expand="block" (click)="irAPostulacion()" style="--background: #EAB308; --color: #003366; font-weight: 900; height: 55px; --border-radius: 15px; box-shadow: 0 6px 15px rgba(234, 179, 8, 0.4); margin-top: 10px;">
+      <ion-icon name="school-outline" slot="start" style="font-size: 1.5rem;"></ion-icon>
+      QUIERO SER TUTOR (POSTULARME)
+    </ion-button>
   </div>
+
+  <!-- ========================================== -->
+  <!-- 🌟 POPOVER: CAMBIO DE PANEL -->
+  <!-- ========================================== -->
+  <ion-popover [isOpen]="menuRolAbierto" [event]="eventoRol" (didDismiss)="menuRolAbierto = false" mode="ios" style="--background: #ffffff; --width: 220px; --border-radius: 12px; --box-shadow: 0 10px 25px rgba(0, 51, 102, 0.15);">
+    <ng-template>
+      <ion-content class="ion-padding-vertical" style="--background: #ffffff;">
+        <p style="margin: 0 15px 10px 15px; font-size: 0.75rem; color: #64748b; font-weight: bold; text-transform: uppercase;">Cambiar a panel:</p>
+        <ion-list lines="none" style="background: transparent;">
+
+          <ion-item button (click)="irAPanel('/tabs/horarios', 'ESTUDIANTE')" *ngIf="rolUsuario !== 'ESTUDIANTE'" style="--background: transparent;">
+            <ion-icon name="school-outline" slot="start" style="color: #003366;"></ion-icon>
+            <ion-label style="font-weight: 700; color: #003366;">Estudiante</ion-label>
+          </ion-item>
+
+          <ion-item button (click)="irAPanel('/tabs-tutor/tutorias', 'TUTOR')" *ngIf="tienePanelTutor && rolUsuario !== 'TUTOR'" style="--background: transparent;">
+            <ion-icon name="briefcase-outline" slot="start" style="color: #003366;"></ion-icon>
+            <ion-label style="font-weight: 700; color: #003366;">Tutor</ion-label>
+          </ion-item>
+
+          <ion-item button (click)="irAPanel('/tabs-admin/postulaciones', 'COORDINADOR')" *ngIf="tienePanelAdmin && rolUsuario !== 'COORDINADOR' && rolUsuario !== 'ADMIN'" style="--background: transparent;">
+            <ion-icon name="shield-checkmark-outline" slot="start" style="color: #003366;"></ion-icon>
+            <ion-label style="font-weight: 700; color: #003366;">Coordinación</ion-label>
+          </ion-item>
+
+        </ion-list>
+      </ion-content>
+    </ng-template>
+  </ion-popover>
+
+  <!-- ========================================== -->
+  <!-- 🌟 POPOVER: PERFIL Y OPCIONES -->
+  <!-- ========================================== -->
+  <ion-popover [isOpen]="menuPerfilAbierto" [event]="eventoPerfil" (didDismiss)="menuPerfilAbierto = false" mode="ios" style="--background: #ffffff; --width: 280px; --border-radius: 12px; --box-shadow: 0 10px 25px rgba(0, 51, 102, 0.15);">
+    <ng-template>
+      <ion-content style="--background: #ffffff;">
+
+        <!-- Cabecera del Popover de Perfil -->
+        <div style="background: #f8fafc; padding: 15px; border-bottom: 1px solid #e2e8f0; margin-bottom: 5px;">
+          <p style="margin: 0; font-weight: 900; color: #003366; font-size: 0.95rem; line-height: 1.2;">{{ usuario.nombre }}</p>
+          <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.75rem;">{{ usuario.correo }}</p>
+        </div>
+
+        <!-- Lista de Opciones -->
+        <ion-list lines="none" style="background: transparent; padding-bottom: 10px;">
+          <ion-item button (click)="irAPerfil()" style="--background: transparent;">
+            <ion-icon name="settings-outline" slot="start" style="color: #475569;"></ion-icon>
+            <ion-label style="font-weight: 600; color: #475569;">Mi Perfil</ion-label>
+          </ion-item>
+
+          <ion-item button (click)="cerrarSesion()" style="--background: transparent;">
+            <ion-icon name="log-out-outline" slot="start" style="color: #ef4444;"></ion-icon>
+            <ion-label style="font-weight: 700; color: #ef4444;">Cerrar Sesión</ion-label>
+          </ion-item>
+        </ion-list>
+
+      </ion-content>
+    </ng-template>
+  </ion-popover>
+
 </ion-content>

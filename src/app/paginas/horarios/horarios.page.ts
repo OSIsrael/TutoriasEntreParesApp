@@ -2,15 +2,19 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Firestore, collection, getDocs, query, where, updateDoc, doc } from '@angular/fire/firestore';
+import { Auth, signOut } from '@angular/fire/auth'; // 🌟 IMPORTACIÓN AÑADIDA PARA CERRAR SESIÓN
 import { 
   IonContent, IonHeader, IonToolbar, 
-  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal,IonFab,IonFabButton,ToastController,AlertController,IonInput 
+  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal,IonFab,IonFabButton,ToastController,AlertController,IonInput,
+  IonPopover // 🌟 IMPORTACIÓN AÑADIDA PARA MENÚS DESPLEGABLES
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   searchOutline, closeOutline, logoWhatsapp, star, mailOutline, 
   peopleOutline, checkmarkOutline, businessOutline, notificationsOutline, 
-  informationCircleOutline, locationOutline, calendarOutline, helpCircleOutline, checkmarkCircleOutline, starOutline, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, closeCircleOutline, sendOutline, personCircleOutline, flashOutline } from 'ionicons/icons';
+  informationCircleOutline, locationOutline, calendarOutline, helpCircleOutline, checkmarkCircleOutline, starOutline, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, closeCircleOutline, sendOutline, personCircleOutline, flashOutline,
+  chevronDownOutline, logOutOutline, settingsOutline // 🌟 NUEVOS ÍCONOS
+} from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
 import { Router } from '@angular/router'; 
 
@@ -21,7 +25,7 @@ import { Router } from '@angular/router';
   standalone: true,
   imports: [
     IonContent, IonHeader, IonToolbar, CommonModule, FormsModule, 
-    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal,IonFab,IonFabButton,IonInput
+    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal,IonFab,IonFabButton,IonInput, IonPopover
   ]
 })
 export class HorariosPage implements OnInit {
@@ -31,7 +35,8 @@ export class HorariosPage implements OnInit {
   private firestore = inject(Firestore);
   private router = inject(Router); 
   private cdr = inject(ChangeDetectorRef);
-  // 🌟 VARIABLES PARA RENOVACIÓN DE PERIODO
+  private auth = inject(Auth); // 🌟 INYECCIÓN DE AUTH
+
   mostrarModalRenovacionEstudiante: boolean = false;
   nuevoCicloEstudiante: number = 1;
   periodoApp: string = '';
@@ -41,10 +46,14 @@ export class HorariosPage implements OnInit {
   private toastController = inject(ToastController);
   private alertController = inject(AlertController);
 
-  datosEstudianteActual: any = null; // 🌟 Guardará los datos para reenviarlos a Excel
+  datosEstudianteActual: any = null; 
 
-  // 🌟 VARIABLES PARA EL MENÚ DE ROLES
-  mostrarMenuRol: boolean = false;
+  // 🌟 NUEVAS VARIABLES PARA MENÚS DESPLEGABLES DE CABECERA
+  menuRolAbierto: boolean = false;
+  eventoRol: any = null;
+  menuPerfilAbierto: boolean = false;
+  eventoPerfil: any = null;
+
   tienePanelTutor: boolean = false;
   tienePanelAdmin: boolean = false;
 
@@ -67,7 +76,6 @@ export class HorariosPage implements OnInit {
   equipoCoordinacion: any[] = [];
   mostrarGuia: boolean = false;
   
-  // 🌟 VARIABLES DE EVALUACIÓN (Ajustadas a 3)
   mostrarModalEvaluacion: boolean = false;
   reservaAEvaluar: any = null;
   enviandoEvaluacion: boolean = false;
@@ -76,7 +84,6 @@ export class HorariosPage implements OnInit {
     "2. ¿La sesión tutorial aclaró tus dudas de forma clara y comprensible?",
     "3. Considero que este tipo de apoyo me ayudará a alcanzar mis metas académicas",
   ];
-  // Arreglo de exactamente 3 posiciones (0 significa no respondida)
   respuestasEvaluacion: number[] = [0, 0, 0];
 
   mostrarModalTerminos: boolean = false;
@@ -98,12 +105,25 @@ export class HorariosPage implements OnInit {
   tipoDerivacion: string = '';
   docenteBuscado: string = '';
   docentesFiltrados: string[] = [];
-  // Cambia temporalmente tu variable vacía por esta:
   docentesExcel: string[] = []; 
   sedeUsuario: string = '';
 
+
+  // (Busca esta parte y añade el nuevo getter justo debajo)
+  get iconoRolActual(): string {
+    if (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR') return 'shield-checkmark-outline';
+    if (this.rolUsuario === 'TUTOR') return 'briefcase-outline';
+    return 'school-outline';
+  }
+
+  // 🌟 NUEVO: TRADUCE EL ROL AL NOMBRE DEL ESPACIO DE TRABAJO
+  get nombrePanelActual(): string {
+    if (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR') return 'COORDINACIÓN';
+    if (this.rolUsuario === 'TUTOR') return 'TUTOR';
+    return 'ESTUDIANTE';
+  }
   constructor() {
-    addIcons({personCircleOutline,helpCircleOutline,swapHorizontalOutline,notificationsOutline,businessOutline,searchOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,calendarOutline,checkmarkCircleOutline,sendOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,flashOutline,closeCircleOutline,locationOutline,starOutline});
+    addIcons({personCircleOutline,helpCircleOutline,swapHorizontalOutline,notificationsOutline,businessOutline,searchOutline,peopleOutline,mailOutline,star,logoWhatsapp,checkmarkOutline,closeOutline,informationCircleOutline,calendarOutline,checkmarkCircleOutline,sendOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,flashOutline,closeCircleOutline,locationOutline,starOutline,chevronDownOutline,logOutOutline,settingsOutline});
   }
 
   ngOnInit() {
@@ -115,22 +135,19 @@ export class HorariosPage implements OnInit {
     this.router.navigate(['/notificaciones']);
   }
 
-async ionViewWillEnter() {
+  async ionViewWillEnter() {
     const correo = localStorage.getItem('correo') || '';
     
-    // 🌟 MOAMBUE: Ñemoñepyrũma pe rolUsuario ha sedeUsuario
     const rolActual = (localStorage.getItem('rol') || '').toUpperCase();
     this.rolUsuario = rolActual; 
     this.sedeUsuario = (localStorage.getItem('sede') || 'CUENCA').toUpperCase();
     
     this.esCoordinadorPanel = (rolActual === 'ADMIN' || rolActual === 'COORDINADOR');
 
-    // 🌟 PROTECCIÓN DE JURISDICCIÓN: Oĩrõ Coordinador, oñemomba'e pe sedeUsuario-pe
     if (this.rolUsuario === 'COORDINADOR') {
       this.filtroSedeAgenda = this.sedeUsuario;
     }
 
-    // 🌟 1. CARGAMOS EL PERIODO GLOBAL ANTES DE NADA
     await this.dbService.cargarConfiguracionGlobal(true);
     this.periodoApp = this.dbService.periodo_actual;
 
@@ -148,24 +165,19 @@ async ionViewWillEnter() {
           } else if (!datosUsr['terminos_aceptados']) {
             this.mostrarModalTerminos = true;
           }
-          
-          if (!datosUsr['terminos_aceptados']) {
-            this.mostrarModalTerminos = true;
-          }
         }
       } catch (e) {
         console.error("Error al verificar Firebase:", e);
       }
     }
 
-    // Pe sede ha rol ojejuhu ymaiterei
     await this.verificarNotificaciones(correo, this.rolUsuario, this.sedeUsuario);
+    await this.cargarPermisosPaneles(correo); // 🌟 Precargamos los permisos en silencio
     
     this.cargando = true;
     this.textoBusqueda = ''; 
 
     const carreraEstudiante = (localStorage.getItem('carrera') || '').toUpperCase();
-
     const snapshotTutores = await getDocs(collection(this.firestore, 'Tutores'));
     let todosLosTutores = snapshotTutores.docs.map(doc => doc.data()).filter(t => t['estado'] === 'ACTIVO');
 
@@ -175,23 +187,15 @@ async ionViewWillEnter() {
     todosLosTutores.forEach(tutor => {
       const correoTutor = (tutor['correo'] || tutor['correo_google'] || '').toLowerCase().trim();
       const estudianteDB = todosLosEstudiantes.find(e => (e['correo'] || '').toLowerCase().trim() === correoTutor);
-      
-      if (estudianteDB && estudianteDB['rol']) {
-        tutor['rol'] = String(estudianteDB['rol']).toUpperCase();
-      } else {
-        tutor['rol'] = 'TUTOR'; 
-      }
+      if (estudianteDB && estudianteDB['rol']) tutor['rol'] = String(estudianteDB['rol']).toUpperCase();
+      else tutor['rol'] = 'TUTOR'; 
     });
 
-    // 🌟 MOAMBUE: Equipo de Coordinación - Ohechaukáta g̃uarã umi Coordinador hembiapo umi sedépe oĩhágui
     const coordinadoresDinamicos = todosLosEstudiantes
       .filter(e => {
         const rolUsuarioDB = String(e['rol'] || '').toUpperCase();
         const sedeCoord = String(e['sede'] || '').toUpperCase();
-        
-        // 🌟 REGLA DE SEDE: Pe Admin ohecha opaite mba'e, Coordinador ohecha hembiapo añónte oĩva isedépe.
         const cumpleSede = (this.rolUsuario === 'ADMIN') || (sedeCoord === this.sedeUsuario);
-
         return (rolUsuarioDB === 'COORDINADOR' || rolUsuarioDB === 'ADMIN') && cumpleSede;
       })
       .map(c => ({
@@ -216,29 +220,18 @@ async ionViewWillEnter() {
             .filter((m: any) => (m.carrera || '').toUpperCase() === carreraEstudiante)
             .map((m: any) => (m.nombre || '').toUpperCase());
         }
-      } catch (e) {
-        console.error("Error al cargar la malla del estudiante", e);
-      }
+      } catch (e) { console.error("Error", e); }
     }
 
     for (let tutor of todosLosTutores) {
       if (this.esCoordinadorPanel) {
-        if (this.filtroSedeAgenda !== 'GLOBAL' && (tutor['sede'] || '').toUpperCase() !== this.filtroSedeAgenda) {
-          continue; 
-        }
+        if (this.filtroSedeAgenda !== 'GLOBAL' && (tutor['sede'] || '').toUpperCase() !== this.filtroSedeAgenda) continue; 
       }
-
       let materiasDelTutor: string[] = [];
-      if (Array.isArray(tutor['materias'])) {
-        materiasDelTutor = tutor['materias'].map((m: string) => m.toUpperCase());
-      } else if (typeof tutor['materias'] === 'string') {
-        materiasDelTutor = tutor['materias'].split(',').map((m: string) => m.trim().toUpperCase());
-      }
+      if (Array.isArray(tutor['materias'])) materiasDelTutor = tutor['materias'].map((m: string) => m.toUpperCase());
+      else if (typeof tutor['materias'] === 'string') materiasDelTutor = tutor['materias'].split(',').map((m: string) => m.trim().toUpperCase());
 
-      if (!this.esCoordinadorPanel) {
-        materiasDelTutor = materiasDelTutor.filter(m => materiasPermitidas.includes(m));
-      }
-
+      if (!this.esCoordinadorPanel) materiasDelTutor = materiasDelTutor.filter(m => materiasPermitidas.includes(m));
       if (materiasDelTutor.length === 0 && !this.esCoordinadorPanel) continue;
 
       tutor['materiasFiltradas'] = materiasDelTutor;
@@ -257,7 +250,70 @@ async ionViewWillEnter() {
     await this.verificarEvaluacionesPendientes();
     this.docentesExcel = await this.dbService.obtenerDocentesDesdeExcel();
   }
-  
+
+  // ==========================================
+  // 🌟 NUEVOS MÉTODOS PARA MENÚS DE CABECERA
+  // ==========================================
+  async cargarPermisosPaneles(correo: string) {
+    this.tienePanelTutor = false;
+    this.tienePanelAdmin = false;
+    if (!correo) return;
+    try {
+      const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
+      const snapEst = await getDocs(qEst);
+      if (!snapEst.empty) {
+        const rolDB = (snapEst.docs[0].data()['rol'] || snapEst.docs[0].data()['Rol'] || '').toUpperCase().trim();
+        if (rolDB === 'TUTOR') this.tienePanelTutor = true;
+        if (rolDB === 'COORDINADOR' || rolDB === 'ADMIN') {
+          this.tienePanelTutor = true;
+          this.tienePanelAdmin = true;
+        }
+      }
+      if (!this.tienePanelTutor) {
+        const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
+        const snapTut = await getDocs(qTut);
+        if (!snapTut.empty) this.tienePanelTutor = true;
+      }
+    } catch (error) {}
+  }
+
+  abrirMenuRol(evento: any) {
+    this.eventoRol = evento;
+    this.menuRolAbierto = true;
+  }
+
+  abrirMenuPerfil(evento: any) {
+    this.eventoPerfil = evento;
+    this.menuPerfilAbierto = true;
+  }
+
+  irAPanel(ruta: string, rolDestino: string) {
+    this.menuRolAbierto = false; 
+    localStorage.setItem('rol', rolDestino); 
+    setTimeout(() => { this.router.navigate([ruta]); }, 150); 
+  }
+
+  irAPerfil() {
+    this.menuPerfilAbierto = false;
+    this.router.navigate(['/tabs/perfil']);
+  }
+
+  async cerrarSesion() {
+    this.menuPerfilAbierto = false;
+    try {
+      await signOut(this.auth);
+      localStorage.clear();
+      this.router.navigate(['/login']);
+    } catch (error) {
+      localStorage.clear();
+      this.router.navigate(['/login']);
+    }
+  }
+
+  // ==========================================
+  // OTRAS FUNCIONES (MANTIENEN TU LÓGICA INTACTA)
+  // ==========================================
+
   async verificarNotificaciones(correo: string, rol: string, sede: string) {
     try {
       const notifs = await this.dbService.obtenerNotificacionesUsuario(correo, rol, sede);
@@ -266,44 +322,30 @@ async ionViewWillEnter() {
         return !leidas.includes(correo);
       });
       this.hayNotificacionesSinLeer = sinLeer.length > 0;
-    } catch (error) {
-      console.error("Error al verificar notificaciones:", error);
-    }
+    } catch (error) {}
   }
 
-  async recargarAgendaSede() {
-    await this.ionViewWillEnter();
-  }
+  async recargarAgendaSede() { await this.ionViewWillEnter(); }
 
-agruparPorMateria(tutores: any[], sedeUsuario: string, esAdmin: boolean = false) {
+  agruparPorMateria(tutores: any[], sedeUsuario: string, esAdmin: boolean = false) {
     const diccionario: { [materia: string]: any[] } = {};
-
-    // 🌟 EVITAMOS QUE EL TUTOR APAREZCA DUPLICADO SI TIENE VARIOS PERFILES EN FIREBASE
     const tutoresUnicos = new Map();
     tutores.forEach(t => {
       const correo = (t.correo || t.correo_google || '').toLowerCase().trim();
-      if (!tutoresUnicos.has(correo)) {
-        tutoresUnicos.set(correo, t);
-      }
+      if (!tutoresUnicos.has(correo)) tutoresUnicos.set(correo, t);
     });
 
     tutoresUnicos.forEach(tutor => {
       let materiasArray = tutor.materiasFiltradas || [];
       if (materiasArray.length === 0 && esAdmin) {
-        if (Array.isArray(tutor.materias)) {
-          materiasArray = tutor.materias;
-        } else if (typeof tutor.materias === 'string') {
-          materiasArray = tutor.materias.split(',').map((m: string) => m.trim());
-        }
+        if (Array.isArray(tutor.materias)) materiasArray = tutor.materias;
+        else if (typeof tutor.materias === 'string') materiasArray = tutor.materias.split(',').map((m: string) => m.trim());
       }
-
       const sedeTutor = (tutor.sede || '').toUpperCase();
       const esMismaSede = (sedeTutor === sedeUsuario.toUpperCase());
-
       let hVisible: any = { lunes: '', martes: '', miercoles: '', jueves: '', viernes: '', sabado: '' };
 
       if (tutor.horarios) {
-        // 🌟 ORDENAMOS LAS HORAS CRONOLÓGICAMENTE ("07:00" siempre irá antes que "11:00")
         const clavesOrdenadas = Object.keys(tutor.horarios).sort((a, b) => {
           const horaA = a.split('-')[1]?.trim() || '';
           const horaB = b.split('-')[1]?.trim() || '';
@@ -312,24 +354,18 @@ agruparPorMateria(tutores: any[], sedeUsuario: string, esAdmin: boolean = false)
 
         for (let clave of clavesOrdenadas) {
           let dashIndex = clave.indexOf('-');
-          
           if (dashIndex > -1) {
             let diaCrudo = clave.substring(0, dashIndex); 
             let horaCruda = clave.substring(dashIndex + 1); 
-            
             let diaClave = diaCrudo.toLowerCase().replace('é', 'e').replace('á', 'a').trim();
             let modalidad = (tutor.horarios[clave] || '').toUpperCase();
             
             const esPermitido = esAdmin || esMismaSede || (modalidad === 'VIRTUAL' || modalidad === 'AMBAS');
-
             if (esPermitido) {
               let etiqueta = '(P)';
               if (modalidad === 'VIRTUAL') etiqueta = '(V)';
               if (modalidad === 'AMBAS') etiqueta = '(P/V)';
-
-              if (hVisible[diaClave] !== undefined) {
-                hVisible[diaClave] += `${horaCruda.trim()} ${etiqueta}\n`;
-              }
+              if (hVisible[diaClave] !== undefined) hVisible[diaClave] += `${horaCruda.trim()} ${etiqueta}\n`;
             }
           } else {
             let diaClave = clave.toLowerCase().replace('é', 'e').replace('á', 'a').trim();
@@ -345,20 +381,15 @@ agruparPorMateria(tutores: any[], sedeUsuario: string, esAdmin: boolean = false)
       let tieneHorariosValidos = false;
       for (let d in hVisible) {
         hVisible[d] = hVisible[d].trim();
-        if (hVisible[d] !== '') {
-          tieneHorariosValidos = true;
-        }
+        if (hVisible[d] !== '') tieneHorariosValidos = true;
       }
 
       if (tieneHorariosValidos || esAdmin) {
         const tutorCopia = { ...tutor, horarioVisible: hVisible };
-
         materiasArray.forEach((materia: string) => {
           if (!materia) return;
           const nombreMateria = materia.toUpperCase();
-          if (!diccionario[nombreMateria]) {
-            diccionario[nombreMateria] = [];
-          }
+          if (!diccionario[nombreMateria]) diccionario[nombreMateria] = [];
           diccionario[nombreMateria].push(tutorCopia);
         });
       }
@@ -366,85 +397,63 @@ agruparPorMateria(tutores: any[], sedeUsuario: string, esAdmin: boolean = false)
 
     this.asignaturasMaster = Object.keys(diccionario).sort().map(nombre => {
       let tutoresMateria = diccionario[nombre];
-
       tutoresMateria.sort((a, b) => {
         const esCoordA = a.rol === 'COORDINADOR';
         const esCoordB = b.rol === 'COORDINADOR';
-        
         if (esCoordA && !esCoordB) return -1;
         if (!esCoordA && esCoordB) return 1;
-        
         return (a.nombre || '').localeCompare(b.nombre || '');
       });
-
-      return {
-        asignatura: nombre,
-        tutores: tutoresMateria
-      };
+      return { asignatura: nombre, tutores: tutoresMateria };
     });
-
     this.asignaturasFiltradas = [...this.asignaturasMaster];
   }
-// 🌟 1. Agrega esta función auxiliar justo arriba de tu función filtrar()
+
   limpiarTexto(texto: string): string {
     if (!texto) return '';
-    return texto
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .trim();
+    return texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   }
 
-  // 🌟 2. Reemplaza tu función filtrar() por esta
   filtrar() {
     const busquedaLimpia = this.limpiarTexto(this.textoBusqueda);
-    
     if (busquedaLimpia === '') {
       this.asignaturasFiltradas = [...this.asignaturasMaster];
       return;
     }
-    
     this.asignaturasFiltradas = this.asignaturasMaster.filter(bloque => {
-      // Limpiamos la materia
       const materiaLimpia = this.limpiarTexto(bloque.asignatura);
       const coincideMateria = materiaLimpia.includes(busquedaLimpia);
-      
-      // Limpiamos el nombre de cada tutor
       const coincideTutor = bloque.tutores.some((t: any) => {
         const tutorLimpio = this.limpiarTexto(t.nombre || '');
         return tutorLimpio.includes(busquedaLimpia);
       });
-      
       return coincideMateria || coincideTutor;
     });
   }
+
 abrirConfirmacion(tutor: any, dia: string, horas: string, materia: string) { 
     if (!horas || horas.trim() === '') return; 
 
     const miCorreo = String(localStorage.getItem('correo') || '').toLowerCase().trim();
     const miNombre = String(localStorage.getItem('nombre') || '').toLowerCase().trim();
-    
     const correoDelTutor = String(tutor.correo || tutor.correo_google || '').toLowerCase().trim();
     const nombreDelTutor = String(tutor.nombre || '').toLowerCase().trim();
 
     if (correoDelTutor !== '' && correoDelTutor === miCorreo) {
-      this.mostrarAviso('No puedes agendar una tutoría contigo mismo.','error');
-      return; 
+      this.mostrarAviso('No puedes agendar una tutoría contigo mismo.','error'); return; 
     }
-
     if (nombreDelTutor !== '' && nombreDelTutor === miNombre) {
-      this.mostrarAviso('Acción bloqueada: No puedes ser el estudiante y el tutor a la vez.','advertencia');
-      return;
+      this.mostrarAviso('Acción bloqueada: No puedes ser el estudiante y el tutor a la vez.','advertencia'); return;
     }
 
-    // 🌟 SEPARAMOS EL TEXTO DE LAS HORAS EN UNA LISTA PARA EL SELECTOR
     this.listaHorasDisponibles = horas.split('\n').map(h => h.trim()).filter(h => h.length > 0);
-    this.horaSeleccionada = ''; // Reiniciamos la selección cada vez que se abre el modal
+    this.horaSeleccionada = ''; 
 
     this.reservaActual = { 
       tutorNombre: tutor.nombre, 
       correoTutor: tutor.correo || tutor.correo_google, 
       celularTutor: tutor.celular, 
+      codigoPaisTutor: tutor.codigo_pais || '+593', // 🌟 NUEVO: CAPTURAMOS EL PAÍS DEL TUTOR
       dia: dia, 
       horas: horas, 
       materia: materia 
@@ -459,23 +468,16 @@ abrirConfirmacion(tutor: any, dia: string, horas: string, materia: string) {
     this.horaSeleccionada = '';
   }
 
-async confirmarReserva() {
+ async confirmarReserva() {
     if (!this.reservaActual) return;
-
-    // 🌟 VALIDAMOS QUE EL ESTUDIANTE HAYA ELEGIDO UNA HORA
     if (!this.horaSeleccionada) {
-      this.mostrarAviso('Por favor, selecciona una hora específica para la tutoría.', 'advertencia');
-      return;
+      this.mostrarAviso('Por favor, selecciona una hora específica para la tutoría.', 'advertencia'); return;
     }
-
-    // 🌟 MOVIDO AQUÍ: VALIDAMOS QUE HAYA DERIVACIÓN Y DOCENTE *ANTES* DE GUARDAR
     if (!this.tipoDerivacion && !this.reservaActual.tipo_derivacion) {
-      this.mostrarAviso('Por favor, indica el motivo de la tutoría.', 'advertencia');
-      return;
+      this.mostrarAviso('Por favor, indica el motivo de la tutoría.', 'advertencia'); return;
     }
     if (!this.docenteBuscado && !this.reservaActual.docente) {
-      this.mostrarAviso('Por favor, busca y selecciona un docente.', 'advertencia');
-      return;
+      this.mostrarAviso('Por favor, busca y selecciona un docente.', 'advertencia'); return;
     }
 
     try {
@@ -483,15 +485,15 @@ async confirmarReserva() {
         correoEstudiante: this.correoUsuario,
         nombreEstudiante: this.nombreUsuario,
         celularEstudiante: localStorage.getItem('celular') || 'No registrado',
+        codigoPaisEstudiante: localStorage.getItem('codigo_pais') || '+593', // 🌟 NUEVO: TU PAÍS COMO ESTUDIANTE
         correoTutor: this.reservaActual.correoTutor,
         nombreTutor: this.reservaActual.tutorNombre,
         celularTutor: this.reservaActual.celularTutor || 'No registrado',
+        codigoPaisTutor: this.reservaActual.codigoPaisTutor || '+593', // 🌟 NUEVO
         materia: this.reservaActual.materia,
         dia_elegido: this.reservaActual.dia,
         hora_elegida: this.horaSeleccionada, 
         codigo: this.dbService.generarCodigoTutoria(this.reservaActual.materia),
-        
-        // 🌟 AÑADIMOS LAS NUEVAS VARIABLES AL PAQUETE QUE VA A FIREBASE Y TU HOJA DE CÁLCULO
         tipo_derivacion: this.tipoDerivacion || this.reservaActual.tipo_derivacion || 'DECISIÓN PROPIA',
         docente: this.docenteBuscado || this.reservaActual.docente || 'No especificado'
       };
@@ -509,23 +511,19 @@ async confirmarReserva() {
             rol_destino: 'TUTOR' 
           });
         }
-      } catch (notiError) {
-        console.warn('Se guardó la clase, pero falló la notificación:', notiError);
-      }
+      } catch (notiError) {}
 
       this.cerrarConfirmacion();
       this.mostrarAviso('¡Tutoría agendada con éxito! Revisa la pestaña de Mis Tutorías.','exito');
       
-      // 🌟 LIMPIAMOS LAS VARIABLES PARA QUE EL MODAL QUEDE EN BLANCO LA PRÓXIMA VEZ
       this.tipoDerivacion = '';
       this.docenteBuscado = '';
       this.docentesFiltrados = [];
-      
     } catch (error) {
-      console.error("Error al agendar:", error);
       this.mostrarAviso('Hubo un problema al enviar tu solicitud.','error');
     }
   }
+
   formatearNumeroWA(numero: string): string {
     if (!numero) return '';
     let limpio = numero.replace(/\D/g, '');
@@ -541,15 +539,13 @@ async confirmarReserva() {
   
   abrirGuia() {
     this.mostrarGuia = true;
+    this.menuPerfilAbierto = false; // Cerramos el menú si lo abrió desde ahí
   }
 
   cerrarGuia() {
     this.mostrarGuia = false;
   }
 
-  // ==========================================
-  // 🌟 SISTEMA DE EVALUACIÓN (3 PREGUNTAS + ESCALA NUMÉRICA)
-  // ==========================================
   async verificarEvaluacionesPendientes() {
     const nombre = localStorage.getItem('nombre');
     const cedula = localStorage.getItem('cedula');
@@ -558,26 +554,18 @@ async confirmarReserva() {
     const miInfo = `${nombre} - ${cedula}`;
 
     try {
-      const q = query(
-        collection(this.firestore, 'Asistencias'),
-        where('estudiante_info', '==', miInfo)
-      );
+      const q = query(collection(this.firestore, 'Asistencias'), where('estudiante_info', '==', miInfo));
       const snap = await getDocs(q);
       
-      const pendientes = snap.docs
-        .map(d => ({ id: d.id, ...d.data() as any }))
-        .filter(r => !r.evaluado);
+      const pendientes = snap.docs.map(d => ({ id: d.id, ...d.data() as any })).filter(r => !r.evaluado);
 
       if (pendientes.length > 0) {
         this.reservaAEvaluar = pendientes[0]; 
         this.mostrarModalEvaluacion = true;   
       }
-    } catch (error) {
-      console.error("Error al buscar evaluaciones pendientes", error);
-    }
+    } catch (error) {}
   }
 
-  // 🌟 VALIDAMOS QUE LAS 3 PREGUNTAS TENGAN RESPUESTA
   get evaluacionValida(): boolean {
     return this.respuestasEvaluacion[0] > 0 && 
            this.respuestasEvaluacion[1] > 0 && 
@@ -607,23 +595,16 @@ async confirmarReserva() {
         p1: this.respuestasEvaluacion[0],
         p2: this.respuestasEvaluacion[1],
         p3: this.respuestasEvaluacion[2],
-        p4: 'N/A', // Rellenamos para no descuadrar tu Google Sheet
-        p5: 'N/A'  // Rellenamos para no descuadrar tu Google Sheet
+        p4: 'N/A', 
+        p5: 'N/A'  
       };
 
-      await fetch(urlScript, { 
-        method: 'POST', 
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
+      await fetch(urlScript, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       await updateDoc(doc(this.firestore, 'Asistencias', this.reservaAEvaluar.id), { evaluado: true });
 
       this.mostrarAviso("¡Gracias por tu retroalimentación! Ya puedes seguir agendando.",'exito');
       this.mostrarModalEvaluacion = false;
-      this.respuestasEvaluacion = [0, 0, 0]; // Reiniciar
-
+      this.respuestasEvaluacion = [0, 0, 0]; 
     } catch (error) {
       this.mostrarAviso("Hubo un error de conexión al enviar la evaluación.",'error');
     } finally {
@@ -631,158 +612,49 @@ async confirmarReserva() {
     }
   }
 
-  // ==========================================
-  // 🌟 ACEPTACIÓN DE TÉRMINOS Y CONDICIONES
-  // ==========================================
   async aceptarTerminos() {
     if (!this.aceptaTerminosCheckbox) return;
-    
     this.guardandoTerminos = true;
     try {
-      await updateDoc(doc(this.firestore, 'Estudiantes', this.usuarioDocId), { 
-        terminos_aceptados: true 
-      });
-      
+      await updateDoc(doc(this.firestore, 'Estudiantes', this.usuarioDocId), { terminos_aceptados: true });
       this.mostrarModalTerminos = false;
     } catch (error) {
-      console.error("Error al guardar términos:", error);
       this.mostrarAviso("Hubo un problema de conexión. Inténtalo de nuevo.",'info');
     } finally {
       this.guardandoTerminos = false;
     }
   }
 
-  // ==========================================
-  // 🌟 CAMBIO DE PANELES (MULTI-COLECCIÓN)
-  // ==========================================
-  async cambiarPanel() {
-    const correo = localStorage.getItem('correo') || '';
-
-    this.tienePanelTutor = false;
-    this.tienePanelAdmin = false;
-
-    if (correo) {
-      try {
-        const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
-        const snapEst = await getDocs(qEst);
-        
-        if (!snapEst.empty) {
-          const rolDB = (snapEst.docs[0].data()['rol'] || snapEst.docs[0].data()['Rol'] || '').toUpperCase().trim();
-          
-          if (rolDB === 'TUTOR') this.tienePanelTutor = true;
-          if (rolDB === 'COORDINADOR' || rolDB === 'ADMIN') {
-            this.tienePanelTutor = true;
-            this.tienePanelAdmin = true;
-          }
-        }
-
-        if (!this.tienePanelTutor) {
-          const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
-          const snapTut = await getDocs(qTut);
-          
-          if (!snapTut.empty) {
-            this.tienePanelTutor = true; 
-          }
-        }
-
-      } catch (error) {
-        console.error(" Error consultando permisos:", error);
-      }
-    }
-
-    this.mostrarMenuRol = true;
-    if (this.cdr) this.cdr.detectChanges();
-  }
-
-  irAPanel(ruta: string, rolDestino: string) {
-    this.mostrarMenuRol = false; 
-    localStorage.setItem('rol', rolDestino); 
-    
-    setTimeout(() => {
-      this.router.navigate([ruta]); 
-    }, 150); 
-  }
- // ==========================================
-  // 🌟 SISTEMA DE AVISOS NATIVOS PREMIUM
-  // ==========================================
-  
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
     let claseCss = 'toast-exito';
-
-    if (tipo === 'error') {
-      icono = 'close-circle-outline';
-      claseCss = 'toast-error';
-    } else if (tipo === 'advertencia') {
-      icono = 'warning-outline';
-      claseCss = 'toast-advertencia';
-    } else if (tipo === 'info') {
-      icono = 'information-circle-outline';
-      claseCss = 'toast-info';
-    }
+    if (tipo === 'error') { icono = 'close-circle-outline'; claseCss = 'toast-error'; } 
+    else if (tipo === 'advertencia') { icono = 'warning-outline'; claseCss = 'toast-advertencia'; } 
+    else if (tipo === 'info') { icono = 'information-circle-outline'; claseCss = 'toast-info'; }
 
     const toast = await this.toastController.create({
-      message: mensaje,
-      duration: 3000,
-      position: 'top', // Los pasamos arriba para que no tapen tus pestañas de navegación
-      icon: icono,
-      cssClass: `toast-premium-gietaes ${claseCss}`,
-      mode: 'ios' 
+      message: mensaje, duration: 3000, position: 'top', icon: icono, cssClass: `toast-premium-gietaes ${claseCss}`, mode: 'ios' 
     });
     await toast.present();
   }
 
-  async confirmarAccion(cabecera: string, mensaje: string): Promise<boolean> {
-    return new Promise(async (resolve) => {
-      const alert = await this.alertController.create({
-        header: cabecera,
-        message: mensaje,
-        cssClass: 'alerta-premium-gietaes',
-        mode: 'md', 
-        buttons: [
-          {
-            text: 'Cancelar',
-            role: 'cancel',
-            cssClass: 'btn-alerta-cancelar',
-            handler: () => resolve(false)
-          },
-          {
-            text: 'Sí, Continuar',
-            cssClass: 'btn-alerta-confirmar',
-            handler: () => resolve(true)
-          }
-        ]
-      });
-      await alert.present();
-    });
-  }
-async confirmarRenovacionEstudiante() {
+  async confirmarRenovacionEstudiante() {
     try {
-      // 1. Actualiza Firebase
       await updateDoc(doc(this.firestore, 'Estudiantes', this.usuarioDocId), {
-        ciclo: this.nuevoCicloEstudiante,
-        ultimo_periodo_activo: this.periodoApp
+        ciclo: this.nuevoCicloEstudiante, ultimo_periodo_activo: this.periodoApp
       });
-
-      // 2. 🌟 RE-ENVÍA LOS DATOS COMPLETOS AL EXCEL CON EL NUEVO PERIODO Y CICLO
       if (this.datosEstudianteActual) {
         const payloadExcel = {
-          opcion: 'registrarEstudiante',
-          periodo: this.periodoApp,
-          ...this.datosEstudianteActual,
-          ciclo: this.nuevoCicloEstudiante 
+          opcion: 'registrarEstudiante', periodo: this.periodoApp, ...this.datosEstudianteActual, ciclo: this.nuevoCicloEstudiante 
         };
         await this.dbService.enviarAExcel(payloadExcel);
       }
-
       this.mostrarModalRenovacionEstudiante = false;
     } catch (error) {
       alert("Error al actualizar el ciclo. Revisa tu conexión.");
     }
   }
-  // ==========================================
-  // 🌟 FUNCIONES DEL AGENDAMIENTO INTELIGENTE
-  // ==========================================
+
   abrirAgendamientoInteligente() {
     this.mostrarModalInteligente = true;
     this.resetearFiltrosInteligentes();
@@ -794,26 +666,13 @@ async confirmarRenovacionEstudiante() {
   }
 
   resetearFiltrosInteligentes() {
-    this.textoBusquedaInteligente = '';
-    this.materiaInteligente = '';
-    this.diaInteligente = '';
-    this.horaInteligente = '';
-    this.materiasSugeridas = [];
-    this.diasDisponiblesInteligente = [];
-    this.horasDisponiblesInteligente = [];
-    this.tipoDerivacion = '';
-    this.docenteBuscado = '';
-    this.docentesFiltrados = [];
+    this.textoBusquedaInteligente = ''; this.materiaInteligente = ''; this.diaInteligente = '';
+    this.horaInteligente = ''; this.materiasSugeridas = []; this.diasDisponiblesInteligente = [];
+    this.horasDisponiblesInteligente = []; this.tipoDerivacion = ''; this.docenteBuscado = ''; this.docentesFiltrados = [];
   }
 
-// 🌟 FUNCIÓN BLINDADA PARA BUSCAR
   buscarMateriaInteligente(event?: any) {
-    // 1. Extraemos el texto exacto letra por letra mientras escribes
-    if (event && event.detail) {
-      this.textoBusquedaInteligente = event.detail.value;
-    }
-
-    // 2. Si borró todo, ocultamos la lista y forzamos el refresco
+    if (event && event.detail) this.textoBusquedaInteligente = event.detail.value;
     if (!this.textoBusquedaInteligente || this.textoBusquedaInteligente.trim() === '') {
       this.materiasSugeridas = [];
       if (this.cdr) this.cdr.detectChanges();
@@ -823,34 +682,25 @@ async confirmarRenovacionEstudiante() {
     const busqueda = this.limpiarTexto(this.textoBusquedaInteligente);
     const sugerenciasTemp: string[] = [];
 
-    // 3. Recorremos tu base de asignaturas comprobando una por una
     if (this.asignaturasMaster && this.asignaturasMaster.length > 0) {
       this.asignaturasMaster.forEach((bloque: any) => {
         if (bloque.asignatura) {
           const materiaLimpia = this.limpiarTexto(bloque.asignatura);
-          
-          // Si coincide y NO está repetida, la agregamos a las sugerencias
           if (materiaLimpia.includes(busqueda) && !sugerenciasTemp.includes(bloque.asignatura)) {
             sugerenciasTemp.push(bloque.asignatura);
           }
         }
       });
     }
-
-    // 4. Asignamos a la variable visual y obligamos a la app a mostrarla
     this.materiasSugeridas = sugerenciasTemp;
     if (this.cdr) this.cdr.detectChanges();
   } 
 
-
- // 🌟 FUNCIÓN AL HACER CLIC EN LA MATERIA
   seleccionarMateriaInteligente(materia: string) {
     this.materiaInteligente = materia;
-    this.textoBusquedaInteligente = materia; // Llena la caja de texto con la elegida
-    this.materiasSugeridas = []; // Oculta la lista
-    
-    this.diaInteligente = '';
-    this.horaInteligente = '';
+    this.textoBusquedaInteligente = materia; 
+    this.materiasSugeridas = []; 
+    this.diaInteligente = ''; this.horaInteligente = '';
 
     const bloque = this.asignaturasMaster.find((a: any) => a.asignatura === materia);
     const diasSet = new Set<string>();
@@ -873,16 +723,12 @@ async confirmarRenovacionEstudiante() {
 
     this.diasDisponiblesInteligente = Array.from(diasSet);
     this.horasDisponiblesInteligente = Array.from(horasSet);
-    
-    // Obligamos a la pantalla a mostrar los selectores de día y hora
     if (this.cdr) this.cdr.detectChanges(); 
   }
-  // 3. ¡El Match Automático y Aleatorio!
+
 async ejecutarMatchInteligente() {
-    // 🌟 Agregamos también la validación aquí por seguridad
     if (!this.materiaInteligente || !this.diaInteligente || !this.horaInteligente || !this.tipoDerivacion || !this.docenteBuscado) {
-      this.mostrarAviso('Por favor, completa todos los campos para buscar tu tutor ideal.', 'advertencia');
-      return;
+      this.mostrarAviso('Por favor, completa todos los campos para buscar tu tutor ideal.', 'advertencia'); return;
     }
 
     const bloque = this.asignaturasMaster.find((a: any) => a.asignatura === this.materiaInteligente);
@@ -894,17 +740,13 @@ async ejecutarMatchInteligente() {
         if (tutor.horarios && tutor.horarios[claveBuscada]) {
           const miCorreo = String(localStorage.getItem('correo')).toLowerCase().trim();
           const correoTutor = String(tutor.correo || tutor.correo_google).toLowerCase().trim();
-          
-          if (correoTutor !== miCorreo) {
-            tutoresValidos.push(tutor);
-          }
+          if (correoTutor !== miCorreo) tutoresValidos.push(tutor);
         }
       });
     }
 
     if (tutoresValidos.length === 0) {
-      this.mostrarAviso('No hay tutores disponibles en ese cruce exacto. Intenta con otra hora.', 'error');
-      return;
+      this.mostrarAviso('No hay tutores disponibles en ese cruce exacto. Intenta con otra hora.', 'error'); return;
     }
 
     const indiceAleatorio = Math.floor(Math.random() * tutoresValidos.length);
@@ -914,6 +756,7 @@ async ejecutarMatchInteligente() {
       tutorNombre: tutorElegido.nombre,
       correoTutor: tutorElegido.correo || tutorElegido.correo_google,
       celularTutor: tutorElegido.celular,
+      codigoPaisTutor: tutorElegido.codigo_pais || '+593', // 🌟 NUEVO: PAÍS DEL TUTOR RANDOM
       dia: this.diaInteligente,
       horas: this.horaInteligente,
       materia: this.materiaInteligente,
@@ -922,30 +765,18 @@ async ejecutarMatchInteligente() {
     };
     
     this.horaSeleccionada = this.horaInteligente; 
-    
-    // 🌟 CAMBIO CLAVE: Primero mandamos a guardar, y LUEGO cerramos el modal.
-    // Si cerrábamos el modal primero, se borraban las variables antes de guardarlas.
     await this.confirmarReserva(); 
     this.cerrarAgendamientoInteligente();
   }
- // ==========================================
-  // 🌟 GESTIÓN DE DOCENTES (BÚSQUEDA NATIVA TIPO ASISTENCIA)
-  // ==========================================
+
   filtrarDocentes() {
     const txt = (this.docenteBuscado || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-    
-    if (!txt) { 
-      this.docentesFiltrados = []; 
-      return; 
-    }
-
-    this.docentesFiltrados = this.docentesExcel.filter((d: string) => 
-      d.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(txt)
-    ).slice(0, 5); // Máximo 5 sugerencias
+    if (!txt) { this.docentesFiltrados = []; return; }
+    this.docentesFiltrados = this.docentesExcel.filter((d: string) => d.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(txt)).slice(0, 5); 
   }
 
   seleccionarDocente(docente: string) {
     this.docenteBuscado = docente;
-    this.docentesFiltrados = []; // Cierra la lista al seleccionar
+    this.docentesFiltrados = []; 
   }
 }

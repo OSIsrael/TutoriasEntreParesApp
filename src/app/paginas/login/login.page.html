@@ -8,7 +8,6 @@
       <!-- ========================================== -->
       <div *ngIf="!modoRegistro" class="animate__animated animate__fadeIn">
         
-        <!-- 🌟 LOGO DE TUTORÍAS RESTAURADO -->
         <div class="logo-container">
           <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" onerror="this.src='assets/logo-gietaes.png'">
         </div>
@@ -42,7 +41,6 @@
           <div class="btn-atras" (click)="modoRegistro = false">
             <ion-icon name="arrow-back-outline"></ion-icon>
           </div>
-          <!-- 🌟 LOGO DE TUTORÍAS EN EL REGISTRO -->
           <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-pequeno" onerror="this.src='assets/logo-gietaes.png'">
         </div>
 
@@ -55,35 +53,35 @@
             <!-- CUENTA GOOGLE VINCULADA -->
             <ion-input class="input-moderno input-bloqueado" label="Cuenta vinculada" labelPlacement="stacked" fill="outline" [(ngModel)]="correoGoogle" readonly="true"></ion-input>
 
-            <!-- 🌟 CORREO INSTITUCIONAL + VALIDACIÓN -->
+            <!-- CORREO INSTITUCIONAL -->
             <ion-input class="input-moderno mt-3" type="email" label="Correo Institucional" labelPlacement="stacked" fill="outline" [(ngModel)]="correoInstitucional" placeholder="ejemplo@est.ups.edu.ec"></ion-input>
             <div *ngIf="estadoCorreo" class="mensaje-validacion" [ngClass]="estadoCorreo.color">
               <ion-icon [name]="estadoCorreo.color === 'exito' ? 'checkmark-circle-outline' : 'warning-outline'"></ion-icon>
               <span>{{ estadoCorreo.texto }}</span>
             </div>
 
-            <!-- Menú desplegable: SEDE -->
+            <!-- SEDE -->
             <ion-select class="input-moderno mt-3" label="Sede Universitaria" labelPlacement="stacked" fill="outline" [(ngModel)]="sede" interface="popover">
               <ion-select-option value="CUENCA">Cuenca</ion-select-option>
               <ion-select-option value="QUITO">Quito</ion-select-option>
               <ion-select-option value="GUAYAQUIL">Guayaquil</ion-select-option>
             </ion-select>
 
-            <!-- 🌟 NOMBRES COMPLETOS + VALIDACIÓN -->
+            <!-- NOMBRES COMPLETOS -->
             <ion-input class="input-moderno mt-3" type="text" label="Nombres Completos Ej. ('JUAN DIEGO PEREZ LOPEZ')" labelPlacement="stacked" fill="outline" [(ngModel)]="nombreCompleto"></ion-input>
             <div *ngIf="estadoNombre" class="mensaje-validacion" [ngClass]="estadoNombre.color">
               <ion-icon [name]="estadoNombre.color === 'exito' ? 'checkmark-circle-outline' : 'warning-outline'"></ion-icon>
               <span>{{ estadoNombre.texto }}</span>
             </div>
 
-          <!-- 🌟 CÉDULA O PASAPORTE + VALIDACIÓN INTELIGENTE -->
+            <!-- CÉDULA O PASAPORTE -->
             <ion-input class="input-moderno mt-3" type="text" maxlength="15" label="Cédula o Pasaporte" labelPlacement="stacked" fill="outline" [(ngModel)]="cedula" style="text-transform: uppercase;"></ion-input>
             <div *ngIf="estadoCedula" class="mensaje-validacion" [ngClass]="estadoCedula.color">
               <ion-icon [name]="estadoCedula.color === 'exito' ? 'checkmark-circle-outline' : 'warning-outline'"></ion-icon>
               <span>{{ estadoCedula.texto }}</span>
             </div>
 
-            <!-- 🌟 BUSCAR CARRERA + VALIDACIÓN -->
+            <!-- BUSCAR CARRERA -->
             <ion-input class="input-moderno mt-3" type="text" label="Buscar Carrera" labelPlacement="stacked" fill="outline" [(ngModel)]="busquedaCarrera" (ionInput)="filtrarCarreras()"></ion-input>
             <div *ngIf="estadoCarrera" class="mensaje-validacion" [ngClass]="estadoCarrera.color">
               <ion-icon [name]="estadoCarrera.color === 'exito' ? 'checkmark-circle-outline' : 'warning-outline'"></ion-icon>
@@ -116,8 +114,20 @@
               </ion-select>
             </div>
 
-            <!-- 🌟 NÚMERO CELULAR + VALIDACIÓN -->
-            <ion-input class="input-moderno mt-3" type="tel" maxlength="10" label="Número Celular" labelPlacement="stacked" fill="outline" [(ngModel)]="celular" placeholder="09xxxxxxxx"></ion-input>
+            <!-- 🌟 NÚMERO CELULAR CON CÓDIGO DE PAÍS -->
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+              <ion-select class="input-moderno" label="País" labelPlacement="stacked" fill="outline" [(ngModel)]="codigoPais" interface="popover" style="flex: 0 0 110px;">
+                <ion-select-option value="+593">🇪🇨 +593</ion-select-option>
+                <ion-select-option value="+57">🇨🇴 +57</ion-select-option>
+                <ion-select-option value="+51">🇵🇪 +51</ion-select-option>
+                <ion-select-option value="+58">🇻🇪 +58</ion-select-option>
+                <ion-select-option value="+1">🇺🇸 +1</ion-select-option>
+                <ion-select-option value="+34">🇪🇸 +34</ion-select-option>
+              </ion-select>
+              
+              <ion-input class="input-moderno" style="flex: 1;" type="tel" maxlength="15" label="Número Celular" labelPlacement="stacked" fill="outline" [(ngModel)]="celular" placeholder="Ej: 0912345678"></ion-input>
+            </div>
+            
             <div *ngIf="estadoCelular" class="mensaje-validacion" [ngClass]="estadoCelular.color">
               <ion-icon [name]="estadoCelular.color === 'exito' ? 'checkmark-circle-outline' : 'warning-outline'"></ion-icon>
               <span>{{ estadoCelular.texto }}</span>
