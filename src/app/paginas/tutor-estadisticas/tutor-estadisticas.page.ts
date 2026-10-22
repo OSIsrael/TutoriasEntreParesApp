@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, inject, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -6,14 +6,14 @@ import {
   IonContent, IonHeader, IonToolbar, IonIcon, IonButton, IonButtons,
   NavController, IonGrid, IonRow, IonCol, IonSelect, IonSelectOption,
   IonSpinner, ToastController, AlertController,
-  IonSegment, IonSegmentButton, IonLabel 
+  IonSegment, IonSegmentButton, IonLabel, IonPopover, IonList, IonItem 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   personCircleOutline, mailOutline, businessOutline, schoolOutline,
   bookOutline, logOutOutline, peopleOutline, notificationsOutline, 
   barChartOutline, personOutline, settingsOutline, addCircleOutline,
-  closeOutline, checkmarkOutline, warningOutline, timeOutline } from 'ionicons/icons';
+  closeOutline, checkmarkOutline, warningOutline, timeOutline, chevronDownOutline, shieldCheckmarkOutline, briefcaseOutline } from 'ionicons/icons';
 import { Auth, signOut } from '@angular/fire/auth';
 import { Firestore, collection, query, where, getDocs, addDoc, doc, updateDoc, getDoc } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
@@ -28,25 +28,26 @@ import Chart from 'chart.js/auto';
     IonContent, IonHeader, IonToolbar, CommonModule, FormsModule,
     IonButtons, IonButton, IonIcon, IonGrid, IonRow, IonCol,
     IonSelect, IonSelectOption, IonSpinner,
-    IonSegment, IonSegmentButton, IonLabel
+    IonSegment, IonSegmentButton, IonLabel, IonPopover, IonList, IonItem
   ]
 })
 export class TutorEstadisticasPage implements OnInit {
-  // 🌟 CORRECCIÓN DE INYECCIÓN DE FIRESTORE
   private firestore = inject(Firestore);
   private dbService = inject(DatabaseService);
   private router = inject(Router);
   private auth = inject(Auth);
   private navCtrl = inject(NavController);
-
   private toastController = inject(ToastController);
   private alertController = inject(AlertController);
+  private cdr = inject(ChangeDetectorRef);
 
   usuario = { nombre: 'CARGANDO...', correo: '', sede: '' };
   rolUsuario: string = '';
   carreraUsuario: string = '';
   cicloUsuario: number = 1;
   celularUsuario: string = '';
+  nombreUsuario: string = '';
+  correoUsuario: string = '';
 
   menuAbierto: boolean = false;
   hayNotificacionesSinLeer: boolean = false;
@@ -69,12 +70,33 @@ export class TutorEstadisticasPage implements OnInit {
   mostrarModalHorarios: boolean = false;
   guardandoHorario: boolean = false;
   diassemana = ['Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
-// 🌟 AÑADIMOS EL CERO A LAS 7 Y A LAS 9 PARA QUE COINCIDAN PERFECTAMENTE
-  franjasHorarias = ['07:00 - 09:00','09:00 - 11:00','11:00 - 13:00','14:00 - 16:00','16:00 - 18:00','18:00 - 20:00','20:00 - 22:00'];  horarioSeleccionado: { [key: string]: string } = {}; 
+  franjasHorarias = ['07:00 - 09:00','09:00 - 11:00','11:00 - 13:00','14:00 - 16:00','16:00 - 18:00','18:00 - 20:00','20:00 - 22:00'];  
+  horarioSeleccionado: { [key: string]: string } = {}; 
   modalidadGlobal: string = 'PRESENCIAL';
 
+  // 🌟 VARIABLES PARA CABECERA DINÁMICA
+  menuRolAbierto: boolean = false;
+  eventoRol: any = null;
+  menuPerfilAbierto: boolean = false;
+  eventoPerfil: any = null;
+  tienePanelTutor: boolean = false;
+  tienePanelAdmin: boolean = false;
+
+  // 🌟 GETTERS DE DISEÑO
+  get iconoRolActual(): string {
+    if (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR') return 'shield-checkmark-outline';
+    if (this.rolUsuario === 'TUTOR') return 'briefcase-outline';
+    return 'school-outline';
+  }
+
+  get nombrePanelActual(): string {
+    if (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR') return 'COORDINACIÓN';
+    if (this.rolUsuario === 'TUTOR') return 'TUTOR';
+    return 'ESTUDIANTE';
+  }
+
   constructor() {
-    addIcons({notificationsOutline,personCircleOutline,mailOutline,businessOutline,barChartOutline,addCircleOutline,personOutline,logOutOutline,settingsOutline,bookOutline,warningOutline,peopleOutline,schoolOutline,closeOutline,checkmarkOutline,timeOutline});
+    addIcons({notificationsOutline,personCircleOutline,mailOutline,businessOutline,barChartOutline,addCircleOutline,personOutline,logOutOutline,settingsOutline,bookOutline,warningOutline,peopleOutline,schoolOutline,closeOutline,checkmarkOutline,timeOutline, chevronDownOutline, shieldCheckmarkOutline, briefcaseOutline});
   }
 
   ngOnInit() {}
@@ -91,24 +113,85 @@ export class TutorEstadisticasPage implements OnInit {
       return;
     }
 
+    this.correoUsuario = correoGuardado;
+    this.nombreUsuario = (localStorage.getItem('nombre') || 'SIN NOMBRE').toUpperCase();
+    this.rolUsuario = (localStorage.getItem('rol') || 'TUTOR').toUpperCase();
+
     this.usuario = {
-      nombre: (localStorage.getItem('nombre') || 'SIN NOMBRE').toUpperCase(),
-      correo: correoGuardado,
+      nombre: this.nombreUsuario,
+      correo: this.correoUsuario,
       sede: (localStorage.getItem('sede') || 'CUENCA').toUpperCase()
     };
 
-    this.rolUsuario = localStorage.getItem('rol') || 'TUTOR';
     this.carreraUsuario = (localStorage.getItem('carrera') || '').toUpperCase();
     this.celularUsuario = localStorage.getItem('celular') || '';
     
     const cicloStr = localStorage.getItem('ciclo') || '1';
     this.cicloUsuario = parseInt(cicloStr.replace(/\D/g, ''), 10) || 1;
 
+    // 🌟 CARGA DE NOTIFICACIONES Y PERMISOS DE PANELES
     await this.verificarNotificaciones(this.usuario.correo, this.rolUsuario, this.usuario.sede);
+    await this.cargarPermisosPaneles(this.correoUsuario);
     
     setTimeout(() => { this.cargarEstadisticas(); }, 300);
   }
 
+  // ==========================================
+  // 🌟 MÉTODOS PARA MENÚS DE CABECERA
+  // ==========================================
+  async cargarPermisosPaneles(correo: string) {
+    this.tienePanelTutor = false;
+    this.tienePanelAdmin = false;
+    if (!correo) return;
+    try {
+      const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
+      const snapEst = await getDocs(qEst);
+      if (!snapEst.empty) {
+        const rolDB = String(snapEst.docs[0].data()['rol'] || snapEst.docs[0].data()['Rol'] || '').toUpperCase().trim();
+        if (rolDB === 'TUTOR') this.tienePanelTutor = true;
+        if (rolDB === 'COORDINADOR' || rolDB === 'ADMIN') {
+          this.tienePanelTutor = true;
+          this.tienePanelAdmin = true;
+        }
+      }
+      if (!this.tienePanelTutor) {
+        const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
+        const snapTut = await getDocs(qTut);
+        if (!snapTut.empty) this.tienePanelTutor = true;
+      }
+    } catch (error) { console.error("Error permisos:", error); }
+    if (this.cdr) this.cdr.detectChanges(); 
+  }
+
+  abrirMenuRol(evento: any) { this.eventoRol = evento; this.menuRolAbierto = true; }
+  abrirMenuPerfil(evento: any) { this.eventoPerfil = evento; this.menuPerfilAbierto = true; }
+
+  irAPanel(ruta: string, rolDestino: string) {
+    this.menuRolAbierto = false; 
+    localStorage.setItem('rol', rolDestino); 
+    setTimeout(() => { this.router.navigate([ruta]); }, 150); 
+  }
+
+  irAPerfil() {
+    this.menuPerfilAbierto = false;
+    this.router.navigate(['/tabs/perfil']); 
+  }
+
+  async cerrarSesion() {
+    this.menuPerfilAbierto = false;
+    try {
+      await signOut(this.auth);
+      localStorage.clear();
+      this.navCtrl.navigateRoot('/login');
+    } catch (error) {
+      localStorage.clear();
+      this.navCtrl.navigateRoot('/login');
+    }
+  }
+
+  // ==========================================
+  // OTRAS FUNCIONES Y GRÁFICAS
+  // ==========================================
   async verificarNotificaciones(correo: string, rol: string, sede: string) {
     try {
       const notifs = await this.dbService.obtenerNotificacionesUsuario(correo, rol, sede, 'TUTOR');
@@ -123,17 +206,6 @@ export class TutorEstadisticasPage implements OnInit {
 
   toggleMenu() { this.menuAbierto = !this.menuAbierto; }
   irAPanelEstudiante() { this.router.navigate(['/tabs/perfil']); }
-
-  async cerrarSesion() {
-    try {
-      await signOut(this.auth);
-      localStorage.clear();
-      this.navCtrl.navigateRoot('/login');
-    } catch (error) {
-      localStorage.clear();
-      this.navCtrl.navigateRoot('/login');
-    }
-  }
 
   async cargarEstadisticas() {
     try {
@@ -272,25 +344,18 @@ export class TutorEstadisticasPage implements OnInit {
     }
   }
 
-  // ==========================================
-  // 🌟 CAMBIO DE HORARIOS (NUEVO Y BLINDADO)
-  // ==========================================
-
-  // 🌟 BUSCADOR INFALIBLE: Prioriza el perfil ACTIVO del tutor
+  // 🌟 BUSCADOR INFALIBLE PARA TUTORES ACTIVOS
   async obtenerDocIdTutor(): Promise<string | null> {
     const correo = this.usuario.correo.toLowerCase().trim();
     
-    // 1. Buscamos en 'correo_google' asegurando que esté ACTIVO
     let q = query(collection(this.firestore, 'Tutores'), where('correo_google', '==', correo), where('estado', '==', 'ACTIVO'));
     let snap = await getDocs(q);
     if (!snap.empty) return snap.docs[0].id;
     
-    // 2. Buscamos en 'correo' asegurando que esté ACTIVO
     q = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo), where('estado', '==', 'ACTIVO'));
     snap = await getDocs(q);
     if (!snap.empty) return snap.docs[0].id;
 
-    // 3. Respaldo por si perdió el estado activo por accidente
     q = query(collection(this.firestore, 'Tutores'), where('correo_google', '==', correo));
     snap = await getDocs(q);
     if (!snap.empty) return snap.docs[0].id;
@@ -302,7 +367,7 @@ export class TutorEstadisticasPage implements OnInit {
     return null;
   }
 
-async abrirModalHorarios() {
+  async abrirModalHorarios() {
     this.menuAbierto = false;
     this.mostrarModalHorarios = true;
     this.horarioSeleccionado = {};
@@ -313,8 +378,6 @@ async abrirModalHorarios() {
         const docSnap = await getDoc(doc(this.firestore, 'Tutores', idTutor));
         if (docSnap.exists()) {
           const horariosDb = docSnap.data()['horarios'] || {};
-          
-          // 🌟 NORMALIZAMOS LAS LLAVES VIEJAS ("7:00" a "07:00") PARA QUE SE REFLEJEN EN LA TABLA
           for(let k in horariosDb) {
             let nuevaClave = k.replace('7:00', '07:00').replace('9:00', '09:00');
             this.horarioSeleccionado[nuevaClave] = horariosDb[k];
@@ -361,7 +424,6 @@ async abrirModalHorarios() {
       }
     }
     
-    // 🌟 FORZAMOS EL REDIBUJADO VISUAL
     this.horarioSeleccionado = { ...this.horarioSeleccionado };
   }
 
@@ -373,7 +435,6 @@ async abrirModalHorarios() {
     this.guardandoHorario = true;
 
     try {
-      // 🌟 LIMPIEZA DE FANTASMAS: Filtramos solo las llaves que existen en la cuadrícula actual
       const horarioLimpio: any = {};
       for (let dia of this.diassemana) {
         for (let franja of this.franjasHorarias) {
@@ -384,7 +445,6 @@ async abrirModalHorarios() {
         }
       }
 
-      // Buscamos si el tutor tiene perfiles duplicados en la base de datos
       const correo = this.usuario.correo.toLowerCase().trim();
       const q1 = query(collection(this.firestore, 'Tutores'), where('correo_google', '==', correo), where('estado', '==', 'ACTIVO'));
       const q2 = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo), where('estado', '==', 'ACTIVO'));
@@ -399,7 +459,6 @@ async abrirModalHorarios() {
       if (docsAActualizar.size > 0) {
         let datosTutorParaExcel: any = null;
 
-        // 🌟 ACTUALIZAMOS TODOS LOS PERFILES DEL TUTOR (borrando los horarios viejos)
         for (let [id, datosTutor] of docsAActualizar) {
           await updateDoc(doc(this.firestore, 'Tutores', id), { horarios: horarioLimpio });
           if (!datosTutorParaExcel) datosTutorParaExcel = datosTutor;
@@ -434,9 +493,6 @@ async abrirModalHorarios() {
     }
   }
 
-  // ==========================================
-  // 🌟 ALERTAS NATIVAS
-  // ==========================================
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
     let claseCss = 'toast-exito';
@@ -461,21 +517,5 @@ async abrirModalHorarios() {
       mode: 'ios' 
     });
     await toast.present();
-  }
-
-  async confirmarAccion(cabecera: string, mensaje: string): Promise<boolean> {
-    return new Promise(async (resolve) => {
-      const alert = await this.alertController.create({
-        header: cabecera,
-        message: mensaje,
-        cssClass: 'alerta-premium-gietaes',
-        mode: 'md', 
-        buttons: [
-          { text: 'Cancelar', role: 'cancel', cssClass: 'btn-alerta-cancelar', handler: () => resolve(false) },
-          { text: 'Sí, Continuar', cssClass: 'btn-alerta-confirmar', handler: () => resolve(true) }
-        ]
-      });
-      await alert.present();
-    });
   }
 }

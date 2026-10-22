@@ -1,16 +1,17 @@
-import { Component, inject, ElementRef, ViewChild } from '@angular/core';
-import { Firestore, collection, query, where, getDocs, addDoc, doc, deleteDoc,updateDoc } from '@angular/fire/firestore';
+import { Component, inject, ElementRef, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { Firestore, collection, query, where, getDocs, addDoc, doc, deleteDoc, updateDoc } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
 import { CommonModule, KeyValuePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Auth, signOut } from '@angular/fire/auth'; // 🌟 AÑADIDO
 import {
   IonContent, IonHeader, IonToolbar, IonButton, IonButtons, IonIcon,
   IonInput, IonTextarea, IonSelect, IonSelectOption,
-  IonDatetime, IonDatetimeButton, IonModal,ToastController,AlertController,IonLabel,IonList,IonItem,IonSpinner 
+  IonDatetime, IonDatetimeButton, IonModal, ToastController, AlertController, IonLabel, IonList, IonItem, IonSpinner, IonPopover 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { arrowBackOutline, megaphoneOutline, checkmarkCircleOutline, closeCircleOutline, personOutline, timeOutline, bookOutline, personCircleOutline, documentTextOutline, filterOutline, locationOutline, callOutline, pieChartOutline, mailOutline, closeOutline, checkmarkOutline,chevronDownOutline,chevronUpOutline, warning, calendarOutline, logoWhatsapp, buildOutline, sadOutline } from 'ionicons/icons';
+import { arrowBackOutline, megaphoneOutline, checkmarkCircleOutline, closeCircleOutline, personOutline, timeOutline, bookOutline, personCircleOutline, documentTextOutline, filterOutline, locationOutline, callOutline, pieChartOutline, mailOutline, closeOutline, checkmarkOutline, chevronDownOutline, chevronUpOutline, warning, calendarOutline, logoWhatsapp, buildOutline, sadOutline, shieldCheckmarkOutline, briefcaseOutline, schoolOutline, settingsOutline, logOutOutline, notificationsOutline } from 'ionicons/icons';
 import Chart from 'chart.js/auto';
 
 @Component({
@@ -22,13 +23,15 @@ import Chart from 'chart.js/auto';
     CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, IonButton,
     KeyValuePipe, IonButtons, IonIcon, IonInput,
     IonTextarea, IonSelect, IonSelectOption,
-    IonDatetime, IonDatetimeButton, IonModal,IonList,IonLabel,IonItem,IonSpinner
+    IonDatetime, IonDatetimeButton, IonModal, IonList, IonLabel, IonItem, IonSpinner, IonPopover
   ],
 })
 export class AdminPostulacionesPage {
   private firestore = inject(Firestore);
   private dbService = inject(DatabaseService);
   private router = inject(Router);
+  private auth = inject(Auth); // 🌟 AÑADIDO
+  private cdr = inject(ChangeDetectorRef);
 
   private toastController = inject(ToastController);
   private alertController = inject(AlertController);
@@ -49,8 +52,22 @@ export class AdminPostulacionesPage {
   @ViewChild('pieCanvas', { static: false }) private pieCanvas!: ElementRef;
   graficoBarras: any;
   graficoPastel: any;
+
+  // 🌟 VARIABLES PARA LA CABECERA DINÁMICA
   rolUsuario: string = '';
   sedeUsuario: string = '';
+  nombreUsuario: string = '';
+  correoUsuario: string = '';
+  
+  menuRolAbierto: boolean = false;
+  eventoRol: any = null;
+  menuPerfilAbierto: boolean = false;
+  eventoPerfil: any = null;
+  tienePanelTutor: boolean = false;
+  tienePanelAdmin: boolean = false;
+  hayNotificacionesSinLeer: boolean = false;
+
+  enviandoAnuncio: boolean = false; // 🌟 BLOQUEO DE MULTI-ENVÍO
 
   nuevoAnuncio = {
     titulo: '',
@@ -59,11 +76,26 @@ export class AdminPostulacionesPage {
     sede_destino: 'GLOBAL',
   };
 
+  // 🌟 GETTERS DE DISEÑO
+  get iconoRolActual(): string {
+    if (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR') return 'shield-checkmark-outline';
+    if (this.rolUsuario === 'TUTOR') return 'briefcase-outline';
+    return 'school-outline';
+  }
+
+  get nombrePanelActual(): string {
+    if (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR') return 'COORDINACIÓN';
+    if (this.rolUsuario === 'TUTOR') return 'TUTOR';
+    return 'ESTUDIANTE';
+  }
+
   constructor() {
-    addIcons({arrowBackOutline,personCircleOutline,filterOutline,checkmarkCircleOutline,personOutline,locationOutline,callOutline,mailOutline,documentTextOutline,timeOutline,bookOutline,closeOutline,checkmarkOutline,warning,calendarOutline,logoWhatsapp,buildOutline,sadOutline,pieChartOutline,megaphoneOutline,closeCircleOutline,chevronDownOutline,chevronUpOutline});
+    addIcons({arrowBackOutline, personCircleOutline, filterOutline, checkmarkCircleOutline, personOutline, locationOutline, callOutline, mailOutline, documentTextOutline, timeOutline, bookOutline, closeOutline, checkmarkOutline, chevronDownOutline, chevronUpOutline, warning, calendarOutline, logoWhatsapp, buildOutline, sadOutline, pieChartOutline, megaphoneOutline, closeCircleOutline, shieldCheckmarkOutline, briefcaseOutline, schoolOutline, settingsOutline, logOutOutline, notificationsOutline});
   }
 
   async ionViewWillEnter() {
+    this.correoUsuario = localStorage.getItem('correo') || '';
+    this.nombreUsuario = localStorage.getItem('nombre') || '';
     this.rolUsuario = String(localStorage.getItem('rol') || 'ESTUDIANTE').toUpperCase(); 
     this.sedeUsuario = String(localStorage.getItem('sede') || 'CUENCA').toUpperCase();
     this.sedeAdmin = this.sedeUsuario;
@@ -79,16 +111,86 @@ export class AdminPostulacionesPage {
       return;
     }
 
+    await this.cargarPermisosPaneles(this.correoUsuario);
+    await this.verificarNotificaciones(this.correoUsuario, this.rolUsuario, this.sedeUsuario);
+
     await this.cargarPostulaciones();
     this.limpiarAnunciosExpirados();
     this.cargarTutoriasEnAlerta();
   }
 
-  // 🌟 CAMBIO CLAVE: Esperamos a que la pantalla sea 100% visible para dibujar las gráficas
   ionViewDidEnter() {
     this.cargarEstadisticas();
   }
 
+  // ==========================================
+  // 🌟 MÉTODOS PARA MENÚS DE CABECERA
+  // ==========================================
+  async cargarPermisosPaneles(correo: string) {
+    this.tienePanelTutor = false;
+    this.tienePanelAdmin = false;
+    if (!correo) return;
+    try {
+      const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
+      const snapEst = await getDocs(qEst);
+      if (!snapEst.empty) {
+        const rolDB = String(snapEst.docs[0].data()['rol'] || snapEst.docs[0].data()['Rol'] || '').toUpperCase().trim();
+        if (rolDB === 'TUTOR') this.tienePanelTutor = true;
+        if (rolDB === 'COORDINADOR' || rolDB === 'ADMIN') {
+          this.tienePanelTutor = true;
+          this.tienePanelAdmin = true;
+        }
+      }
+      if (!this.tienePanelTutor) {
+        const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
+        const snapTut = await getDocs(qTut);
+        if (!snapTut.empty) this.tienePanelTutor = true;
+      }
+    } catch (error) { console.error("Error permisos:", error); }
+    if (this.cdr) this.cdr.detectChanges(); 
+  }
+
+  abrirMenuRol(evento: any) { this.eventoRol = evento; this.menuRolAbierto = true; }
+  abrirMenuPerfil(evento: any) { this.eventoPerfil = evento; this.menuPerfilAbierto = true; }
+
+  irAPanel(ruta: string, rolDestino: string) {
+    this.menuRolAbierto = false; 
+    localStorage.setItem('rol', rolDestino); 
+    setTimeout(() => { this.router.navigate([ruta]); }, 150); 
+  }
+
+  irAPerfil() {
+    this.menuPerfilAbierto = false;
+    this.router.navigate(['/tabs/perfil']); 
+  }
+
+  async cerrarSesion() {
+    this.menuPerfilAbierto = false;
+    try {
+      await signOut(this.auth);
+      localStorage.clear();
+      this.router.navigate(['/login']);
+    } catch (error) {
+      localStorage.clear();
+      this.router.navigate(['/login']);
+    }
+  }
+
+  async verificarNotificaciones(correo: string, rol: string, sede: string) {
+    try {
+      const notifs = await this.dbService.obtenerNotificacionesUsuario(correo, rol, sede, 'COORDINADOR');
+      const sinLeer = notifs.filter((n: any) => !n['leida_por']?.includes(correo));
+      this.hayNotificacionesSinLeer = sinLeer.length > 0;
+    } catch (error) {}
+  }
+
+  irANotificaciones() {
+    this.router.navigate(['/notificaciones'], { queryParams: { panel: 'COORDINADOR' } });
+  }
+
+  // ==========================================
+  // 🌟 ALERTAS SOS (CON FILTRO DE JURISDICCIÓN)
+  // ==========================================
   async cargarTutoriasEnAlerta() {
     try {
       const q = query(collection(this.firestore, 'Reservas'), where('estado', '==', 'REQUIERE_ADMIN'));
@@ -377,45 +479,65 @@ export class AdminPostulacionesPage {
       this.mostrarAviso('Error al rechazar la postulación.','error');
     }
   }
-
   obtenerDia(clave: any): string { return String(clave).split('-')[0] || ''; }
   obtenerHora(clave: any): string { return String(clave).split('-')[1] || ''; }
-  
+
   regresar() { 
     this.router.navigate(['/tabs/perfil']); 
   }
 
   // ==========================================
-  // 🌟 ESTADÍSTICAS (ROBUSTAS)
+  // 🌟 ESTADÍSTICAS MEJORADAS (BARRAS MUESTRA TUTORÍAS IMPARTIDAS)
   // ==========================================
   async cargarEstadisticas() {
     try {
-      const querySnapshot = await getDocs(collection(this.firestore, 'Tutores'));
-      const conteoCarreras: { [key: string]: number } = {};
+      const queryTutores = await getDocs(collection(this.firestore, 'Tutores'));
+      const queryAsistencias = await getDocs(collection(this.firestore, 'Asistencias'));
+      
+      const conteoTutoresCarrera: { [key: string]: number } = {};
+      const mapaTutorCarrera: { [correo: string]: string } = {};
       const esSuperAdmin = this.rolUsuario === 'ADMIN';
 
-      querySnapshot.forEach((doc) => {
+      // 1. Procesar Tutores Activos (Para Pastel)
+      queryTutores.forEach((doc) => {
         const data = doc.data();
         const sedeTutor = String(data['sede'] || '').toUpperCase();
-        const estadoTutor = String(data['estado'] || '').toUpperCase(); // 🌟 Ignora tildes o minúsculas
+        const estadoTutor = String(data['estado'] || '').toUpperCase(); 
+        const correoTutor = String(data['correo'] || data['correo_google'] || '').toLowerCase();
+        const carrera = data['carrera'] || 'NO ASIGNADA';
 
         const tienePermisoSede = esSuperAdmin || sedeTutor === this.sedeUsuario;
 
         if (tienePermisoSede && (this.filtroSedeGraficas === 'GLOBAL' || sedeTutor === this.filtroSedeGraficas)) {
+          mapaTutorCarrera[correoTutor] = carrera; // Guardamos su carrera en el diccionario
           if (estadoTutor === 'ACTIVO') {
-            const carrera = data['carrera'] || 'NO ASIGNADA';
-            conteoCarreras[carrera] = (conteoCarreras[carrera] || 0) + 1;
+            conteoTutoresCarrera[carrera] = (conteoTutoresCarrera[carrera] || 0) + 1;
           }
         }
       });
 
-      const nombresCarreras = Object.keys(conteoCarreras);
-      const cantidadPorCarrera = Object.values(conteoCarreras);
+      // 2. Procesar Tutorías Impartidas (Para Barras)
+      const conteoTutoriasCarrera: { [key: string]: number } = {};
+      queryAsistencias.forEach((doc) => {
+         const data = doc.data();
+         const correoTutor = String(data['correoTutor'] || '').toLowerCase();
+         
+         // Si el tutor de esta asistencia pertenece a la jurisdicción actual
+         if (mapaTutorCarrera[correoTutor]) {
+            const carrera = mapaTutorCarrera[correoTutor];
+            conteoTutoriasCarrera[carrera] = (conteoTutoriasCarrera[carrera] || 0) + 1;
+         }
+      });
 
-      // Usamos setTimeout minúsculo para darle a Angular tiempo de pintar los Canvas
+      const labelsPie = Object.keys(conteoTutoresCarrera);
+      const dataPie = Object.values(conteoTutoresCarrera);
+
+      const labelsBar = Object.keys(conteoTutoriasCarrera);
+      const dataBar = Object.values(conteoTutoriasCarrera);
+
       setTimeout(() => {
-        this.generarGraficoBarras(nombresCarreras, cantidadPorCarrera);
-        this.generarGraficoPastel(nombresCarreras, cantidadPorCarrera);
+        this.generarGraficoBarras(labelsBar, dataBar);
+        this.generarGraficoPastel(labelsPie, dataPie);
       }, 150);
 
     } catch (error) {
@@ -425,15 +547,15 @@ export class AdminPostulacionesPage {
 
   generarGraficoBarras(labels: string[], data: number[]) {
     if (this.graficoBarras) this.graficoBarras.destroy();
-    if (!this.barCanvas || !this.barCanvas.nativeElement) return; // 🌟 Evita que el código colapse si el canvas no se ha dibujado
+    if (!this.barCanvas || !this.barCanvas.nativeElement) return; 
 
     this.graficoBarras = new Chart(this.barCanvas.nativeElement, {
       type: 'bar',
       data: {
         labels: labels,
-        datasets: [{ label: 'Tutores Activos', data: data, backgroundColor: '#003366', borderRadius: 4 }],
+        datasets: [{ label: 'Tutorías Impartidas', data: data, backgroundColor: '#003366', borderRadius: 4 }], // 🌟 ACTUALIZADO EL LABEL
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }, // maintainAspectRatio false evita que la gráfica se encoja o desaparezca
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }, 
     });
   }
 
@@ -451,11 +573,18 @@ export class AdminPostulacionesPage {
     });
   }
 
+  // ==========================================
+  // 🌟 BLOQUEO DE MULTI-ENVÍO EN ANUNCIOS
+  // ==========================================
   async publicarAnuncio() {
+    if (this.enviandoAnuncio) return; // 🌟 BARRERA CONTRA CLICS REPETIDOS
+
     if (!this.nuevoAnuncio.titulo || !this.nuevoAnuncio.descripcion) {
       this.mostrarAviso('Por favor, llena el título y la descripción del comunicado.','advertencia');
       return;
     }
+
+    this.enviandoAnuncio = true; // 🌟 BLOQUEAMOS EL BOTÓN
 
     const destinoSeguro = this.rolUsuario === 'ADMIN' ? this.nuevoAnuncio.sede_destino.toUpperCase() : this.sedeUsuario;
 
@@ -487,6 +616,8 @@ export class AdminPostulacionesPage {
     } catch (error) {
       console.error('Error al publicar:', error);
       this.mostrarAviso('Error al publicar el comunicado.','error');
+    } finally {
+      this.enviandoAnuncio = false; // 🌟 LIBERAMOS EL BOTÓN CUANDO TERMINE
     }
   }
 

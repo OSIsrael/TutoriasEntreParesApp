@@ -5,17 +5,23 @@ import { Router } from '@angular/router';
 import { 
   IonContent, IonHeader, IonToolbar, IonButtons, IonButton, IonIcon, 
   IonList, IonItemSliding, IonItem, IonItemOptions, IonItemOption,
-  IonLabel, IonModal,ToastController,AlertController,IonPopover
+  IonLabel, IonModal, ToastController, AlertController, IonPopover
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   notificationsOutline, bookOutline, logoWhatsapp, 
   personOutline, timeOutline, calendarOutline, trashOutline,
-  checkmarkCircleOutline, closeCircleOutline, closeOutline, helpCircleOutline, informationCircleOutline, documentTextOutline, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, chevronDownOutline, chevronBackOutline,informationCircle,closeCircle, personCircleOutline,checkmarkCircle } from 'ionicons/icons';
-import { Firestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc,getDoc } from '@angular/fire/firestore';
+  checkmarkCircleOutline, closeCircleOutline, closeOutline, helpCircleOutline, 
+  informationCircleOutline, documentTextOutline, swapHorizontalOutline, schoolOutline, 
+  briefcaseOutline, shieldCheckmarkOutline, chevronDownOutline, chevronBackOutline,
+  informationCircle, closeCircle, personCircleOutline, checkmarkCircle, 
+  settingsOutline, logOutOutline // 🌟 AÑADIDOS PARA EL POPOVER DE PERFIL
+} from 'ionicons/icons';
+import { Firestore, collection, query, where, getDocs, doc, updateDoc, deleteDoc, getDoc } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Auth, signOut } from '@angular/fire/auth';
+
 @Component({
   selector: 'app-tutor-tutorias',
   templateUrl: './tutor-tutorias.page.html',
@@ -46,7 +52,7 @@ export class TutorTutoriasPage implements OnInit {
   materiasDisponibles: string[] = [];
   materiasSeleccionadas: string[] = [];
   diassemana=['Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
-  franjasHorarias=['7:00 - 9:00','09:00 - 11:00','11:00 - 13:00','14:00 - 16:00','16:00 - 18:00','18:00 - 20:00','20:00 - 22:00']
+  franjasHorarias=['7:00 - 9:00','09:00 - 11:00','11:00 - 13:00','14:00 - 16:00','16:00 - 18:00','18:00 - 20:00','20:00 - 22:00'];
   horarioSeleccionado: { [key: string]: string } = {}; 
   modalidadGlobal: string = 'PRESENCIAL';
 
@@ -54,19 +60,18 @@ export class TutorTutoriasPage implements OnInit {
 
   private toastController = inject(ToastController);
   private alertController = inject(AlertController);
-  mostrarMenuRol: boolean = false;
+  
+  // 🌟 PERMISOS DE PANELES
   tienePanelTutor: boolean = false;
   tienePanelAdmin: boolean = false;
 
   tutoriasPorImpartir: any[] = [];
   cargando: boolean = true;
   correoUsuario: string = '';
+  nombreUsuario: string = ''; // 🌟 AÑADIDO PARA LA CABECERA
   rolUsuario: string = '';
   hayNotificacionesSinLeer: boolean = false;
   mostrarGuiaTutor: boolean = false;
-  
-  // 🌟 VARIABLES NECESARIAS PARA EL POPOVER DE PERFIL
-  nombreUsuario: string = '';
 
   @ViewChild('popoverEstado') popoverEstado!: IonPopover;
   menuEstadoAbierto: boolean = false;
@@ -78,7 +83,7 @@ export class TutorTutoriasPage implements OnInit {
   menuPerfilAbierto: boolean = false;
   eventoPerfil: any = null;
 
-// 🌟 GETTERS PARA LA CABECERA DINÁMICA
+  // 🌟 GETTERS PARA LA CABECERA DINÁMICA
   get iconoRolActual(): string {
     if (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR') return 'shield-checkmark-outline';
     if (this.rolUsuario === 'TUTOR') return 'briefcase-outline';
@@ -91,18 +96,17 @@ export class TutorTutoriasPage implements OnInit {
     return 'ESTUDIANTE';
   }
 
-  // Métodos de los menús
-
-
   constructor() {
-    addIcons({personCircleOutline,swapHorizontalOutline,helpCircleOutline,notificationsOutline,calendarOutline,bookOutline,informationCircleOutline,personOutline,timeOutline,chevronDownOutline,logoWhatsapp,trashOutline,checkmarkCircleOutline,documentTextOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,chevronBackOutline,closeCircleOutline,informationCircle,checkmarkCircle,closeCircle});
+    addIcons({personCircleOutline,swapHorizontalOutline,helpCircleOutline,notificationsOutline,calendarOutline,bookOutline,informationCircleOutline,personOutline,timeOutline,chevronDownOutline,logoWhatsapp,trashOutline,checkmarkCircleOutline,documentTextOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,chevronBackOutline,closeCircleOutline,informationCircle,checkmarkCircle,closeCircle, settingsOutline, logOutOutline});
   }
 
   ngOnInit() { }
 
   async ionViewWillEnter() {
     this.correoUsuario = localStorage.getItem('correo') || '';
+    this.nombreUsuario = localStorage.getItem('nombre') || ''; // 🌟 CARGAMOS EL NOMBRE
     this.rolUsuario = (localStorage.getItem('rol') || 'ESTUDIANTE').toUpperCase();
+    
     await this.cargarPermisosPaneles(this.correoUsuario);
 
     await this.dbService.cargarConfiguracionGlobal(true);
@@ -178,7 +182,7 @@ export class TutorTutoriasPage implements OnInit {
           color: colorEstado,
           estado: res['estado'],
           celularEstudiante: res['celularEstudiante'], 
-          codigoPaisEstudiante: res['codigoPaisEstudiante'] || '+593', // 🌟 AÑADE ESTA LÍNEA
+          codigoPaisEstudiante: res['codigoPaisEstudiante'] || '+593',
           nombreEstudiante: res['nombreEstudiante'],
           correoEstudiante: res['correoEstudiante'],
           tipoDerivacion: res['tipo_derivacion'] || 'DECISIÓN PROPIA',
@@ -212,7 +216,7 @@ export class TutorTutoriasPage implements OnInit {
     });
   }
 
-contactarEstudiante(celular: string, codigoPais: string, nombre: string, materia: string) {
+  contactarEstudiante(celular: string, codigoPais: string, nombre: string, materia: string) {
     if (!celular || celular === 'No registrado' || celular.trim() === '') {
       this.mostrarAviso("El estudiante no registró su número celular.",'error');
       return;
@@ -223,7 +227,6 @@ contactarEstudiante(celular: string, codigoPais: string, nombre: string, materia
       celFormateado = celFormateado.substring(1);
     }
     
-    // 🌟 Formateo de la extensión del país
     let prefijo = (codigoPais || '+593').replace(/\D/g, ''); 
     const numeroFinal = prefijo + celFormateado;
     
@@ -231,6 +234,7 @@ contactarEstudiante(celular: string, codigoPais: string, nombre: string, materia
     const urlWa = `https://wa.me/${numeroFinal}?text=${mensaje}`;
     window.open(urlWa, '_blank');
   }
+
   abrirMenuEstado(evento: any, tutoria: any) {
     evento.stopPropagation(); 
     this.tutoriaSeleccionada = tutoria;
@@ -453,42 +457,6 @@ contactarEstudiante(celular: string, codigoPais: string, nombre: string, materia
     this.mostrarGuiaTutor = false;
   }
 
-  async cambiarPanel() {
-    const correo = localStorage.getItem('correo') || '';
-    this.tienePanelTutor = false;
-    this.tienePanelAdmin = false;
-
-    if (correo) {
-      try {
-        const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
-        const snapEst = await getDocs(qEst);
-        
-        if (!snapEst.empty) {
-          const rolDB = (snapEst.docs[0].data()['rol'] || snapEst.docs[0].data()['Rol'] || '').toUpperCase().trim();
-          
-          if (rolDB === 'TUTOR') this.tienePanelTutor = true;
-          if (rolDB === 'COORDINADOR' || rolDB === 'ADMIN') {
-            this.tienePanelTutor = true;
-            this.tienePanelAdmin = true;
-          }
-        }
-
-        if (!this.tienePanelTutor) {
-          const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
-          const snapTut = await getDocs(qTut);
-          
-          if (!snapTut.empty) {
-            this.tienePanelTutor = true; 
-          }
-        }
-      } catch (error) {}
-    }
-
-    this.mostrarMenuRol = true;
-    if (this.cdr) this.cdr.detectChanges();
-  }
-
- 
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
     let claseCss = 'toast-exito';
@@ -693,6 +661,7 @@ contactarEstudiante(celular: string, codigoPais: string, nombre: string, materia
       }
     }
   }
+
   // ==========================================
   // 🌟 MÉTODOS PARA MENÚS DE CABECERA
   // ==========================================

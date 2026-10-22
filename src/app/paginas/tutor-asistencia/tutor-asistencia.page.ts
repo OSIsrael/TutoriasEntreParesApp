@@ -4,17 +4,18 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { 
   IonContent, IonHeader, IonToolbar, IonIcon, IonButton, IonButtons,
-  IonItem, IonLabel, IonSelect, IonSelectOption, IonTextarea, IonInput, IonList, IonRange, IonModal, ToastController, AlertController
+  IonItem, IonLabel, IonSelect, IonSelectOption, IonTextarea, IonInput, IonList, IonRange, IonModal, ToastController, AlertController, IonPopover
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   documentTextOutline, sendOutline, notificationsOutline, 
   personOutline, bookOutline, timeOutline, schoolOutline,
   checkmarkCircleOutline, chatbubblesOutline, gitNetworkOutline, barcodeOutline,
-  peopleOutline, trashOutline, closeCircle, helpCircleOutline, swapHorizontalOutline, closeOutline, briefcaseOutline, shieldCheckmarkOutline, personCircleOutline 
+  peopleOutline, trashOutline, closeCircle, helpCircleOutline, swapHorizontalOutline, closeOutline, briefcaseOutline, shieldCheckmarkOutline, personCircleOutline, chevronDownOutline, settingsOutline, logOutOutline
 } from 'ionicons/icons';
 import { Firestore, doc, getDoc, collection, getDocs, where, query, deleteDoc } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
+import { Auth, signOut } from '@angular/fire/auth';
 
 @Component({
   selector: 'app-tutor-asistencia',
@@ -24,7 +25,7 @@ import { DatabaseService } from '../../services/database';
   imports: [
     CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, 
     IonIcon, IonButton, IonButtons, IonItem, IonLabel, 
-    IonSelect, IonSelectOption, IonTextarea, IonInput, IonList, IonRange, IonModal
+    IonSelect, IonSelectOption, IonTextarea, IonInput, IonList, IonRange, IonModal, IonPopover
   ]
 })
 export class TutorAsistenciaPage implements OnInit {
@@ -32,33 +33,39 @@ export class TutorAsistenciaPage implements OnInit {
   private firestore = inject(Firestore);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private auth = inject(Auth);
 
   private toastController = inject(ToastController);
   private alertController = inject(AlertController);
 
-  mostrarMenuRol: boolean = false;
-  tienePanelTutor: boolean = false;
-  tienePanelAdmin: boolean = false;
-
+  // 🌟 VARIABLES GLOBALES Y DE USUARIO
   correoTutor: string = '';
   nombreTutor: string = '';
   carreraTutor: string = '';
-  rolUsuario: string = '';
+  rolUsuario: string = 'ESTUDIANTE';
   sedeUsuario: string = '';
+  nombreUsuario: string = '';
+  correoUsuario: string = '';
 
+  // 🌟 VARIABLES PARA CABECERA DINÁMICA
+  menuRolAbierto: boolean = false;
+  eventoRol: any = null;
+  menuPerfilAbierto: boolean = false;
+  eventoPerfil: any = null;
+
+  tienePanelTutor: boolean = false;
+  tienePanelAdmin: boolean = false;
+  hayNotificacionesSinLeer: boolean = false;
+
+  // 🌟 VARIABLES DE ASISTENCIA
   estudiantes: any[] = [];
   docentesExcel: string[] = [];
   materiasTutor: string[] = [];
-  
   cargando: boolean = true;
   enviando: boolean = false;
-  hayNotificacionesSinLeer: boolean = false;
-
   tutoriaPreCargada: boolean = false;
-
   busquedaEstudiante: string = '';
   estudiantesFiltrados: any[] = [];
-
   estudiantesSeleccionados: any[] = [];
 
   form = {
@@ -70,18 +77,37 @@ export class TutorAsistenciaPage implements OnInit {
     codigo_tutoria: ''
   };
 
+  // 🌟 GETTERS DE DISEÑO
+  get iconoRolActual(): string {
+    if (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR') return 'shield-checkmark-outline';
+    if (this.rolUsuario === 'TUTOR') return 'briefcase-outline';
+    return 'school-outline';
+  }
+
+  get nombrePanelActual(): string {
+    if (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR') return 'COORDINACIÓN';
+    if (this.rolUsuario === 'TUTOR') return 'TUTOR';
+    return 'ESTUDIANTE';
+  }
+
   constructor() {
-    addIcons({personCircleOutline, swapHorizontalOutline, notificationsOutline, bookOutline, documentTextOutline, timeOutline, barcodeOutline, peopleOutline, personOutline, trashOutline, schoolOutline, gitNetworkOutline, sendOutline, closeOutline, briefcaseOutline, shieldCheckmarkOutline, helpCircleOutline, checkmarkCircleOutline, chatbubblesOutline, closeCircle});
+    addIcons({personCircleOutline, swapHorizontalOutline, notificationsOutline, bookOutline, documentTextOutline, timeOutline, barcodeOutline, peopleOutline, personOutline, trashOutline, schoolOutline, gitNetworkOutline, sendOutline, closeOutline, briefcaseOutline, shieldCheckmarkOutline, helpCircleOutline, checkmarkCircleOutline, chatbubblesOutline, closeCircle, chevronDownOutline, settingsOutline, logOutOutline});
   }
 
   ngOnInit() { }
 
   async ionViewWillEnter() {
-    this.correoTutor = localStorage.getItem('correo') || '';
-    this.nombreTutor = localStorage.getItem('nombre') || '';
+    this.correoUsuario = localStorage.getItem('correo') || '';
+    this.nombreUsuario = localStorage.getItem('nombre') || '';
+    this.correoTutor = this.correoUsuario;
+    this.nombreTutor = this.nombreUsuario;
+    
     this.carreraTutor = localStorage.getItem('carrera') || '';
-    this.rolUsuario = localStorage.getItem('rol') || 'TUTOR';
+    this.rolUsuario = (localStorage.getItem('rol') || 'TUTOR').toUpperCase();
     this.sedeUsuario = localStorage.getItem('sede') || 'CUENCA';
+
+    // 🌟 CARGA DE PERMISOS PARA LA CABECERA
+    await this.cargarPermisosPaneles(this.correoUsuario);
 
     // 🌟 SOLUCIÓN A LA CACHÉ: Atrapamos la tutoría enviada justo cuando la página se abre
     const state = history.state;
@@ -97,12 +123,67 @@ export class TutorAsistenciaPage implements OnInit {
     await this.cargarDatos();
   }
 
+  // ==========================================
+  // 🌟 MÉTODOS PARA MENÚS DE CABECERA
+  // ==========================================
+  async cargarPermisosPaneles(correo: string) {
+    this.tienePanelTutor = false;
+    this.tienePanelAdmin = false;
+    if (!correo) return;
+    try {
+      const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
+      const snapEst = await getDocs(qEst);
+      if (!snapEst.empty) {
+        const rolDB = String(snapEst.docs[0].data()['rol'] || snapEst.docs[0].data()['Rol'] || '').toUpperCase().trim();
+        if (rolDB === 'TUTOR') this.tienePanelTutor = true;
+        if (rolDB === 'COORDINADOR' || rolDB === 'ADMIN') {
+          this.tienePanelTutor = true;
+          this.tienePanelAdmin = true;
+        }
+      }
+      if (!this.tienePanelTutor) {
+        const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
+        const snapTut = await getDocs(qTut);
+        if (!snapTut.empty) this.tienePanelTutor = true;
+      }
+    } catch (error) { console.error("Error permisos:", error); }
+    if (this.cdr) this.cdr.detectChanges(); 
+  }
+
+  abrirMenuRol(evento: any) { this.eventoRol = evento; this.menuRolAbierto = true; }
+  abrirMenuPerfil(evento: any) { this.eventoPerfil = evento; this.menuPerfilAbierto = true; }
+
+  irAPanel(ruta: string, rolDestino: string) {
+    this.menuRolAbierto = false; 
+    localStorage.setItem('rol', rolDestino); 
+    setTimeout(() => { this.router.navigate([ruta]); }, 150); 
+  }
+
+  irAPerfil() {
+    this.menuPerfilAbierto = false;
+    this.router.navigate(['/tabs/perfil']); 
+  }
+
+  async cerrarSesion() {
+    this.menuPerfilAbierto = false;
+    try {
+      await signOut(this.auth);
+      localStorage.clear();
+      this.router.navigate(['/login']);
+    } catch (error) {
+      localStorage.clear();
+      this.router.navigate(['/login']);
+    }
+  }
+
+  // ==========================================
+  // 🌟 MÉTODOS DE ASISTENCIA
+  // ==========================================
   preCargarClase(master: any) {
     this.tutoriaPreCargada = true;
     this.form.materia = master.materia;
     this.form.codigo_tutoria = master.codigo !== 'SIN CÓDIGO' ? master.codigo : '';
     
-    // Agregar al solicitante original
     this.estudiantesSeleccionados.push({
       info: `${master.nombreEstudiante} (Solicitante)`,
       nombre: master.nombreEstudiante,
@@ -113,7 +194,6 @@ export class TutorAsistenciaPage implements OnInit {
       participo: 'SI'
     });
 
-    // Agregar estudiantes que se unieron
     if (master.alumnosExtra && master.alumnosExtra.length > 0) {
       master.alumnosExtra.forEach((extra: any) => {
         this.estudiantesSeleccionados.push({
@@ -128,7 +208,6 @@ export class TutorAsistenciaPage implements OnInit {
       });
     }
     
-    // Forzamos el redibujado de la interfaz por si Ionic se queda congelado
     if (this.cdr) this.cdr.detectChanges();
   }
 
@@ -270,50 +349,9 @@ export class TutorAsistenciaPage implements OnInit {
     }
   }
 
-  async cambiarPanel() {
-    const correo = localStorage.getItem('correo') || '';
-    this.tienePanelTutor = false;
-    this.tienePanelAdmin = false;
-
-    if (correo) {
-      try {
-        const qEst = query(collection(this.firestore, 'Estudiantes'), where('correo', '==', correo));
-        const snapEst = await getDocs(qEst);
-        
-        if (!snapEst.empty) {
-          const rolDB = (snapEst.docs[0].data()['rol'] || snapEst.docs[0].data()['Rol'] || '').toUpperCase().trim();
-          
-          if (rolDB === 'TUTOR') this.tienePanelTutor = true;
-          if (rolDB === 'COORDINADOR' || rolDB === 'ADMIN') {
-            this.tienePanelTutor = true;
-            this.tienePanelAdmin = true;
-          }
-        }
-
-        if (!this.tienePanelTutor) {
-          const qTut = query(collection(this.firestore, 'Tutores'), where('correo', '==', correo));
-          const snapTut = await getDocs(qTut);
-          
-          if (!snapTut.empty) {
-            this.tienePanelTutor = true; 
-          }
-        }
-      } catch (error) {}
-    }
-
-    this.mostrarMenuRol = true;
-    if (this.cdr) this.cdr.detectChanges();
-  }
-
-  irAPanel(ruta: string, rolDestino: string) {
-    this.mostrarMenuRol = false; 
-    localStorage.setItem('rol', rolDestino); 
-    
-    setTimeout(() => {
-      this.router.navigate([ruta]); 
-    }, 150); 
-  }
-  
+  // ==========================================
+  // 🌟 ALERTAS NATIVAS
+  // ==========================================
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
     let claseCss = 'toast-exito';

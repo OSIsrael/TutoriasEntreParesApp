@@ -328,46 +328,59 @@
   <ion-popover [isOpen]="menuRolAbierto" [event]="eventoRol" (didDismiss)="menuRolAbierto = false" mode="ios" style="--background: #ffffff; --width: 220px; --border-radius: 12px; --box-shadow: 0 10px 25px rgba(0, 51, 102, 0.15);">
     <ng-template>
       <ion-content class="ion-padding-vertical" style="--background: #ffffff;">
-        <p style="margin: 0 15px 10px 15px; font-size: 0.75rem; color: #64748b; font-weight: bold; text-transform: uppercase;">Cambiar a panel:</p>
+        <p style="margin: 0 15px 10px 15px; font-size: 0.75rem; color: #64748b; font-weight: bold; text-transform: uppercase;">Ir a panel:</p>
         <ion-list lines="none" style="background: transparent;">
-          <ion-item button (click)="irAPanel('/tabs/horarios', 'ESTUDIANTE')" *ngIf="rolUsuario !== 'ESTUDIANTE'" style="--background: transparent;">
+          
+          <!-- 🌟 ESTUDIANTE: Siempre visible para todos -->
+          <ion-item button (click)="irAPanel('/tabs/horarios', 'ESTUDIANTE')" style="--background: transparent;">
             <ion-icon name="school-outline" slot="start" style="color: #003366;"></ion-icon>
             <ion-label style="font-weight: 700; color: #003366;">Estudiante</ion-label>
           </ion-item>
-          <ion-item button (click)="irAPanel('/tabs-tutor/tutorias', 'TUTOR')" *ngIf="tienePanelTutor && rolUsuario !== 'TUTOR'" style="--background: transparent;">
+          
+          <!-- 🌟 TUTOR: Siempre visible si tiene el permiso -->
+          <ion-item button (click)="irAPanel('/tabs-tutor/tutorias', 'TUTOR')" *ngIf="tienePanelTutor" style="--background: transparent;">
             <ion-icon name="briefcase-outline" slot="start" style="color: #003366;"></ion-icon>
             <ion-label style="font-weight: 700; color: #003366;">Tutor</ion-label>
           </ion-item>
-          <ion-item button (click)="irAPanel('/tabs-admin/postulaciones', 'COORDINADOR')" *ngIf="tienePanelAdmin && rolUsuario !== 'COORDINADOR' && rolUsuario !== 'ADMIN'" style="--background: transparent;">
+          
+          <!-- 🌟 COORDINACIÓN: Siempre visible si es Admin o Coordinador -->
+          <ion-item button (click)="irAPanel('/admin-postulaciones', 'COORDINADOR')" *ngIf="tienePanelAdmin" style="--background: transparent;">
             <ion-icon name="shield-checkmark-outline" slot="start" style="color: #003366;"></ion-icon>
             <ion-label style="font-weight: 700; color: #003366;">Coordinación</ion-label>
           </ion-item>
+
         </ion-list>
       </ion-content>
     </ng-template>
   </ion-popover>
 
-  <!-- ========================================== -->
+<!-- ========================================== -->
   <!-- 🌟 POPOVER: PERFIL Y OPCIONES -->
   <!-- ========================================== -->
   <ion-popover [isOpen]="menuPerfilAbierto" [event]="eventoPerfil" (didDismiss)="menuPerfilAbierto = false" mode="ios" style="--background: #ffffff; --width: 280px; --border-radius: 12px; --box-shadow: 0 10px 25px rgba(0, 51, 102, 0.15);">
     <ng-template>
       <ion-content style="--background: #ffffff;">
+        
+        <!-- Cabecera del Popover de Perfil -->
         <div style="background: #f8fafc; padding: 15px; border-bottom: 1px solid #e2e8f0; margin-bottom: 5px;">
-          <!-- Ajusta las variables si en tu página se llaman diferente (Ej. usuario.nombre) -->
-          <p style="margin: 0; font-weight: 900; color: #003366; font-size: 0.95rem; line-height: 1.2;">{{ nombreUsuario || usuario?.nombre || 'USUARIO' }}</p>
-          <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.75rem;">{{ correoUsuario || usuario?.correo }}</p>
+          <!-- 🌟 NAURNOS DAGITI VARIABLES DITOY -->
+          <p style="margin: 0; font-weight: 900; color: #003366; font-size: 0.95rem; line-height: 1.2;">{{ nombreUsuario || 'TUTOR' }}</p>
+          <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.75rem;">{{ correoUsuario }}</p>
         </div>
+
+        <!-- Lista de Opciones -->
         <ion-list lines="none" style="background: transparent; padding-bottom: 10px;">
           <ion-item button (click)="irAPerfil()" style="--background: transparent;">
             <ion-icon name="settings-outline" slot="start" style="color: #475569;"></ion-icon>
             <ion-label style="font-weight: 600; color: #475569;">Mi Perfil</ion-label>
           </ion-item>
+          
           <ion-item button (click)="cerrarSesion()" style="--background: transparent;">
             <ion-icon name="log-out-outline" slot="start" style="color: #ef4444;"></ion-icon>
             <ion-label style="font-weight: 700; color: #ef4444;">Cerrar Sesión</ion-label>
           </ion-item>
         </ion-list>
+
       </ion-content>
     </ng-template>
   </ion-popover>
