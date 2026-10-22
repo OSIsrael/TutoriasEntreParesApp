@@ -688,4 +688,17 @@ generarCodigoTutoria(materia: string): string {
       throw error;
     }
   }
+  // 🌟 NUEVA FUNCIÓN PARA ENVIAR LA EVALUACIÓN DEL ESTUDIANTE AL EXCEL
+  async guardarEvaluacionEstudiante(payloadExcel: any) {
+    try {
+      await fetch(this.scriptURL_dinamica, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payloadExcel)
+      });
+    } catch (error) {
+      console.error('Error al enviar la evaluación al Excel:', error);
+    }
+  }
 }

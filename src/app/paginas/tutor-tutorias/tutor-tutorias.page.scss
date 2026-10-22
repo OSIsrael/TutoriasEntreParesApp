@@ -449,3 +449,17 @@ ion-content {
       #e2e8f0 10px
     ); /* Un tramado sutil de líneas diagonales para que se vea "tachado" */
   }
+  /* Asegurar que se vea el botón de asistencia y modalidad */
+.info-texto p {
+  margin: 0; 
+  font-size: 0.8rem; 
+  color: #475569; 
+  line-height: 1.4;
+}
+
+.info-texto ion-icon {
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+/* El espaciador fantasma ya fue incluido en el HTML mediante style="padding-bottom: 100px;" */

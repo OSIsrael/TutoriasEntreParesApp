@@ -154,7 +154,7 @@ export class TutorTutoriasPage implements OnInit {
     this.router.navigate(['/notificaciones'], { queryParams: { panel: 'TUTOR' } });
   }
 
-  async cargarTutoriasPorImpartir() {
+ async cargarTutoriasPorImpartir() {
     this.cargando = true;
     this.tutoriasPorImpartir = [];
 
@@ -173,27 +173,37 @@ export class TutorTutoriasPage implements OnInit {
         let colorEstado = '#fde047'; 
         if (res['estado'] === 'CONFIRMADA' || res['estado'] === 'ACEPTADA') colorEstado = '#34d399'; 
 
-        const tutoriaFormateada: any = {
+    const tutoriaFormateada: any = {
           id: documento.id,
           materia: res['materia'],
           codigo: res['codigo'] || res['codigo_tutoria'] || 'SIN CÓDIGO',
           dia: res['dia_elegido'] || res['dia'] || 'Por definir',
           hora: res['hora_elegida'] || res['hora'] || 'Por definir',
+          fecha_exacta: res['fecha_exacta'] || '', 
+          modalidad: res['modalidad'] || 'Presencial', 
           color: colorEstado,
           estado: res['estado'],
           celularEstudiante: res['celularEstudiante'], 
-          codigoPaisEstudiante: res['codigoPaisEstudiante'] || '+593',
+          codigoPaisEstudiante: res['codigoPaisEstudiante'] || '+593', 
           nombreEstudiante: res['nombreEstudiante'],
           correoEstudiante: res['correoEstudiante'],
           tipoDerivacion: res['tipo_derivacion'] || 'DECISIÓN PROPIA',
-          docente: res['docente'] || '',
+          es_invitado: res['es_invitado'] || false, 
+          // 🌟 SOLUCIÓN: Atrapamos cualquier posible nombre de variable del Docente
+          docente: res['docente'] || res['nombreDocente'] || res['docenteEstudiante'] || res['nombre_docente'] || '', 
           alumnosExtra: [] 
         };
 
         if (tutoriaFormateada.codigo !== 'SIN CÓDIGO') {
           if (tutoriasAgrupadas.has(tutoriaFormateada.codigo)) {
             const master = tutoriasAgrupadas.get(tutoriaFormateada.codigo);
-            master.alumnosExtra.push(tutoriaFormateada);
+            // Si el que acabamos de leer es el dueño original, intercambiamos roles
+            if (!tutoriaFormateada.es_invitado && master.es_invitado) {
+              tutoriaFormateada.alumnosExtra = [...master.alumnosExtra, master];
+              tutoriasAgrupadas.set(tutoriaFormateada.codigo, tutoriaFormateada);
+            } else {
+              master.alumnosExtra.push(tutoriaFormateada);
+            }
           } else {
             tutoriasAgrupadas.set(tutoriaFormateada.codigo, tutoriaFormateada);
           }
@@ -714,4 +724,5 @@ export class TutorTutoriasPage implements OnInit {
       this.router.navigate(['/login']);
     }
   }
+  
 }

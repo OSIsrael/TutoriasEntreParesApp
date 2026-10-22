@@ -29,6 +29,24 @@ ion-content {
 .mt-3 { margin-top: 15px; }
 .mt-4 { margin-top: 30px; }
 
+/* 🌟 TARJETAS MODERNAS DE ASISTENCIA */
+.alumno-card-asistencia {
+  background: #ffffff;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #cbd5e1;
+  padding: 15px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+  border-left: 4px solid #EAB308;
+  transition: all 0.2s ease;
+}
+
+/* Diseño secundario para invitados */
+.alumno-card-asistencia.invitado {
+  background: #f8fafc;
+  border-left: 4px solid #cbd5e1;
+}
+
 .tarjeta-formulario {
   background: #ffffff !important;
   border-radius: 16px;
@@ -59,102 +77,36 @@ ion-content {
     }
   }
 
-  .label-flotante {
-    font-size: 0.75rem; 
-    color: #003366; 
-    font-weight: 800;
-    text-transform: uppercase;
-  }
-
   .textarea-moderno {
     align-items: flex-start;
     ion-textarea { color: #0f172a !important; font-weight: 600; }
   }
+}
 
-  /* 🌟 ESTUDIANTES AÑADIDOS */
-  .alumno-card {
-    background: #f8fafc;
-    border: 2px solid #cbd5e1;
-    border-radius: 12px;
-    padding: 15px;
-    position: relative;
+/* 🌟 LISTAS DE AUTOCOMPLETADO (Escudo Anti Modo-Oscuro) */
+.lista-autocompletado, .lista-autocompletado-docentes {
+  background: #ffffff !important;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  max-height: 180px;
+  overflow-y: auto;
+  z-index: 999;
 
-    .alumno-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #cbd5e1;
-      padding-bottom: 10px;
-      margin-bottom: 12px;
-
-      .nombre-est {
-        font-weight: 800;
-        color: #003366;
-        font-size: 0.95rem;
-      }
-
-      .btn-borrar {
-        color: #ef4444;
-        font-size: 1.4rem;
-        cursor: pointer;
-        transition: transform 0.2s;
-        &:active { transform: scale(0.8); }
-      }
-    }
-
-    .minimalista {
-      --background: #ffffff;
-      --border-radius: 8px;
-      --padding-start: 12px;
-      height: 48px;
-    }
-    
-    /* 🌟 CONTENEDOR RELATIVO PARA EL MENÚ DEL DOCENTE */
-    .contenedor-docente {
-      position: relative;
-      z-index: 10;
-    }
+  ion-item {
+    --background: #ffffff !important;
+    --background-hover: #f1f5f9 !important;
+    --color: #333333 !important;
   }
+}
 
-  /* 🌟 LISTAS DE AUTOCOMPLETADO (Escudo Anti Modo-Oscuro) */
-  .lista-autocompletado, .lista-autocompletado-docentes {
-    background: #ffffff !important;
-    border: 2px solid #cbd5e1;
-    border-radius: 8px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    max-height: 180px;
-    overflow-y: auto;
-    z-index: 999;
+.lista-autocompletado {
+  margin-top: 5px;
+  margin-bottom: 15px;
+}
 
-    ion-item {
-      --background: #ffffff !important;
-      --background-hover: #f1f5f9 !important;
-      --color: #333333 !important;
-    }
-  }
-  
-  .lista-autocompletado {
-    margin-top: 5px;
-    margin-bottom: 15px;
-  }
-
-  /* Posición flotante para la lista de los Docentes */
-  .lista-autocompletado-docentes {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100%;
-    margin-top: 4px;
-  }
-
-  .btn-enviar {
-    --background: #EAB308; 
-    --background-hover: #d97706;
-    --color: #003366;
-    --border-radius: 12px;
-    font-weight: 900;
-    letter-spacing: 0.5px;
-    height: 50px;
-    margin-bottom: 90px;
-  }
+.lista-sugerencias {
+  position: absolute; top: 100%; left: 0; right: 0; background: white; border-radius: 8px;
+  margin-top: 5px; max-height: 180px; overflow-y: auto; box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+  z-index: 999999; border: 1px solid #cbd5e1;
 }

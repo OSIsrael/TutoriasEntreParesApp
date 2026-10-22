@@ -5,7 +5,7 @@ import { Firestore, collection, getDocs, query, where, updateDoc, doc } from '@a
 import { Auth, signOut } from '@angular/fire/auth'; 
 import { 
   IonContent, IonHeader, IonToolbar, 
-  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal,IonFab,IonFabButton,ToastController,AlertController,IonInput,
+  IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal,ToastController,AlertController,IonInput,
   IonPopover, IonDatetime, IonDatetimeButton 
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -25,7 +25,7 @@ import { Router } from '@angular/router';
   standalone: true,
   imports: [
     IonContent, IonHeader, IonToolbar, CommonModule, FormsModule, 
-    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal,IonFab,IonFabButton,IonInput, IonPopover, IonDatetime, IonDatetimeButton
+    IonIcon, IonItem, IonLabel, IonSelect, IonSelectOption, IonButtons, IonButton, IonSpinner, IonCheckbox, IonList,IonModal,IonInput, IonPopover, IonDatetime, IonDatetimeButton
   ]
 })
 export class HorariosPage implements OnInit {

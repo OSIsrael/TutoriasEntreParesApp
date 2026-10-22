@@ -13,7 +13,7 @@ import { DatabaseService } from '../../services/database';
   templateUrl: './avisos.page.html',
   styleUrls: ['./avisos.page.scss'],
   standalone: true,
-  imports: [IonContent, IonHeader, IonToolbar, IonIcon, IonSpinner, CommonModule, IonButtons, IonButton, IonModal, IonList, IonItem, IonLabel, IonItemSliding, IonItemOptions, IonItemOption, IonPopover]
+  imports: [IonContent, IonHeader, IonToolbar, IonIcon, IonSpinner, CommonModule, IonButtons, IonButton, IonList, IonItem, IonLabel, IonItemSliding, IonItemOptions, IonItemOption, IonPopover]
 })
 export class AvisosPage {
   private firestore = inject(Firestore);

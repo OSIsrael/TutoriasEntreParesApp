@@ -4,16 +4,16 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { 
   IonContent, IonHeader, IonToolbar, IonIcon, IonButton, IonButtons,
-  IonItem, IonLabel, IonSelect, IonSelectOption, IonTextarea, IonInput, IonList, IonRange, IonModal, ToastController, AlertController, IonPopover
+  IonItem, IonLabel, IonSelect, IonSelectOption, IonTextarea, IonInput, IonList, IonRange,  ToastController, AlertController, IonPopover
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
   documentTextOutline, sendOutline, notificationsOutline, 
   personOutline, bookOutline, timeOutline, schoolOutline,
   checkmarkCircleOutline, chatbubblesOutline, gitNetworkOutline, barcodeOutline,
-  peopleOutline, trashOutline, closeCircle, helpCircleOutline, swapHorizontalOutline, closeOutline, briefcaseOutline, shieldCheckmarkOutline, personCircleOutline, chevronDownOutline, settingsOutline, logOutOutline
+  peopleOutline, trashOutline, closeCircle, helpCircleOutline, swapHorizontalOutline, closeOutline, briefcaseOutline, shieldCheckmarkOutline, personCircleOutline, chevronDownOutline, settingsOutline, logOutOutline, starOutline, star
 } from 'ionicons/icons';
-import { Firestore, doc, getDoc, collection, getDocs, where, query, deleteDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, collection, getDocs, where, query, deleteDoc, setDoc } from '@angular/fire/firestore';
 import { DatabaseService } from '../../services/database';
 import { Auth, signOut } from '@angular/fire/auth';
 
@@ -25,7 +25,7 @@ import { Auth, signOut } from '@angular/fire/auth';
   imports: [
     CommonModule, FormsModule, IonContent, IonHeader, IonToolbar, 
     IonIcon, IonButton, IonButtons, IonItem, IonLabel, 
-    IonSelect, IonSelectOption, IonTextarea, IonInput, IonList, IonRange, IonModal, IonPopover
+    IonSelect, IonSelectOption, IonTextarea, IonInput, IonList, IonRange,  IonPopover
   ]
 })
 export class TutorAsistenciaPage implements OnInit {
@@ -38,7 +38,6 @@ export class TutorAsistenciaPage implements OnInit {
   private toastController = inject(ToastController);
   private alertController = inject(AlertController);
 
-  // 🌟 VARIABLES GLOBALES Y DE USUARIO
   correoTutor: string = '';
   nombreTutor: string = '';
   carreraTutor: string = '';
@@ -47,7 +46,6 @@ export class TutorAsistenciaPage implements OnInit {
   nombreUsuario: string = '';
   correoUsuario: string = '';
 
-  // 🌟 VARIABLES PARA CABECERA DINÁMICA
   menuRolAbierto: boolean = false;
   eventoRol: any = null;
   menuPerfilAbierto: boolean = false;
@@ -57,7 +55,6 @@ export class TutorAsistenciaPage implements OnInit {
   tienePanelAdmin: boolean = false;
   hayNotificacionesSinLeer: boolean = false;
 
-  // 🌟 VARIABLES DE ASISTENCIA
   estudiantes: any[] = [];
   docentesExcel: string[] = [];
   materiasTutor: string[] = [];
@@ -67,17 +64,18 @@ export class TutorAsistenciaPage implements OnInit {
   busquedaEstudiante: string = '';
   estudiantesFiltrados: any[] = [];
   estudiantesSeleccionados: any[] = [];
+  estudiantesInvitados: any[] = []; 
 
   form = {
     materia: '',
     tema_tratado: '',
-    horas: 1,
+    horas: 1, 
     asistio: '',
     participo: '',
-    codigo_tutoria: ''
+    codigo_tutoria: '',
+    calificacion_tutor: 0 // 🌟 NUEVO: OBLIGATORIO PARA EL TUTOR
   };
 
-  // 🌟 GETTERS DE DISEÑO
   get iconoRolActual(): string {
     if (this.rolUsuario === 'ADMIN' || this.rolUsuario === 'COORDINADOR') return 'shield-checkmark-outline';
     if (this.rolUsuario === 'TUTOR') return 'briefcase-outline';
@@ -91,7 +89,7 @@ export class TutorAsistenciaPage implements OnInit {
   }
 
   constructor() {
-    addIcons({personCircleOutline, swapHorizontalOutline, notificationsOutline, bookOutline, documentTextOutline, timeOutline, barcodeOutline, peopleOutline, personOutline, trashOutline, schoolOutline, gitNetworkOutline, sendOutline, closeOutline, briefcaseOutline, shieldCheckmarkOutline, helpCircleOutline, checkmarkCircleOutline, chatbubblesOutline, closeCircle, chevronDownOutline, settingsOutline, logOutOutline});
+    addIcons({starOutline, star, personCircleOutline, swapHorizontalOutline, notificationsOutline, bookOutline, documentTextOutline, timeOutline, barcodeOutline, peopleOutline, personOutline, trashOutline, schoolOutline, gitNetworkOutline, sendOutline, closeOutline, briefcaseOutline, shieldCheckmarkOutline, helpCircleOutline, checkmarkCircleOutline, chatbubblesOutline, closeCircle, chevronDownOutline, settingsOutline, logOutOutline});
   }
 
   ngOnInit() { }
@@ -101,21 +99,17 @@ export class TutorAsistenciaPage implements OnInit {
     this.nombreUsuario = localStorage.getItem('nombre') || '';
     this.correoTutor = this.correoUsuario;
     this.nombreTutor = this.nombreUsuario;
-    
     this.carreraTutor = localStorage.getItem('carrera') || '';
     this.rolUsuario = (localStorage.getItem('rol') || 'TUTOR').toUpperCase();
     this.sedeUsuario = localStorage.getItem('sede') || 'CUENCA';
 
-    // 🌟 CARGA DE PERMISOS PARA LA CABECERA
     await this.cargarPermisosPaneles(this.correoUsuario);
 
-    // 🌟 SOLUCIÓN A LA CACHÉ: Atrapamos la tutoría enviada justo cuando la página se abre
     const state = history.state;
     if (state && state.tutoriaMaster) {
-      this.estudiantesSeleccionados = []; // Limpiamos por si había una clase anterior
+      this.estudiantesSeleccionados = []; 
+      this.estudiantesInvitados = []; 
       this.preCargarClase(state.tutoriaMaster);
-      
-      // Limpiamos el historial para no afectar futuras entradas manuales a la pestaña
       history.replaceState({}, '');
     }
 
@@ -123,9 +117,6 @@ export class TutorAsistenciaPage implements OnInit {
     await this.cargarDatos();
   }
 
-  // ==========================================
-  // 🌟 MÉTODOS PARA MENÚS DE CABECERA
-  // ==========================================
   async cargarPermisosPaneles(correo: string) {
     this.tienePanelTutor = false;
     this.tienePanelAdmin = false;
@@ -152,33 +143,10 @@ export class TutorAsistenciaPage implements OnInit {
 
   abrirMenuRol(evento: any) { this.eventoRol = evento; this.menuRolAbierto = true; }
   abrirMenuPerfil(evento: any) { this.eventoPerfil = evento; this.menuPerfilAbierto = true; }
+  irAPanel(ruta: string, rolDestino: string) { this.menuRolAbierto = false; localStorage.setItem('rol', rolDestino); setTimeout(() => { this.router.navigate([ruta]); }, 150); }
+  irAPerfil() { this.menuPerfilAbierto = false; this.router.navigate(['/tabs/perfil']); }
+  async cerrarSesion() { this.menuPerfilAbierto = false; try { await signOut(this.auth); localStorage.clear(); this.router.navigate(['/login']); } catch (error) { localStorage.clear(); this.router.navigate(['/login']); } }
 
-  irAPanel(ruta: string, rolDestino: string) {
-    this.menuRolAbierto = false; 
-    localStorage.setItem('rol', rolDestino); 
-    setTimeout(() => { this.router.navigate([ruta]); }, 150); 
-  }
-
-  irAPerfil() {
-    this.menuPerfilAbierto = false;
-    this.router.navigate(['/tabs/perfil']); 
-  }
-
-  async cerrarSesion() {
-    this.menuPerfilAbierto = false;
-    try {
-      await signOut(this.auth);
-      localStorage.clear();
-      this.router.navigate(['/login']);
-    } catch (error) {
-      localStorage.clear();
-      this.router.navigate(['/login']);
-    }
-  }
-
-  // ==========================================
-  // 🌟 MÉTODOS DE ASISTENCIA
-  // ==========================================
   preCargarClase(master: any) {
     this.tutoriaPreCargada = true;
     this.form.materia = master.materia;
@@ -187,6 +155,7 @@ export class TutorAsistenciaPage implements OnInit {
     this.estudiantesSeleccionados.push({
       info: `${master.nombreEstudiante} (Solicitante)`,
       nombre: master.nombreEstudiante,
+      correo: master.correoEstudiante, // 🌟 CAPTURAMOS SU CORREO
       idReserva: master.id,
       docente: master.docente,
       derivacion: master.tipoDerivacion,
@@ -196,9 +165,10 @@ export class TutorAsistenciaPage implements OnInit {
 
     if (master.alumnosExtra && master.alumnosExtra.length > 0) {
       master.alumnosExtra.forEach((extra: any) => {
-        this.estudiantesSeleccionados.push({
-          info: `${extra.nombreEstudiante} (Invitado)`,
+        this.estudiantesInvitados.push({
+          info: `${extra.nombreEstudiante}`, 
           nombre: extra.nombreEstudiante,
+          correo: extra.correoEstudiante, // 🌟 CAPTURAMOS SU CORREO
           idReserva: extra.id,
           docente: extra.docente,
           derivacion: extra.tipoDerivacion,
@@ -207,7 +177,6 @@ export class TutorAsistenciaPage implements OnInit {
         });
       });
     }
-    
     if (this.cdr) this.cdr.detectChanges();
   }
 
@@ -218,10 +187,8 @@ export class TutorAsistenciaPage implements OnInit {
       if (tutorSnap.exists()) {
         this.materiasTutor = tutorSnap.data()['materias'] || [];
       }
-
       const snapEstudiantes = await getDocs(collection(this.firestore, 'Estudiantes'));
       this.estudiantes = snapEstudiantes.docs.map(doc => doc.data());
-
       this.docentesExcel = await this.dbService.obtenerDocentesDesdeExcel();
     } catch (e) {
       console.error(e);
@@ -237,9 +204,7 @@ export class TutorAsistenciaPage implements OnInit {
     } catch (error) {}
   }
 
-  irANotificaciones() {
-    this.router.navigate(['/notificaciones'], { queryParams: { panel: 'TUTOR' } });
-  }
+  irANotificaciones() { this.router.navigate(['/notificaciones'], { queryParams: { panel: 'TUTOR' } }); }
 
   filtrarEstudiantes() {
     const txt = this.busquedaEstudiante.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
@@ -252,12 +217,12 @@ export class TutorAsistenciaPage implements OnInit {
   }
 
   seleccionarEstudiante(est: any) {
-    const infoCompletada = `${est.nombre_completo} - ${est.cedula}`;
-    
+    const infoCompletada = `${est.nombre_completo}\n${est.cedula}`;
     if (!this.estudiantesSeleccionados.find(e => e.info === infoCompletada)) {
       this.estudiantesSeleccionados.push({
         info: infoCompletada,
         nombre: est.nombre_completo,
+        correo: est.correo, // 🌟 CAPTURAMOS SU CORREO
         cedula: est.cedula,
         docente: '',
         docentesFiltrados: [],
@@ -266,19 +231,15 @@ export class TutorAsistenciaPage implements OnInit {
         participo: 'SI'
       });
     }
-    
     this.busquedaEstudiante = ''; 
     this.estudiantesFiltrados = [];
   }
 
-  removerEstudiante(index: number) {
-    this.estudiantesSeleccionados.splice(index, 1);
-  }
+  removerEstudiante(index: number) { this.estudiantesSeleccionados.splice(index, 1); }
 
   filtrarDocentesParaEstudiante(est: any) {
     const txt = (est.docente || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
     if (!txt) { est.docentesFiltrados = []; return; }
-
     est.docentesFiltrados = this.docentesExcel.filter(d => 
       d.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(txt)
     ).slice(0, 5);
@@ -302,12 +263,19 @@ export class TutorAsistenciaPage implements OnInit {
       }
     }
 
+    // 🌟 VALIDAMOS OBLIGATORIAMENTE QUE EL TUTOR HAYA DADO ESTRELLAS
+    if (this.form.calificacion_tutor === 0) {
+      this.mostrarAviso("Por favor, califica tu experiencia general en esta sesión tutorial para poder registrar la asistencia.", 'error');
+      return;
+    }
+
     this.enviando = true;
 
     try {
       const promesas = [];
+      const todosLosEstudiantes = [...this.estudiantesSeleccionados, ...this.estudiantesInvitados];
 
-      for (const est of this.estudiantesSeleccionados) {
+      for (const est of todosLosEstudiantes) {
         if (est.asistio === 'SI') {
           const reporte = {
             correoTutor: this.correoTutor,
@@ -321,9 +289,22 @@ export class TutorAsistenciaPage implements OnInit {
             estudiante_info: est.info,
             nombre_docente: est.docente || 'No especificado', 
             derivacion: est.derivacion || 'DECISIÓN PROPIA',          
-            fecha_registro: new Date().toISOString()
+            fecha_registro: new Date().toISOString(),
+            calificacion_tutor: this.form.calificacion_tutor // 🌟 ENVIAMOS LAS ESTRELLAS DEL TUTOR AL EXCEL
           };
           promesas.push(this.dbService.guardarAsistencia(reporte));
+
+          // 🌟 GENERAR EVALUACIÓN OBLIGATORIA PENDIENTE PARA EL ESTUDIANTE
+          if (est.correo) {
+            const evalRef = doc(collection(this.firestore, 'EvaluacionesPendientes'));
+            promesas.push(setDoc(evalRef, {
+              correoEstudiante: est.correo,
+              nombreTutor: this.nombreTutor,
+              materia: this.form.materia,
+              fecha_clase: new Date().toISOString(),
+              estado: 'PENDIENTE'
+            }));
+          }
         }
 
         if (est.idReserva) {
@@ -333,10 +314,11 @@ export class TutorAsistenciaPage implements OnInit {
 
       await Promise.all(promesas);
 
-      this.mostrarAviso(`Asistencia registrada. La tutoría ha sido finalizada.`, 'exito');
+      this.mostrarAviso(`Asistencia registrada. Tus alumnos deberán evaluarte.`, 'exito');
       
-      this.form = { materia: '', tema_tratado: '', horas: 1, asistio: '', participo: '', codigo_tutoria: '' };
+      this.form = { materia: '', tema_tratado: '', horas: 1, asistio: '', participo: '', codigo_tutoria: '', calificacion_tutor: 0 };
       this.estudiantesSeleccionados = [];
+      this.estudiantesInvitados = []; 
       this.busquedaEstudiante = '';
       this.tutoriaPreCargada = false;
 
@@ -349,57 +331,16 @@ export class TutorAsistenciaPage implements OnInit {
     }
   }
 
-  // ==========================================
-  // 🌟 ALERTAS NATIVAS
-  // ==========================================
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';
     let claseCss = 'toast-exito';
-
-    if (tipo === 'error') {
-      icono = 'close-circle-outline';
-      claseCss = 'toast-error';
-    } else if (tipo === 'advertencia') {
-      icono = 'warning-outline';
-      claseCss = 'toast-advertencia';
-    } else if (tipo === 'info') {
-      icono = 'information-circle-outline';
-      claseCss = 'toast-info';
-    }
+    if (tipo === 'error') { icono = 'close-circle-outline'; claseCss = 'toast-error'; } 
+    else if (tipo === 'advertencia') { icono = 'warning-outline'; claseCss = 'toast-advertencia'; } 
+    else if (tipo === 'info') { icono = 'information-circle-outline'; claseCss = 'toast-info'; }
 
     const toast = await this.toastController.create({
-      message: mensaje,
-      duration: 3000,
-      position: 'top', 
-      icon: icono,
-      cssClass: `toast-premium-gietaes ${claseCss}`,
-      mode: 'ios' 
+      message: mensaje, duration: 4000, position: 'top', icon: icono, cssClass: `toast-premium-gietaes ${claseCss}`, mode: 'ios' 
     });
     await toast.present();
-  }
-
-  async confirmarAccion(cabecera: string, mensaje: string): Promise<boolean> {
-    return new Promise(async (resolve) => {
-      const alert = await this.alertController.create({
-        header: cabecera,
-        message: mensaje,
-        cssClass: 'alerta-premium-gietaes',
-        mode: 'md', 
-        buttons: [
-          {
-            text: 'Cancelar',
-            role: 'cancel',
-            cssClass: 'btn-alerta-cancelar',
-            handler: () => resolve(false)
-          },
-          {
-            text: 'Sí, Continuar',
-            cssClass: 'btn-alerta-confirmar',
-            handler: () => resolve(true)
-          }
-        ]
-      });
-      await alert.present();
-    });
   }
 }

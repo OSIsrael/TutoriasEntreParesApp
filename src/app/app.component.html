@@ -1,3 +1,63 @@
 <ion-app>
   <ion-router-outlet></ion-router-outlet>
+
+  <!-- 🌟 EL CERROJO INQUEBRANTABLE (No se puede cerrar haciendo clic afuera) -->
+  <ion-modal [isOpen]="mostrarModalEvaluacion" [backdropDismiss]="false" class="modal-evaluacion-global">
+    <ng-template>
+      <div class="evaluacion-container">
+        
+        <div class="header-eval">
+          <h2>¡Clase Finalizada!</h2>
+          <p>Tu tutor de <strong>{{ evaluacionPendiente?.materia }}</strong> ha registrado tu asistencia.</p>
+        </div>
+
+        <div class="body-eval">
+          <p class="advertencia-texto">
+            Es obligatorio evaluar la tutoría para continuar utilizando la plataforma GIETAES.
+          </p>
+
+          <!-- PREGUNTA 1 -->
+          <div class="pregunta-box">
+            <p>1. ¿Comprendiste mejor el tema después de esta sesión tutorial?</p>
+            <div class="estrellas">
+              <ion-icon *ngFor="let star of [1,2,3,4,5]" 
+                        [name]="respuestas.p1 >= star ? 'star' : 'star-outline'" 
+                        (click)="respuestas.p1 = star">
+              </ion-icon>
+            </div>
+          </div>
+
+          <!-- PREGUNTA 2 -->
+          <div class="pregunta-box">
+            <p>2. ¿La sesión tutorial aclaró tus dudas de forma clara y comprensible?</p>
+            <div class="estrellas">
+              <ion-icon *ngFor="let star of [1,2,3,4,5]" 
+                        [name]="respuestas.p2 >= star ? 'star' : 'star-outline'" 
+                        (click)="respuestas.p2 = star">
+              </ion-icon>
+            </div>
+          </div>
+
+          <!-- PREGUNTA 3 -->
+          <div class="pregunta-box">
+            <p>3. Considero que este tipo de apoyo me ayudará a alcanzar mis metas académicas.</p>
+            <div class="estrellas">
+              <ion-icon *ngFor="let star of [1,2,3,4,5]" 
+                        [name]="respuestas.p3 >= star ? 'star' : 'star-outline'" 
+                        (click)="respuestas.p3 = star">
+              </ion-icon>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="footer-eval">
+          <ion-button expand="block" (click)="enviarEvaluacion()" [disabled]="enviandoEval">
+            {{ enviandoEval ? 'GUARDANDO...' : 'ENVIAR EVALUACIÓN' }}
+          </ion-button>
+        </div>
+
+      </div>
+    </ng-template>
+  </ion-modal>
 </ion-app>

@@ -20,7 +20,7 @@ import jsQR from 'jsqr'; // 🌟 IMPORTACIÓN DE LA LIBRERÍA WEB DE QR
 import { 
   IonContent, IonIcon, IonHeader, IonToolbar, IonButtons, IonButton,
   IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonList,IonModal,IonLabel,ToastController,AlertController, ActionSheetController,
-  IonPopover, IonSpinner
+  IonPopover, 
 } from '@ionic/angular/standalone';
 
 @Component({
@@ -30,7 +30,7 @@ import {
   standalone: true,
   imports: [
     IonContent, IonIcon, CommonModule, FormsModule, IonHeader, IonToolbar,
-    IonButtons, IonButton, IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonList,IonModal,IonLabel, IonSpinner,
+    IonButtons, IonButton, IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonList,IonModal,IonLabel,
     IonPopover 
   ]
 })
