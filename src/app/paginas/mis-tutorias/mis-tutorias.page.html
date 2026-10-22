@@ -1,70 +1,55 @@
 <ion-header class="ion-no-border">
   <ion-toolbar class="header-blanco">
-    
-    <!-- 🌟 LOGO A LA IZQUIERDA -->
     <img src="assets/logo-tutorias.png" alt="Tutorías entre Pares" class="logo-cabecera" slot="start" onerror="this.src='assets/logo-gietaes.png'">
 
-    <!-- 🌟 BOTONES AGRUPADOS A LA DERECHA -->
     <ion-buttons slot="end" style="display: flex; align-items: center; gap: 8px; margin-right: 10px;">
-
-     <!-- 🌟 1. SELECTOR DE PANEL DINÁMICO (Con lógica infalible) -->
       <div (click)="(tienePanelTutor || tienePanelAdmin || rolUsuario !== 'ESTUDIANTE') ? abrirMenuRol($event) : null" 
            [style.cursor]="(tienePanelTutor || tienePanelAdmin || rolUsuario !== 'ESTUDIANTE') ? 'pointer' : 'default'" 
            style="background: #f8fafc; border: 1.5px solid #003366; border-radius: 20px; padding: 4px 10px; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
-        
         <ion-icon [name]="iconoRolActual" style="color: #003366; font-size: 1.2rem; margin-right: 6px;"></ion-icon>
-        
         <span style="color: #003366; font-size: 0.7rem; font-weight: 900; white-space: nowrap; margin-right: 4px; text-transform: uppercase;">
           PANEL: {{ nombrePanelActual }}
         </span>
-        
-        <!-- 🌟 Muestra la flecha si tiene permisos extra o si está en un panel superior -->
         <ion-icon *ngIf="tienePanelTutor || tienePanelAdmin || rolUsuario !== 'ESTUDIANTE'" name="chevron-down-outline" style="color: #003366; font-size: 0.9rem;"></ion-icon>
       </div>
 
-      <!-- 🌟 2. NOTIFICACIONES -->
       <ion-button (click)="irANotificaciones()" style="position: relative; --background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 42px; height: 42px;">
         <ion-icon name="notifications-outline" style="color: #003366; font-size: 1.5rem;"></ion-icon>
         <div *ngIf="hayNotificacionesSinLeer" style="position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background-color: #EAB308; border-radius: 50%; border: 2px solid white;"></div>
       </ion-button>
 
-      <!-- 🌟 3. PERFIL DESPLEGABLE -->
       <ion-button (click)="abrirMenuPerfil($event)" style="--background: rgba(0, 51, 102, 0.05); --border-radius: 50%; width: 42px; height: 42px;">
         <ion-icon name="person-circle-outline" style="color: #003366; font-size: 1.8rem;"></ion-icon>
       </ion-button>
-
     </ion-buttons>
-
   </ion-toolbar>
   <div class="linea-separadora"></div>
 </ion-header>
 
-<ion-content class="fondo-app" [hidden]="scanActive">
-  <div class="ion-padding">
+<ion-content class="fondo-app">
+  <div class="ion-padding espaciador-inferior">
     <h2 class="titulo-azul">TUTORÍAS AGENDADAS:</h2>
 
     <p *ngIf="cargando" style="text-align: center; color: #666;">Cargando tus tutorías...</p>
-    
     <p *ngIf="!cargando && tutorias.length === 0" style="text-align: center; color: #666;">Aún no tienes tutorías en tu historial.</p>
 
-    <!-- 🌟 GUÍA PASO A PASO PARA CONTACTAR AL TUTOR -->
+    <!-- 🌟 GUÍA FORMAL (PUNTO 3) -->
     <div class="guia-contacto" *ngIf="!cargando && tutorias.length > 0" style="margin-bottom: 25px; background: rgba(16, 185, 129, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
       <h4 style="color: #003366; font-size: 0.95rem; font-weight: 800; margin-top: 0; margin-bottom: 12px; display: flex; align-items: center;">
-        <ion-icon name="chatbubbles-outline" style="font-size: 1.4rem; color: #10b981; margin-right: 6px;"></ion-icon>
-        ¿Qué hacer ahora?
+        <ion-icon name="information-circle-outline" style="font-size: 1.4rem; color: #10b981; margin-right: 6px;"></ion-icon>
+        Directrices de Gestión de Tutorías
       </h4>
-      <ol style="margin: 0; padding-left: 25px; color: #555; font-size: 0.85rem; line-height: 1.6;">
-        <li style="margin-bottom: 6px;"><strong>Desliza</strong> la tarjeta de tu tutoría hacia la izquierda o derecha</li>
-        <li style="margin-bottom: 6px;">Usa el botón celeste <strong>(QR)</strong> para invitar amigos a unirse a tu clase.</li>
-        <li style="margin-bottom: 6px;">Toca el botón verde de <strong>WhatsApp</strong> para coordinar con tu tutor.</li>
+      <ol style="margin: 0; padding-left: 25px; color: #475569; font-size: 0.85rem; line-height: 1.6;">
+        <li style="margin-bottom: 6px;">Para acceder a las opciones de interacción, deslice la tarjeta correspondiente hacia la izquierda o hacia la derecha.</li>
+        <li style="margin-bottom: 6px;">Utilice la opción del código QR para autorizar la integración de compañeros adicionales a su sesión de tutoría.</li>
+        <li style="margin-bottom: 6px;">Para fines de coordinación logística, comuníquese con su tutor asignado mediante la herramienta de WhatsApp.</li>
       </ol>
     </div>
 
-    <!-- TARJETAS DESLIZABLES -->
+    <!-- TARJETAS DESLIZABLES (PUNTO 1 Y 2) -->
     <ion-list style="background: transparent;" lines="none" *ngIf="!cargando">
       <ion-item-sliding *ngFor="let t of tutorias" style="background: transparent; margin-bottom: 15px;">
         
-        <!-- 🌟 DESLIZAR HACIA LA DERECHA (side="start") -->
         <ion-item-options side="start">
           <ion-item-option *ngIf="t.codigo && t.codigo !== 'SIN CÓDIGO' && t.estado !== 'REQUIERE_ADMIN'" color="tertiary" (click)="mostrarMiQR(t)">
             <ion-icon slot="icon-only" name="qr-code-outline" style="font-size: 1.8rem;"></ion-icon>
@@ -86,22 +71,41 @@
             <div class="info-texto">
               <h3>{{ t.materia }} <span *ngIf="t.codigo && t.codigo !== 'SIN CÓDIGO'">( {{ t.codigo }} )</span></h3>
               
-              <p style="color: #003366; font-weight: 900; font-size: 0.9rem; margin-bottom: 5px;">
-                Tutor: <span [style.color]="t.estado === 'REQUIERE_ADMIN' ? '#f97316' : '#003366'">{{ t.nombreContacto }}</span>
+              <p style="color: #EAB308; font-weight: 900; font-size: 0.85rem; margin: 5px 0;">
+                <ion-icon name="person-circle-outline" style="vertical-align: middle;"></ion-icon> 
+                <span [style.color]="t.estado === 'REQUIERE_ADMIN' ? '#f97316' : '#EAB308'">{{ t.nombreContacto }}</span>
               </p>
 
-              <p *ngIf="t.estado === 'REQUIERE_ADMIN'" style="font-size: 0.75rem; color: #ef4444; font-style: italic; margin-bottom: 5px;">
-                * Tu solicitud está en revisión por Coordinación.
+              <!-- 🌟 INFORMACIÓN COMPLETA DE LA CLASE -->
+              <p style="margin-bottom: 5px;">
+                <ion-icon name="calendar-outline"></ion-icon> {{ t.fecha_exacta || t.dia }} | 
+                <ion-icon name="time-outline"></ion-icon> {{ t.hora }}
+              </p>
+              
+              <p style="font-weight: bold; margin-bottom: 8px;">
+                <ion-icon name="business-outline"></ion-icon> Modalidad: {{ t.modalidad || 'Presencial' }}
               </p>
 
-              <p>{{ t.dia }}</p>
-              <p>{{ t.hora }}</p>
+              <!-- 🌟 INDICADOR DE PERSONAS UNIDAS -->
+              <div *ngIf="t.cantidadUnidos > 0 && t.estado !== 'REQUIERE_ADMIN'" style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 10px; font-size: 0.75rem; font-weight: bold; margin-top: 5px;">
+                <ion-icon name="people-outline" style="margin-right: 5px; font-size: 1rem;"></ion-icon>
+                {{ t.cantidadUnidos }} invitado(s) unido(s) a la clase
+              </div>
+
+              <!-- 🌟 ESTADO DE DERIVACIÓN (PUNTO 2) -->
+              <div *ngIf="t.estado === 'REQUIERE_ADMIN'" style="background: rgba(239, 68, 68, 0.2); border-left: 3px solid #ef4444; padding: 8px; margin-top: 8px; border-radius: 4px;">
+                <p style="font-size: 0.7rem; color: #fca5a5; font-style: italic; font-weight: bold; line-height: 1.2;">
+                  * Tu solicitud está siendo gestionada por el área de Coordinación para asignarte un nuevo tutor.
+                </p>
+              </div>
+
             </div>
-            <div class="punto-estado" [style.background]="t.color"></div>
+            
+            <!-- 🌟 PUNTO DE ESTADO (Cambia a amarillo si está en revisión) -->
+            <div class="punto-estado" [style.background]="t.estado === 'REQUIERE_ADMIN' ? '#fde047' : t.color"></div>
           </div>
         </ion-item>
 
-        <!-- 🌟 DESLIZAR HACIA LA IZQUIERDA (side="end") -->
         <ion-item-options side="end">
           <ion-item-option *ngIf="t.codigo && t.codigo !== 'SIN CÓDIGO' && t.estado !== 'REQUIERE_ADMIN'" color="tertiary" (click)="mostrarMiQR(t)">
             <ion-icon slot="icon-only" name="qr-code-outline" style="font-size: 1.8rem;"></ion-icon>
@@ -128,16 +132,15 @@
     <div class="guia-codigo" style="margin-top: 15px; margin-bottom: 30px; background: rgba(0, 51, 102, 0.04); padding: 15px; border-radius: 12px; border: 1px solid rgba(0, 51, 102, 0.1);">
       <h4 style="color: #003366; font-size: 0.95rem; font-weight: 800; margin-top: 0; margin-bottom: 12px; display: flex; align-items: center;">
         <ion-icon name="information-circle" style="font-size: 1.4rem; color: #EAB308; margin-right: 6px;"></ion-icon>
-        ¿Cómo unirme a una clase?
+        ¿Cómo unirse a una clase grupal?
       </h4>
       <ol style="margin: 0; padding-left: 25px; color: #555; font-size: 0.85rem; line-height: 1.6;">
-        <li style="margin-bottom: 6px;">Pide a un compañero el código de su tutoría agendada <strong style="color: #003366;">(Ej: MAT - 1234)</strong>.</li>
-        <li style="margin-bottom: 6px;">Toca el botón dorado <strong style="color: #003366;">(+)</strong> y elige ingresar código o escanear el QR.</li>
-        <li>¡Listo! Te unirás a su misma sesión, con el mismo tutor.</li>
+        <li style="margin-bottom: 6px;">Solicite al organizador el código de registro correspondiente a la tutoría <b>(Ej: MAT-1234)</b>.</li>
+        <li style="margin-bottom: 6px;">Presione el botón de adición <b>(+)</b> y seleccione la opción de ingreso manual o escaneo de código QR.</li>
+        <li>El sistema procesará la solicitud y lo integrará a la sesión programada.</li>
       </ol>
     </div>
 
-    <!-- LEYENDA -->
     <div class="leyenda">
       <span><div class="punto verde"></div> Confirmada</span>
       <span><div class="punto amarillo"></div> Pendiente</span>
@@ -145,13 +148,11 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- 🌟 MODAL: CÓDIGO MANUAL -->
-  <!-- ========================================== -->
+  <!-- MODALES EXTRAS (MANUAL, OPCIONES Y QR) SE MANTIENEN IGUALES -->
   <div class="overlay" *ngIf="mostrarModalCodigo">
     <div class="modal-amarillo animate__animated animate__zoomIn">
       <h3>INGRESA EL CÓDIGO:</h3>
-      <input type="text" placeholder="CD - 0101" class="input-codigo" [(ngModel)]="codigoIngresado">
+      <input type="text" placeholder="MAT-1234" class="input-codigo" [(ngModel)]="codigoIngresado">
       <div class="botones-modal">
         <button class="btn-azul" (click)="unirsePorCodigo()"><ion-icon name="checkmark-outline"></ion-icon></button>
         <button class="btn-azul" (click)="cerrarModalCodigo()"><ion-icon name="close-outline"></ion-icon></button>
@@ -159,32 +160,25 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- 🌟 MODAL: OPCIONES PARA UNIRSE -->
-  <!-- ========================================== -->
   <ion-modal [isOpen]="mostrarOpcionesUnirse" (didDismiss)="cerrarOpcionesUnirse()" class="modal-gietaes-centrado">
     <ng-template>
       <div style="display: flex; flex-direction: column; background: #ffffff; border-radius: 20px; overflow: hidden;">
-        
         <div style="background: #003366; padding: 18px 20px; border-bottom: 4px solid #EAB308; display: flex; justify-content: space-between; align-items: center;">
           <h3 style="color: #ffffff; font-size: 1.15rem; font-weight: 900; margin: 0; letter-spacing: 0.5px;">UNIRSE A UNA CLASE</h3>
           <ion-icon name="close-outline" (click)="cerrarOpcionesUnirse()" style="font-size: 2rem; color: #ffffff; cursor: pointer; opacity: 0.8;"></ion-icon>
         </div>
-
         <div style="padding: 25px 20px; background: #f8fafc;">
           <p style="margin: 0 0 20px 0; color: #475569; font-size: 0.95rem; text-align: center; font-weight: 500;">
             ¿Cómo deseas ingresar a la tutoría de tu compañero?
           </p>
-
           <ion-list style="background: transparent; padding: 0;">
-            <ion-item button lines="none" (click)="opcionEscanearQRElegida()" style="--background: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; --padding-start: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+            <ion-item button lines="none" (click)="activarEscanerWeb()" style="--background: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 15px; --padding-start: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
               <ion-icon name="scan-outline" slot="start" style="color: #003366; font-size: 1.8rem; margin-right: 15px;"></ion-icon>
               <ion-label>
                 <h2 style="color: #003366; font-weight: 900; font-size: 1.05rem;">Escanear Código QR</h2>
-                <p style="color: #64748b; font-size: 0.8rem; margin-top: 2px;">Usa la cámara de tu celular</p>
+                <p style="color: #64748b; font-size: 0.8rem; margin-top: 2px;">Usa la cámara de tu dispositivo</p>
               </ion-label>
             </ion-item>
-
             <ion-item button lines="none" (click)="opcionCodigoManualElegido()" style="--background: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; margin-bottom: 5px; --padding-start: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
               <ion-icon name="keypad-outline" slot="start" style="color: #003366; font-size: 1.8rem; margin-right: 15px;"></ion-icon>
               <ion-label>
@@ -194,98 +188,73 @@
             </ion-item>
           </ion-list>
         </div>
-
       </div>
     </ng-template>
   </ion-modal>
 
-  <!-- ========================================== -->
-  <!-- 🌟 MODAL: MOSTRAR MI CÓDIGO QR -->
-  <!-- ========================================== -->
   <ion-modal [isOpen]="mostrarModalMiQR" (didDismiss)="cerrarModalMiQR()" class="modal-gietaes-centrado">
     <ng-template>
       <div style="display: flex; flex-direction: column; background: #ffffff; height: 100%; align-items: center; justify-content: center; padding: 20px;">
-        
         <div style="width: 100%; display: flex; justify-content: flex-end; margin-bottom: 10px;">
           <ion-icon name="close-circle-outline" (click)="cerrarModalMiQR()" style="font-size: 2.2rem; color: #94a3b8; cursor: pointer;"></ion-icon>
         </div>
-
         <h2 style="color: #003366; font-weight: 900; margin-top: 0; text-align: center;">ÚNETE A MI TUTORÍA</h2>
         <p style="color: #64748b; text-align: center; font-size: 0.9rem; margin-bottom: 25px;">
           Muestra este código QR a tus compañeros para que lo escaneen y se unan a esta clase.
         </p>
-
         <div style="background: white; padding: 15px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 2px solid #EAB308;">
           <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + codigoQRGenerado" alt="Código QR" style="width: 220px; height: 220px;" />
         </div>
-
         <div style="margin-top: 25px; text-align: center;">
           <p style="color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; font-weight: bold; margin-bottom: 5px;">O dígitales el código:</p>
           <div style="background: #f8fafc; padding: 10px 20px; border-radius: 8px; border: 1px dashed #cbd5e1;">
             <span style="font-size: 1.5rem; font-weight: 900; color: #003366; letter-spacing: 2px;">{{ codigoQRGenerado }}</span>
           </div>
         </div>
-
       </div>
     </ng-template>
   </ion-modal>
 
-<!-- ========================================== -->
-  <!-- 🌟 POPOVER: CAMBIO DE PANEL -->
-  <!-- ========================================== -->
+  <!-- 🌟 POPOVERS DE LA CABECERA -->
   <ion-popover [isOpen]="menuRolAbierto" [event]="eventoRol" (didDismiss)="menuRolAbierto = false" mode="ios" style="--background: #ffffff; --width: 220px; --border-radius: 12px; --box-shadow: 0 10px 25px rgba(0, 51, 102, 0.15);">
     <ng-template>
       <ion-content class="ion-padding-vertical" style="--background: #ffffff;">
         <p style="margin: 0 15px 10px 15px; font-size: 0.75rem; color: #64748b; font-weight: bold; text-transform: uppercase;">Ir a panel:</p>
         <ion-list lines="none" style="background: transparent;">
-          
-          <!-- 🌟 ESTUDIANTE: Siempre visible para todos -->
           <ion-item button (click)="irAPanel('/tabs/horarios', 'ESTUDIANTE')" style="--background: transparent;">
             <ion-icon name="school-outline" slot="start" style="color: #003366;"></ion-icon>
             <ion-label style="font-weight: 700; color: #003366;">Estudiante</ion-label>
           </ion-item>
-          
-          <!-- 🌟 TUTOR: Siempre visible si tiene el permiso -->
           <ion-item button (click)="irAPanel('/tabs-tutor/tutorias', 'TUTOR')" *ngIf="tienePanelTutor" style="--background: transparent;">
             <ion-icon name="briefcase-outline" slot="start" style="color: #003366;"></ion-icon>
             <ion-label style="font-weight: 700; color: #003366;">Tutor</ion-label>
           </ion-item>
-          
-          <!-- 🌟 COORDINACIÓN: Siempre visible si es Admin o Coordinador -->
           <ion-item button (click)="irAPanel('/admin-postulaciones', 'COORDINADOR')" *ngIf="tienePanelAdmin" style="--background: transparent;">
             <ion-icon name="shield-checkmark-outline" slot="start" style="color: #003366;"></ion-icon>
             <ion-label style="font-weight: 700; color: #003366;">Coordinación</ion-label>
           </ion-item>
-
         </ion-list>
       </ion-content>
     </ng-template>
   </ion-popover>
 
-  <!-- ========================================== -->
-  <!-- 🌟 POPOVER: PERFIL Y OPCIONES -->
-  <!-- ========================================== -->
   <ion-popover [isOpen]="menuPerfilAbierto" [event]="eventoPerfil" (didDismiss)="menuPerfilAbierto = false" mode="ios" style="--background: #ffffff; --width: 280px; --border-radius: 12px; --box-shadow: 0 10px 25px rgba(0, 51, 102, 0.15);">
     <ng-template>
       <ion-content style="--background: #ffffff;">
-        
         <div style="background: #f8fafc; padding: 15px; border-bottom: 1px solid #e2e8f0; margin-bottom: 5px;">
           <p style="margin: 0; font-weight: 900; color: #003366; font-size: 0.95rem; line-height: 1.2;">{{ nombreUsuario }}</p>
           <p style="margin: 5px 0 0 0; color: #64748b; font-size: 0.75rem;">{{ correoUsuario }}</p>
         </div>
-
         <ion-list lines="none" style="background: transparent; padding-bottom: 10px;">
           <ion-item button (click)="irAPerfil()" style="--background: transparent;">
             <ion-icon name="settings-outline" slot="start" style="color: #475569;"></ion-icon>
             <ion-label style="font-weight: 600; color: #475569;">Mi Perfil</ion-label>
           </ion-item>
-          
           <ion-item button (click)="cerrarSesion()" style="--background: transparent;">
             <ion-icon name="log-out-outline" slot="start" style="color: #ef4444;"></ion-icon>
             <ion-label style="font-weight: 700; color: #ef4444;">Cerrar Sesión</ion-label>
           </ion-item>
         </ion-list>
-
       </ion-content>
     </ng-template>
   </ion-popover>
@@ -293,13 +262,15 @@
 </ion-content>
 
 <!-- ========================================== -->
-<!-- 🌟 INTERFAZ DE LA CÁMARA -->
+<!-- 🌟 INTERFAZ DE LA CÁMARA (API WEB - jsQR) -->
 <!-- ========================================== -->
 <div *ngIf="scanActive" class="interfaz-escaner animate__animated animate__fadeIn">
-  <div class="cuadro-enfoque"></div>
-  <p class="texto-escaner">Apunta la cámara al código QR de tu compañero</p>
+  <div class="video-container">
+    <video #videoElement autoplay playsinline></video>
+  </div>
+  <p class="texto-escaner">Apunta la cámara de tu dispositivo al código QR de tu compañero</p>
   
-  <ion-button color="danger" expand="block" class="btn-cancelar-scan" (click)="detenerEscaner()">
+  <ion-button color="danger" expand="block" class="btn-cancelar-scan" (click)="detenerEscanerWeb()">
     <ion-icon name="close-circle-outline" slot="start"></ion-icon>
     Cancelar Escaneo
   </ion-button>

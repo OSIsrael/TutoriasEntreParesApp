@@ -425,21 +425,23 @@ export class AdminPostulacionesPage {
     window.open(url, '_blank');
   }
 
-  async aceptar(post: any) {
+async aceptar(post: any) {
     const confirmar = await this.confirmarAccion(`¿Estás seguro de APROBAR a ${post.nombre} para dictar ${post.materia_postulada}?`,'');
     if (!confirmar) return; 
 
     try {
+      // 1. Procesamos la aceptación en la Base de Datos
       await this.dbService.aceptarTutor(post.id, post);
       
+      // 2. 🌟 Enviamos la Notificación de ÉXITO al estudiante
       try {
         await this.dbService.crearNotificacion({
-          titulo: '¡Postulación Aprobada!',
+          titulo: '¡Postulación Aprobada! 🎉',
           mensaje: `¡Felicidades! Tu solicitud para impartir "${post.materia_postulada}" ha sido aceptada. Ya puedes ver tu panel de tutor.`,
           tipo: 'POSTULACION',
-          correo_destino: post.correo, 
+          correo_destino: post.correo, // 🌟 Clave: Solo a él
           sede_destino: post.sede,
-          rol_destino: 'TODOS' 
+          rol_destino: 'ESTUDIANTE' // 🌟 Corregido (antes decía 'TODOS')
         });
       } catch (e) {
         console.warn('Postulación aceptada, pero falló la notificación', e);
@@ -453,19 +455,21 @@ export class AdminPostulacionesPage {
     }
   }
 
-  async rechazar(post: any) {
+ async rechazar(post: any) {
     const confirmar = await this.confirmarAccion(`¿Estás seguro de RECHAZAR a ${post.nombre} para dictar ${post.materia_postulada}?`,'');
     if (!confirmar) return;
 
     try {
+      // 1. Procesamos el rechazo en la Base de Datos
       await this.dbService.rechazarPostulacion(post.id);
       
+      // 2. 🌟 Enviamos la Notificación de RECHAZO al estudiante
       try {
         await this.dbService.crearNotificacion({
-          titulo: 'Postulación Rechazada',
-          mensaje: `Tu solicitud para ser tutor de "${post.materia_postulada}" no pudo ser aprobada en esta ocasión.`,
+          titulo: 'Postulación Rechazada ❌',
+          mensaje: `Tu solicitud para ser tutor de "${post.materia_postulada}" no pudo ser aprobada en esta ocasión. Sigue esforzándote.`,
           tipo: 'POSTULACION',
-          correo_destino: post.correo, 
+          correo_destino: post.correo, // 🌟 Clave: Solo a él
           sede_destino: post.sede,
           rol_destino: 'ESTUDIANTE' 
         });

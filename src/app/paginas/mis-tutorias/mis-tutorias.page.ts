@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { addIcons } from 'ionicons';
@@ -8,14 +8,14 @@ import {
   logOutOutline, peopleOutline, filterOutline, notificationsOutline, trashOutline,
   chatbubblesOutline, informationCircle, swapHorizontalOutline, schoolOutline, briefcaseOutline, shieldCheckmarkOutline, helpCircleOutline,
   qrCodeOutline, scanOutline, keypadOutline, closeCircleOutline,
-  chevronDownOutline, searchOutline
+  chevronDownOutline, searchOutline, timeOutline, calendarOutline, informationCircleOutline
 } from 'ionicons/icons';
 import { DatabaseService } from '../../services/database';
 import { Router } from '@angular/router'; 
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Firestore, collection, query, where, getDocs, doc, deleteDoc, getDoc } from '@angular/fire/firestore';
 import { Auth, signOut } from '@angular/fire/auth'; 
-import { BarcodeScanner } from '@capacitor-community/barcode-scanner'; // 🌟 ESCÁNER QR
+import jsQR from 'jsqr'; // 🌟 IMPORTACIÓN DE LA LIBRERÍA WEB DE QR
 
 import { 
   IonContent, IonIcon, IonHeader, IonToolbar, IonButtons, IonButton,
@@ -43,7 +43,6 @@ export class MisTutoriasPage implements OnInit, OnDestroy {
 
   private toastController = inject(ToastController);
   private alertController = inject(AlertController);
-  private actionSheetCtrl = inject(ActionSheetController);
 
   menuRolAbierto: boolean = false;
   eventoRol: any = null;
@@ -58,8 +57,14 @@ export class MisTutoriasPage implements OnInit, OnDestroy {
   
   mostrarModalMiQR: boolean = false;
   codigoQRGenerado: string = '';
-  
-  scanActive: boolean = false; // 🌟 VARIABLE PARA LA CÁMARA
+
+  // 🌟 VARIABLES PARA LA CÁMARA WEB
+  scanActive: boolean = false; 
+  @ViewChild('videoElement', { static: false }) videoElement!: ElementRef<HTMLVideoElement>;
+  canvasElement!: HTMLCanvasElement;
+  canvasContext!: CanvasRenderingContext2D | null;
+  videoStream: MediaStream | null = null;
+  scanInterval: any = null;
 
   tutorias: any[] = [];
   cargando: boolean = true;
@@ -83,7 +88,7 @@ export class MisTutoriasPage implements OnInit, OnDestroy {
   }
 
   constructor() {
-    addIcons({personCircleOutline,helpCircleOutline,swapHorizontalOutline,notificationsOutline,chatbubblesOutline,bookOutline,logoWhatsapp,trashOutline,addOutline,informationCircle,checkmarkOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,mailOutline,businessOutline,settingsOutline,logOutOutline,peopleOutline,filterOutline, qrCodeOutline, scanOutline, keypadOutline, closeCircleOutline, chevronDownOutline, searchOutline});
+    addIcons({personCircleOutline,helpCircleOutline,swapHorizontalOutline,notificationsOutline,chatbubblesOutline,bookOutline,logoWhatsapp,trashOutline,addOutline,informationCircle,checkmarkOutline,closeOutline,schoolOutline,briefcaseOutline,shieldCheckmarkOutline,mailOutline,businessOutline,settingsOutline,logOutOutline,peopleOutline,filterOutline, qrCodeOutline, scanOutline, keypadOutline, closeCircleOutline, chevronDownOutline, searchOutline, timeOutline, calendarOutline, informationCircleOutline});
   }
 
   ngOnInit() {
@@ -96,15 +101,11 @@ export class MisTutoriasPage implements OnInit, OnDestroy {
     this.nombreUsuario = localStorage.getItem('nombre') || '';
     const sede = localStorage.getItem('sede') || 'CUENCA';
     
-    // 🌟 1. CARGAMOS LOS PERMISOS AL INSTANTE DESDE MEMORIA PARA QUE LA FLECHA APAREZCA DE INMEDIATO
     this.tienePanelTutor = localStorage.getItem('tienePanelTutor') === 'true';
     this.tienePanelAdmin = localStorage.getItem('tienePanelAdmin') === 'true';
 
     await this.verificarNotificaciones(this.correoUsuario, this.rolUsuario, sede);
-    
-    // 🌟 2. ACTUALIZAMOS LOS PERMISOS POR DETRÁS (Asegurándonos que siempre sean correctos)
     await this.cargarPermisosPaneles(this.correoUsuario); 
-    
     await this.cargarMisTutorias();
   }
 
@@ -113,20 +114,16 @@ export class MisTutoriasPage implements OnInit, OnDestroy {
   // ==========================================
   async cargarPermisosPaneles(correo: string) {
     if (!correo) return;
-    
     try {
-      // Usamos getDoc (Búsqueda Directa por ID) que es muchísimo más rápida que una consulta Query
       const adminSnap = await getDoc(doc(this.firestore, 'Administradores', correo));
       if (adminSnap.exists()) {
         this.tienePanelAdmin = true;
         this.tienePanelTutor = true;
       }
-
       const tutorSnap = await getDoc(doc(this.firestore, 'Tutores', correo));
       if (tutorSnap.exists()) {
         this.tienePanelTutor = true;
       }
-
       const estSnap = await getDoc(doc(this.firestore, 'Estudiantes', correo));
       if (estSnap.exists()) {
         const rolDB = String(estSnap.data()['rol'] || estSnap.data()['Rol'] || '').toUpperCase().trim();
@@ -136,27 +133,16 @@ export class MisTutoriasPage implements OnInit, OnDestroy {
           this.tienePanelAdmin = true;
         }
       }
-
-      // 🌟 GUARDAMOS EN MEMORIA PARA QUE LA FLECHA CARGUE AL INSTANTE LA PRÓXIMA VEZ
       localStorage.setItem('tienePanelTutor', this.tienePanelTutor ? 'true' : 'false');
       localStorage.setItem('tienePanelAdmin', this.tienePanelAdmin ? 'true' : 'false');
-
     } catch (error) {
       console.error("Error consultando permisos:", error);
     }
-    
-    if (this.cdr) this.cdr.detectChanges(); // Forzamos dibujado de la flecha
+    if (this.cdr) this.cdr.detectChanges(); 
   }
 
-  abrirMenuRol(evento: any) {
-    this.eventoRol = evento;
-    this.menuRolAbierto = true;
-  }
-
-  abrirMenuPerfil(evento: any) {
-    this.eventoPerfil = evento;
-    this.menuPerfilAbierto = true;
-  }
+  abrirMenuRol(evento: any) { this.eventoRol = evento; this.menuRolAbierto = true; }
+  abrirMenuPerfil(evento: any) { this.eventoPerfil = evento; this.menuPerfilAbierto = true; }
 
   irAPanel(ruta: string, rolDestino: string) {
     this.menuRolAbierto = false; 
@@ -181,29 +167,18 @@ export class MisTutoriasPage implements OnInit, OnDestroy {
     }
   }
 
-  abrirGuia() {
-    this.menuPerfilAbierto = false;
-  }
-
-  irANotificaciones() {
-    this.router.navigate(['/notificaciones']);
-  }
+  abrirGuia() { this.menuPerfilAbierto = false; }
+  irANotificaciones() { this.router.navigate(['/notificaciones']); }
 
   // ==========================================
-  // 🌟 OTRAS FUNCIONES Y LISTADO DE TUTORÍAS
+  // 🌟 CARGA DE TUTORÍAS Y LECTURA DE GRUPOS
   // ==========================================
-
   async verificarNotificaciones(correo: string, rol: string, sede: string) {
     try {
       const notifs = await this.dbService.obtenerNotificacionesUsuario(correo, rol, sede);
-      const sinLeer = notifs.filter((n: any) => {
-        const leidas = n['leida_por'] || [];
-        return !leidas.includes(correo);
-      });
+      const sinLeer = notifs.filter((n: any) => !n['leida_por']?.includes(correo));
       this.hayNotificacionesSinLeer = sinLeer.length > 0;
-    } catch (error) {
-      console.error("Error al verificar notificaciones:", error);
-    }
+    } catch (error) {}
   }
 
  async cargarMisTutorias() {
@@ -213,12 +188,27 @@ export class MisTutoriasPage implements OnInit, OnDestroy {
     try {
       const qEstudiante = query(collection(this.firestore, 'Reservas'), where('correoEstudiante', '==', this.correoUsuario));
       const snapshot = await getDocs(qEstudiante);
+      
+      // Consultamos toda la tabla para contar cuántos se han unido a cada código
+      const qTotalReservas = query(collection(this.firestore, 'Reservas'));
+      const snapshotTotal = await getDocs(qTotalReservas);
+      const conteoPorCodigo: { [codigo: string]: number } = {};
+
+      snapshotTotal.forEach(doc => {
+        const codigoClase = doc.data()['codigo'];
+        if (codigoClase && codigoClase !== 'SIN CÓDIGO') {
+          // Contamos a todos (incluyendo al dueño), por lo que restaremos 1 luego
+          conteoPorCodigo[codigoClase] = (conteoPorCodigo[codigoClase] || 0) + 1;
+        }
+      });
+
       const hoy = new Date();
       hoy.setHours(0, 0, 0, 0); 
 
       for (const documento of snapshot.docs) {
         const res = documento.data();
         
+        // Verificamos si la fecha exacta ya pasó para eliminarla de la bandeja
         if (res['fecha_solicitud'] && res['dia_elegido'] !== 'Por definir') {
           const fechaExactaDeLaClase = this.calcularFechaExacta(res['fecha_solicitud'], res['dia_elegido'] || res['dia'], res['hora_elegida'] || res['hora']);
           fechaExactaDeLaClase.setHours(23, 59, 59, 999);
@@ -229,9 +219,7 @@ export class MisTutoriasPage implements OnInit, OnDestroy {
           }
         }
 
-        if (res['estado'] === 'CANCELADA') {
-          continue; 
-        }
+        if (res['estado'] === 'CANCELADA') continue; 
 
         let colorEstado = '#fde047'; 
         let nombreTutorMostrar = res['nombreTutor'];
@@ -241,16 +229,23 @@ export class MisTutoriasPage implements OnInit, OnDestroy {
 
         if (res['estado'] === 'REQUIERE_ADMIN') {
           colorEstado = '#f97316'; 
-          nombreTutorMostrar = 'Buscando tutor...';
+          nombreTutorMostrar = 'Asignando nuevo tutor...';
           celularTutorMostrar = null; 
         }
+
+        const codigoEval = res['codigo'] || 'SIN CÓDIGO';
+        // 🌟 CALCULAMOS LA CANTIDAD DE INVITADOS (Total inscritos al código - 1 el propio estudiante)
+        const cantidadUnidos = codigoEval !== 'SIN CÓDIGO' ? (conteoPorCodigo[codigoEval] - 1) : 0;
 
         const tutoriaFormateada = {
           id: documento.id,
           materia: res['materia'],
-          codigo: res['codigo'] || 'SIN CÓDIGO',
+          codigo: codigoEval,
           dia: res['dia_elegido'] || res['dia'] || 'Por definir',
           hora: res['hora_elegida'] || res['hora'] || 'Por definir',
+          fecha_exacta: res['fecha_exacta'] || '', // 🌟 LEE LA FECHA EXACTA
+          modalidad: res['modalidad'] || 'Presencial', // 🌟 LEE LA MODALIDAD
+          cantidadUnidos: cantidadUnidos > 0 ? cantidadUnidos : 0, // 🌟 GUARDA LA CANTIDAD DE INVITADOS
           color: colorEstado,
           estado: res['estado'],
           celularContacto: celularTutorMostrar, 
@@ -384,7 +379,6 @@ export class MisTutoriasPage implements OnInit, OnDestroy {
 
     const horaStr = horaRango.split('-')[0].trim();
     const [hora, min] = horaStr.split(':').map(Number);
-
     const ahora = new Date();
     let fecha = new Date();
     fecha.setHours(hora, min, 0, 0);
@@ -437,54 +431,75 @@ export class MisTutoriasPage implements OnInit, OnDestroy {
   }
 
   // ==========================================
-  // 🌟 LÓGICA DE LA CÁMARA PARA ESCANEAR QR (NATIVA Y 100% OPERATIVA)
+  // 🌟 LÓGICA DE LA CÁMARA PARA ESCANEAR QR (NATIVA WEB / NAVEGADOR)
   // ==========================================
-  opcionEscanearQRElegida() {
+  activarEscanerWeb() {
     this.cerrarOpcionesUnirse();
-    this.abrirEscanerQR();
-  }
+    this.scanActive = true;
+    this.cdr.detectChanges(); // Forzamos el render para que exista el videoElement
 
-  async abrirEscanerQR() {
-    try {
-      const status = await BarcodeScanner.checkPermission({ force: true });
-
-      if (status.granted) {
-        this.scanActive = true;
-        document.querySelector('body')?.classList.add('scanner-active');
-        await BarcodeScanner.hideBackground();
-
-        const result = await BarcodeScanner.startScan();
-
-        if (result.hasContent) {
-          this.detenerEscaner();
-          this.codigoIngresado = result.content;
-          this.unirsePorCodigo(); // Ingresa el código y se une automáticamente
+    setTimeout(async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        this.videoStream = stream;
+        
+        if (this.videoElement && this.videoElement.nativeElement) {
+          this.videoElement.nativeElement.srcObject = stream;
+          this.videoElement.nativeElement.setAttribute("playsinline", "true"); // Requiere Safari/iOS
+          this.videoElement.nativeElement.play();
+          
+          this.canvasElement = document.createElement("canvas");
+          this.canvasContext = this.canvasElement.getContext("2d");
+          
+          requestAnimationFrame(this.escanearCuadro.bind(this));
         }
-      } else {
-        this.mostrarAviso('Necesitas dar permiso a la cámara para escanear el QR.', 'error');
+      } catch (err) {
+        console.error("Error al acceder a la cámara:", err);
+        this.mostrarAviso('No pudimos acceder a tu cámara. Asegúrate de dar los permisos en el navegador.', 'error');
+        this.detenerEscanerWeb();
       }
-    } catch (error) {
-      console.error('Error con el escáner:', error);
-      this.detenerEscaner();
-      this.mostrarAviso('El escáner de cámara solo funciona en un dispositivo físico.', 'info');
-    }
+    }, 200);
   }
 
-  detenerEscaner() {
-    BarcodeScanner.showBackground();
-    BarcodeScanner.stopScan();
-    document.querySelector('body')?.classList.remove('scanner-active');
+  escanearCuadro() {
+    if (!this.scanActive || !this.videoElement || !this.canvasContext) return;
+    
+    if (this.videoElement.nativeElement.readyState === this.videoElement.nativeElement.HAVE_ENOUGH_DATA) {
+      this.canvasElement.height = this.videoElement.nativeElement.videoHeight;
+      this.canvasElement.width = this.videoElement.nativeElement.videoWidth;
+      
+      this.canvasContext.drawImage(this.videoElement.nativeElement, 0, 0, this.canvasElement.width, this.canvasElement.height);
+      
+      const imageData = this.canvasContext.getImageData(0, 0, this.canvasElement.width, this.canvasElement.height);
+      const codigoEncontrado = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+
+      if (codigoEncontrado) {
+        // Detenemos la cámara
+        this.detenerEscanerWeb();
+        this.codigoIngresado = codigoEncontrado.data; // Aquí guardamos el código leído
+        this.unirsePorCodigo(); // Y ejecutamos el proceso de unirse directamente
+        return;
+      }
+    }
+    
+    // Si no encontró nada, sigue buscando en el siguiente frame
+    requestAnimationFrame(this.escanearCuadro.bind(this));
+  }
+
+  detenerEscanerWeb() {
     this.scanActive = false;
+    if (this.videoStream) {
+      this.videoStream.getTracks().forEach(track => track.stop());
+      this.videoStream = null;
+    }
   }
 
   ngOnDestroy() {
-    if (this.scanActive) {
-      this.detenerEscaner();
-    }
+    this.detenerEscanerWeb();
   }
 
   // ==========================================
-  // 🌟 ALERTAS
+  // 🌟 ALERTAS NATIVAS
   // ==========================================
   async mostrarAviso(mensaje: string, tipo: 'exito' | 'error' | 'advertencia' | 'info' = 'exito') {
     let icono = 'checkmark-circle-outline';

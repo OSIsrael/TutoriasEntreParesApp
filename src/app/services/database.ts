@@ -21,11 +21,9 @@ export class DatabaseService {
   public firestore = inject(Firestore);
   public storage = inject(Storage);
 
-  // 🌟 ELIMINAMOS LA URL QUEMADA Y AGREGAMOS LAS VARIABLES DINÁMICAS
   scriptURL_dinamica: string = '';
   periodo_actual: string = '';
 
-// 🌟 AHORA ACEPTA UN PARÁMETRO PARA FORZAR LA ACTUALIZACIÓN
   async cargarConfiguracionGlobal(forzarActualizacion: boolean = false) {
     if (this.scriptURL_dinamica && !forzarActualizacion) return; 
 
@@ -42,7 +40,6 @@ export class DatabaseService {
     }
   }
 
-  // 🌟 FUNCIÓN AUXILIAR PARA FORMATEAR HORARIOS DEL TUTOR HACIA EXCEL
   formatearHorariosParaExcel(horariosFusionados: any): any {
     let horariosExcel: any = { LUNES: '', MARTES: '', MIERCOLES: '', JUEVES: '', VIERNES: '', SABADO: '' };
     if (horariosFusionados) {
@@ -62,13 +59,12 @@ export class DatabaseService {
 
   async obtenerCatalogosDesdeExcel(): Promise<{carreras: string[], materias: MateriaCatalogo[]}> {
     try {
-      await this.cargarConfiguracionGlobal(); // 🌟 Asegura que la URL exista
+      await this.cargarConfiguracionGlobal(); 
       if (!this.scriptURL_dinamica) return { carreras: [], materias: [] };
 
       let urlLimpia = this.scriptURL_dinamica.split('?')[0]; 
       const url = `${urlLimpia}?api=true`;
       
-      console.log("[DEBUG GIETAES] Consultando URL final:", url);
       const response = await fetch(url);
       const data = await response.json();
       
@@ -104,8 +100,6 @@ export class DatabaseService {
   async guardarPostulacion(datosPostulacion: any): Promise<boolean> {
     try {
       const postulacionesRef = collection(this.firestore, 'Postulaciones');
-      
-      // 🌟 Le inyectamos el periodo a la postulación antes de guardarla
       await this.cargarConfiguracionGlobal();
       const paqueteFinal = { ...datosPostulacion, periodo: this.periodo_actual };
       await addDoc(postulacionesRef, paqueteFinal);
@@ -146,21 +140,13 @@ export class DatabaseService {
     }
   }
 
-  // ==========================================
-  // SEGURIDAD ADMIN
-  // ==========================================
   async verificarSiEsAdmin(correo: string): Promise<boolean> {
     try {
       const correoLimpio = correo.toLowerCase().trim();
-      const q = query(
-        collection(this.firestore, 'Administradores'), 
-        where('correo_google', '==', correoLimpio)
-      );
-      
+      const q = query(collection(this.firestore, 'Administradores'), where('correo_google', '==', correoLimpio));
       const snapshot = await getDocs(q);
       return !snapshot.empty; 
     } catch (error) {
-      console.error("Error al verificar Admin:", error);
       return false;
     }
   }
@@ -203,27 +189,22 @@ export class DatabaseService {
       return { existe: false }; 
       
     } catch (error) {
-      console.error("Error al verificar existencia de usuario:", error);
       return { existe: false, error: 'Error de conexión con la base de datos' };
     }
   }
 
  async registrarNuevoEstudiante(datos: any) {
     try {
-      // 1. Cargamos la configuración (URL y Periodo) una sola vez
       await this.cargarConfiguracionGlobal();
 
-      // 2. Preparamos el paquete inyectándole el periodo actual
       const datosCompletos = {
         ...datos,
         ultimo_periodo_activo: this.periodo_actual
       };
       
-      // 3. Guardamos en Firebase (¡Usando datosCompletos!)
       const docRef = doc(this.firestore, 'Estudiantes', datos.correo);
       await setDoc(docRef, datosCompletos);
 
-      // 4. Guardamos en Google Sheets
       if (this.scriptURL_dinamica) {
         await fetch(this.scriptURL_dinamica, {
           method: 'POST',
@@ -241,9 +222,6 @@ export class DatabaseService {
     }
   }
 
-  // ==========================================
-  // GESTIÓN POSTULACIONES Y TUTORES
-  // ==========================================
   async enviarPostulacion(paquete: any) {
     const nuevaRef = doc(collection(this.firestore, 'Postulaciones'));
     await this.cargarConfiguracionGlobal();
@@ -263,7 +241,7 @@ export class DatabaseService {
       let listaMaterias: string[] = [];
       let horariosFusionados: any = {};
       
-      await this.cargarConfiguracionGlobal(); // 🌟 Obtenemos el periodo
+      await this.cargarConfiguracionGlobal(); 
 
       if (tutorSnap.exists()) {
         const datosPrevios = tutorSnap.data();
@@ -283,7 +261,7 @@ export class DatabaseService {
         await updateDoc(tutorRef, { 
           materias: listaMaterias,
           horarios: horariosFusionados,
-          ultimo_periodo_activo: this.periodo_actual // 🌟 ACTUALIZAMOS SU PERIODO
+          ultimo_periodo_activo: this.periodo_actual 
         });
 
       } else {
@@ -304,7 +282,7 @@ export class DatabaseService {
           horarios: horariosFusionados, 
           estado: 'ACTIVO',
           rol: 'TUTOR',
-          ultimo_periodo_activo: this.periodo_actual // 🌟 SE REGISTRA CON EL PERIODO ACTUAL
+          ultimo_periodo_activo: this.periodo_actual 
         };
         await setDoc(tutorRef, nuevoTutor);
       }
@@ -374,14 +352,13 @@ export class DatabaseService {
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
-      console.error('Error obteniendo tutores:', error);
       return [];
     }
   }
 
   async obtenerCoordinadoresDesdeExcel(): Promise<any[]> {
     try {
-      await this.cargarConfiguracionGlobal(); // 🌟 Actualizado para usar enlace dinámico
+      await this.cargarConfiguracionGlobal(); 
       if (!this.scriptURL_dinamica) return [];
 
       let urlLimpia = this.scriptURL_dinamica.split('?')[0]; 
@@ -413,9 +390,6 @@ export class DatabaseService {
     }
   }
 
-  // ==========================================
-  // ESTUDIANTES Y RESERVAS
-  // ==========================================
   async guardarEstudiante(uid: string, datos: any) {
     const userRef = doc(this.firestore, `Estudiantes/${uid}`);
     return setDoc(userRef, datos, { merge: true });
@@ -426,10 +400,12 @@ export class DatabaseService {
     return collectionData(horariosRef, { idField: 'id' });
   } 
 
-  generarCodigoTutoria(materia: string): string {
-    const siglas = materia.substring(0, 3).toUpperCase();
+generarCodigoTutoria(materia: string): string {
+    // Reemplaza tildes por letras normales para un código limpio
+    const materiaLimpia = materia.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const siglas = materiaLimpia.substring(0, 3).toUpperCase();
     const numeros = Math.floor(1000 + Math.random() * 9000); 
-    return `${siglas} - ${numeros}`;
+    return `${siglas}-${numeros}`;
   }
 
   async agendarTutoria(datosReserva: any) {
@@ -441,11 +417,11 @@ export class DatabaseService {
       codigo: this.generarCodigoTutoria(datosReserva.materia),
       estado: 'PENDIENTE', 
       fecha_solicitud: new Date().toISOString(),
-      periodo: this.periodo_actual // 🌟 Etiqueta de periodo para las tutorías
+      periodo: this.periodo_actual 
     };
 
     try {
-      await addDoc(collection(this.firestore, 'Tutorias_Agendadas'), nuevaReserva); // Corregido para incluir todo
+      await addDoc(collection(this.firestore, 'Tutorias_Agendadas'), nuevaReserva); 
       
       await this.crearNotificacion({
         titulo: '¡Nueva Tutoría Agendada!',
@@ -472,7 +448,6 @@ export class DatabaseService {
       const todosLosDocs = [...snapTutor.docs, ...snapEstudiante.docs];
       return todosLosDocs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (e) {
-      console.error("DB_SERVICE: Error crítico trayendo tutorías", e);
       return [];
     }
   }
@@ -491,14 +466,10 @@ export class DatabaseService {
 
       return 'ESTUDIANTE';
     } catch (error) {
-      console.error("Error al obtener rol:", error);
       return 'ESTUDIANTE'; 
     }
   }
 
-  // ==========================================
-  // UNIRSE POR CÓDIGO
-  // ==========================================
   async unirseATutoriaPorCodigo(codigoIngresado: string, correoUsuario: string, nombreUsuario: string) {
     try {
       const codigoLimpio = codigoIngresado.toUpperCase().trim();
@@ -539,13 +510,12 @@ export class DatabaseService {
         codigo: codigoLimpio, 
         estado: tutoriaOriginal['estado'], 
         fecha_solicitud: new Date().toISOString(),
-        periodo: tutoriaOriginal['periodo'] || this.periodo_actual // 🌟 Hereda el periodo
+        periodo: tutoriaOriginal['periodo'] || this.periodo_actual 
       };
 
       await addDoc(collection(this.firestore, 'Reservas'), nuevaReserva);
       return { exito: true, mensaje: `¡Te has unido a la tutoría de ${tutoriaOriginal['materia']} con éxito!` };
     } catch (error) {
-      console.error("Error al unirse por código:", error);
       return { exito: false, mensaje: 'Ocurrió un error en el servidor.' };
     }
   }
@@ -560,7 +530,6 @@ export class DatabaseService {
       const querySnapshot = await getDocs(q);
       return !querySnapshot.empty; 
     } catch (error) {
-      console.error("Error al verificar postulaciones pendientes:", error);
       return false;
     }
   }
@@ -570,12 +539,10 @@ export class DatabaseService {
       const postRef = doc(this.firestore, 'Postulaciones', idPostulacion);
       await updateDoc(postRef, { estado_aprobacion: 'RECHAZADO' });
     } catch (error) {
-      console.error("Error al rechazar postulación:", error);
       throw error;
     }
   }
 
-  // 🌟 MOTOR MAESTRO DE NOTIFICACIONES
   async crearNotificacion(datos: any) {
     try {
       const notificacionRef = doc(collection(this.firestore, 'Notificaciones'));
@@ -610,7 +577,6 @@ export class DatabaseService {
 
       return notificaciones.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
     } catch (error) {
-      console.error("Error obteniendo notificaciones:", error);
       return [];
     }
   }
@@ -629,9 +595,7 @@ export class DatabaseService {
           await updateDoc(notifRef, { leida_por: leidaPor });
         }
       }
-    } catch (error) {
-      console.error("Error al marcar como leída:", error);
-    }
+    } catch (error) {}
   }
 
   async obtenerEstudiantesPorCarrera(carrera: string) {
@@ -640,7 +604,6 @@ export class DatabaseService {
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => doc.data());
     } catch (error) {
-      console.error("Error obteniendo estudiantes:", error);
       return [];
     }
   }
@@ -658,7 +621,6 @@ export class DatabaseService {
       const idUnico = `${nombreLimpio}_${new Date().getTime()}`;
       const nuevaRef = doc(this.firestore, 'Asistencias', idUnico);
       
-      // 🌟 Añadimos el periodo al guardar la asistencia en Firebase
       const asistenciaFinal = { ...datosAsistencia, periodo: this.periodo_actual };
       await setDoc(nuevaRef, asistenciaFinal);
 
@@ -677,32 +639,32 @@ export class DatabaseService {
       }
       
     } catch (error) {
-      console.error('Error al guardar asistencia:', error);
       throw error;
     }
   }
 
-  async obtenerDocentesDesdeExcel(): Promise<string[]> {
+  // 🌟 FUNCIÓN CORREGIDA: AHORA RECIBE EL PARÁMETRO DE SEDE
+  async obtenerDocentesDesdeExcel(sedeFiltro: string = 'GLOBAL'): Promise<string[]> {
     try {
       await this.cargarConfiguracionGlobal();
       if (!this.scriptURL_dinamica) return [];
 
       let urlLimpia = this.scriptURL_dinamica.split('?')[0];
-      const url = `${urlLimpia}?api=true`;
+      // 🌟 Añadimos la sede a la URL para que el script la lea
+      const url = `${urlLimpia}?api=true&sede=${sedeFiltro}`;
+      
       const response = await fetch(url);
       const data = await response.json();
       return data.docentes || [];
     } catch (error) {
-      console.error("Error obteniendo docentes:", error);
       return [];
     }
   }
-async subirPDFRendimiento(archivo: File, cedula: string): Promise<string> {
-    
-    const CLOUD_NAME = 'ostzs4f1';       // Ej: 'dzh7q8r9w'
-    const UPLOAD_PRESET = 's7tcq2rz'; // Ej: 'ml_default'
 
-    // Endpoint oficial para subir archivos raw (como PDFs) a tu nube
+  async subirPDFRendimiento(archivo: File, cedula: string): Promise<string> {
+    const CLOUD_NAME = 'ostzs4f1';       
+    const UPLOAD_PRESET = 's7tcq2rz'; 
+
     const urlCloudinary = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`;
 
     const formData = new FormData();
@@ -710,7 +672,6 @@ async subirPDFRendimiento(archivo: File, cedula: string): Promise<string> {
     formData.append('upload_preset', UPLOAD_PRESET);
 
     try {
-      // Usamos fetch nativo para enviar el PDF directamente a la nube
       const respuesta = await fetch(urlCloudinary, {
         method: 'POST',
         body: formData
@@ -719,12 +680,11 @@ async subirPDFRendimiento(archivo: File, cedula: string): Promise<string> {
       const data = await respuesta.json();
       
       if (data.secure_url) {
-        return data.secure_url; // Este es el link público del PDF para el Admin
+        return data.secure_url; 
       } else {
         throw new Error('Cloudinary no devolvió la URL de descarga.');
       }
     } catch (error) {
-      console.error("Error al subir el PDF externo:", error);
       throw error;
     }
   }

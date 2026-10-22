@@ -195,12 +195,12 @@ async enviarPostulaciones() {
     this.estadoVista = 'CARGANDO';
 
     try {
-      const correo = localStorage.getItem('correo');
+      const correo = localStorage.getItem('correo') || '';
       const nombre = localStorage.getItem('nombre');
       const celular = localStorage.getItem('celular') || '';
       const cedula = localStorage.getItem('cedula') || '';
 
-      // 1. Subir el PDF a Storage y obtener el link (esto es lo único que toma unos segundos)
+      // 1. Subir el PDF a Storage y obtener el link
       const urlRendimiento = await this.dbService.subirPDFRendimiento(this.archivoPDF, cedula);
 
       // 2. Construir el documento con el link incluido
@@ -228,7 +228,7 @@ async enviarPostulaciones() {
         // Agregamos el guardado de la postulación a la "cola" de ejecución paralela
         peticionesEnParalelo.push(this.dbService.enviarPostulacion(documentoPostulacion)); 
 
-        // Agregamos la notificación a la misma "cola"
+        // 🌟 1. Notificación para los Coordinadores (Para que revisen la solicitud)
         peticionesEnParalelo.push(this.dbService.crearNotificacion({
           titulo: 'Nueva Postulación de Tutor',
           mensaje: `${nombre} postuló para dictar ${nombreMateria}.`,
@@ -236,12 +236,21 @@ async enviarPostulaciones() {
           rol_destino: 'ADMIN', 
           sede_destino: this.sedeUsuario 
         }));
+        
+        // 🌟 2. NUEVO: Notificación para el ESTUDIANTE (Confirmación de envío)
+        peticionesEnParalelo.push(this.dbService.crearNotificacion({
+          titulo: 'Postulación en Revisión ⏳',
+          mensaje: `Tu solicitud para ser tutor de ${nombreMateria} ha sido recibida y está siendo evaluada por Coordinación.`,
+          tipo: 'POSTULACION',
+          correo_destino: correo, // Dirigida específicamente al estudiante que postula
+          sede_destino: this.sedeUsuario 
+        }));
       }
 
       // ⚡ Ejecutamos TODA la lista al mismo tiempo. Lo que tomaba 5 segundos ahora toma milisegundos.
       await Promise.all(peticionesEnParalelo);
 
-      this.mostrarAviso("Postulaciones enviadas con éxito.",'exito');
+      this.mostrarAviso("Postulaciones enviadas con éxito. Revisa tu campanita de notificaciones.",'exito');
       this.navCtrl.navigateBack('/tabs/perfil');
 
     } catch (error) {

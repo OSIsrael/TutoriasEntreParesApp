@@ -23,24 +23,23 @@
   background: #ffffff;
   border: 2px solid #cbd5e1;
   border-radius: 10px;
-  padding: 0 15px; /* Espacio a los lados */
+  padding: 0 15px; 
   transition: all 0.3s ease;
 
-  /* Efecto foco sutil (opcional) */
   &:focus-within {
-    border-color: #EAB308; /* Color dorado de la línea gráfica */
+    border-color: #EAB308; 
     box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1);
   }
 }
 
 .icono-lupa {
   font-size: 1.3rem;
-  color: #64748b; /* Gris azulado sutil */
-  margin-right: 10px; /* Separación con el texto */
+  color: #64748b; 
+  margin-right: 10px; 
 }
 
 .input-busqueda {
-  flex: 1; /* Ocupa todo el espacio restante */
+  flex: 1; 
   border: none;
   outline: none;
   background: transparent;
@@ -53,511 +52,225 @@
   }
 }
 
-/* --- ESTILOS DE LA TABLA (ANTIGUO SCRIPT) --- */
-.asignatura-block {
-  margin-bottom: 25px;
-}
+.asignatura-block { margin-bottom: 25px; }
 
 .seccion-tabla { 
-  width: 100%; 
-  max-width: 1000px; 
-  margin: 0 auto; 
-  background: white; 
-  border-radius: 10px; 
-  overflow: hidden; 
-  border: 1px solid #cbd5e1;
+  width: 100%; max-width: 1000px; margin: 0 auto; background: white; 
+  border-radius: 10px; overflow: hidden; border: 1px solid #cbd5e1;
   box-shadow: 0 4px 6px rgba(0,0,0,0.05);
 }
 
 .header-asig-azul { 
-  padding: 12px; 
-  background: #003366; 
-  color: white; 
-  font-weight: 800; 
-  text-align: center; 
-  text-transform: uppercase; 
-  font-size: 0.9rem; 
+  padding: 12px; background: #003366; color: white; font-weight: 800; 
+  text-align: center; text-transform: uppercase; font-size: 0.9rem; 
 }
 
-table { 
-  width: 100%; 
-  border-collapse: collapse; 
-  table-layout: auto; 
-}
+table { width: 100%; border-collapse: collapse; table-layout: auto; }
 
 th, td { 
-  padding: 8px 2px; 
-  border: 1px solid #cbd5e1; 
-  text-align: center; 
-  font-size: 0.75rem; 
-  word-wrap: break-word; 
-  white-space: pre-line; /* Mantiene el salto de línea en las horas */
+  padding: 8px 2px; border: 1px solid #cbd5e1; text-align: center; 
+  font-size: 0.75rem; word-wrap: break-word; white-space: pre-line; 
 }
 
 th { background: #f1f5f9; color: #003366; font-weight: 800; font-size: 0.7rem; }
 
 .col-nombre {
-  font-weight: 700; 
-  text-align: left; 
-  font-size: 0.65rem; 
-  padding-left: 5px;
-  color: #003366;
+  font-weight: 700; text-align: left; font-size: 0.65rem; padding-left: 5px; color: #003366;
 }
 
-/* Celdas con Horario */
 .celda-llena { 
-  background: #e2e8f0; 
-  cursor: pointer; 
-  color: #003366;
-  font-weight: bold;
+  background: #e2e8f0; cursor: pointer; color: #003366; font-weight: bold;
+  transition: all 0.3s ease-in-out;
+}
+.celda-llena:hover {
+  background: #003366; color: #ffffff; box-shadow: inset 0 0 0 2px #EAB308;
 }
 .celda-llena:active {
-  background: #cbd5e1;
+  background: #EAB308; color: #003366;
 }
 
 .btn-wa-icon { 
-  text-decoration: none; 
-  color: #25D366; 
-  font-size: 1.5rem; 
-  display: flex; 
-  justify-content: center; 
-  align-items: center;
+  text-decoration: none; color: #25D366; font-size: 1.5rem; 
+  display: flex; justify-content: center; align-items: center;
 }
 
-/* --- ESTILOS DEL MODAL AMARILLO (Confirmación) --- */
 .overlay { 
   position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
-  background: rgba(0,0,0,0.6); 
-  display: flex; justify-content: center; align-items: center; z-index: 100; 
+  background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 100; 
 }
 
 .modal-amarillo {
   background: #003366; padding: 30px 20px; border-radius: 20px; text-align: center;
-  border: 2px solid #EAB308; width: 80%; max-width: 300px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-  
+  border: 2px solid #EAB308; width: 90%; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  max-height: 90vh; overflow-y: auto;
   h3 { color: #ffffff; font-weight: 900; margin-top: 0; margin-bottom: 15px; font-size: 1.2rem; line-height: 1.3;}
-  
-  .botones-modal { display: flex; justify-content: center; gap: 30px; }
-  
+  .botones-modal { display: flex; justify-content: center; gap: 30px; margin-top: 15px; }
   .btn-azul {
     background: white; color: #003366; width: 60px; height: 60px; border-radius: 50%;
     font-size: 2rem; display: flex; justify-content: center; align-items: center; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.3); cursor: pointer;
   }
-  .btn-rojo { background: #ef4444; }
-}
-.seccion-coordinacion { 
-  border: 2px solid #003366; 
-  border-radius: 12px; 
-  margin: 20px auto; 
-  overflow: hidden; 
-  width: 100%; 
-  max-width: 1000px; 
-  box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+  .btn-rojo { background: #ef4444; color: white; }
 }
 
-.header-bloque-fijo { 
-  width: 100%; 
-  background-color: #003366 !important; 
-  color: white !important; 
-  border-collapse: collapse; 
-  table-layout: fixed; 
-}
-
-.celda-materia-fija { 
-  padding: 10px; 
-  text-align: center; 
-  font-weight: 800; 
-  border: 1px solid rgba(255,255,255,0.2); 
-  font-size: 0.8rem; 
-}
-
-.celda-contacto-fija { 
-  text-align: center; 
-  font-size: 0.75rem; 
-  border: 1px solid rgba(255,255,255,0.2); 
-  padding: 10px;
-}
-
-.fila-nombre-fija { 
-  padding: 10px; 
-  text-align: center; 
-  font-weight: 700; 
-  background: rgba(255,255,255,0.1) !important; 
-  font-size: 0.9rem; 
-}
-
-.fila-tutorias-fija { 
-  padding: 8px; 
-  text-align: center; 
-  font-size: 0.75rem; 
-  border: 1px solid rgba(255,255,255,0.2); 
-}
-
-.wa-burbuja-fija { 
-  background: white !important; 
-  color: #25D366 !important; 
-  padding: 5px 12px; 
-  border-radius: 15px; 
-  text-decoration: none; 
-  font-weight: bold; 
-  font-size: 0.85rem; 
-  display: inline-flex; 
-  align-items: center; 
-  margin-top: 5px;
-}
-.columna-hora-fija { 
-  font-weight: 800; 
-  color: #003366; 
-  background: #f8fafc !important; 
-  width: 15%; 
-}
-
-@media screen and (max-width: 600px) {
-  th, td { font-size: 0.65rem; padding: 5px 1px; }
-  .btn-wa-icon { font-size: 1.3rem; }
-}
-
-/* ==============================================
-   🌟 MODAL DE GUÍA PREMIUM
-   ============================================== */
-.overlay-modal { 
-  position: fixed; 
-  top: 0; left: 0; right: 0; bottom: 0; 
-  background: rgba(15, 23, 42, 0.7); 
-  backdrop-filter: blur(4px); 
-  display: flex; 
-  justify-content: center; 
-  align-items: center; 
-  z-index: 1000; 
-}
-
-.modal-premium {
-  background: #ffffff; 
-  width: 90%; 
-  max-width: 360px;
-  border-radius: 20px; 
-  box-shadow: 0 20px 40px rgba(0,0,0,0.25);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  
-  .modal-header {
-    background: #f8fafc;
-    padding: 20px 20px 15px;
-    text-align: center;
-    border-bottom: 1px solid #e2e8f0;
-    
-    ion-icon {
-      font-size: 2.5rem;
-      color: #003366;
-      margin-bottom: 5px;
-    }
-
-    h3 { 
-      color: #003366; 
-      font-weight: 900; 
-      margin: 0; 
-      font-size: 1.1rem; 
-    }
-  }
-
-  .modal-body {
-    padding: 20px;
-
-    .modal-desc {
-      font-size: 0.85rem; 
-      color: #475569; 
-      margin-top: 0;
-      margin-bottom: 20px;
-    }
-
-    /* Diseño de la lista de pasos */
-    .step-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 15px;
-      margin-bottom: 15px;
-      background: #f1f5f9;
-      padding: 12px;
-      border-radius: 12px;
-      border-left: 4px solid #EAB308;
-
-      ion-icon {
-        font-size: 1.8rem;
-        color: #003366;
-        margin-top: 2px;
-      }
-
-      strong {
-        color: #003366;
-        font-size: 0.95rem;
-        display: block;
-        margin-bottom: 3px;
-      }
-
-      p {
-        margin: 0;
-        font-size: 0.8rem;
-        color: #475569;
-        line-height: 1.3;
-      }
-    }
-  }
-
-  .modal-footer {
-    padding: 0 20px 20px;
-    
-    .btn-enviar {
-      margin: 0;
-      font-weight: 800;
-      height: 45px;
-      --border-radius: 10px;
-      --background: #EAB308;
-      --background-hover: #d97706;
-      --color: #003366;
-      letter-spacing: 0.5px;
-    }
-  }
-}
-
-/* ==============================================
-   🌟 ESTILOS DE LA EVALUACIÓN DE TUTORES
-   ============================================== */
-.pregunta-evaluacion {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 12px;
-  margin-bottom: 12px;
-  text-align: center;
-
-  p {
-    margin: 0 0 10px 0;
-    font-size: 0.85rem;
-    color: #003366;
-    font-weight: 700;
-  }
-
-  .estrellas-contenedor {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-
-    ion-icon {
-      font-size: 2.2rem;
-      color: #cbd5e1; /* Gris inactivo */
-      cursor: pointer;
-      transition: transform 0.2s, color 0.2s;
-
-      &:active {
-        transform: scale(0.8);
-      }
-
-      &.activa {
-        color: #EAB308; /* Dorado Premium */
-      }
-    }
-  }
-}
-/* ==============================================
-   🌟 ESTILOS DE TÉRMINOS Y CONDICIONES
-   ============================================== */
-.caja-texto-legal {
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 15px;
-  max-height: 250px;
-  overflow-y: auto;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
-
-  p {
-    font-size: 0.85rem;
-    color: #475569;
-    line-height: 1.4;
-    margin-top: 0;
-    margin-bottom: 12px;
-    text-align: justify;
-
-    strong {
-      color: #003366;
-    }
-  }
-
-  p:last-child {
-    margin-bottom: 0;
-  }
-}
-/* ==============================================
-   🌟 TARJETAS DE CALIFICACIÓN NATIVAS
-   ============================================== */
-.tarjeta-pregunta {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 18px 15px;
-  margin-bottom: 20px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.03);
-}
-
-.texto-pregunta {
-  color: #003366;
-  font-size: 0.9rem;
-  font-weight: 700;
-  margin-top: 0;
-  margin-bottom: 18px;
-  text-align: center;
-  line-height: 1.3;
-}
-
-/* Fila de números */
-.escala-numerica {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 10px;
-  margin-bottom: 8px;
-}
-
-.opcion-numero {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #f1f5f9;
-  color: #64748b;
-  font-size: 1.1rem;
-  font-weight: 800;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  /* 🌟 ESTADO ACTIVO */
-  &.activo {
-    background: #003366;
-    color: #ffffff;
-    border-color: #EAB308;
-    transform: scale(1.15);
-    box-shadow: 0 4px 10px rgba(0, 51, 102, 0.25);
-  }
-
-  &:active {
-    transform: scale(0.95);
-  }
-}
-
-.leyenda-escala {
-  display: flex;
-  justify-content: space-between;
-  padding: 0 5px;
-  font-size: 0.7rem;
-  color: #94a3b8;
-  font-weight: 600;
-}
-
-/* Botón Final */
-.btn-enviar-calificacion {
-  --background: #EAB308;
-  --background-hover: #d97706;
-  --color: #003366;
-  --border-radius: 10px;
-  font-weight: 900;
-  height: 50px;
-  margin: 0;
-
-  &[disabled] {
-    opacity: 0.6;
-  }
-}
-/* 🌟 ESTILO PARA ITI POPOVER TI ORAS */
-::ng-deep .popover-horario {
-  --background: #ffffff; /* Puraw a background */
-  --color: #003366; /* Asul a letra */
-  --border-radius: 10px;
-}
-
-::ng-deep .popover-horario ion-item {
-  --background: #ffffff;
-  --color: #003366;
-  font-weight: 500;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-::ng-deep .popover-horario ion-radio {
-  --color: #003366;
-  --color-checked: #d97706; /* Duyaw a kolor ti gietaes */
-}
-
-::ng-deep .popover-horario ion-item.item-radio-checked {
-  --color: #d97706;
-  font-weight: bold;
-}
-/* --- MODAL AZUL INTELIGENTE --- */
 .modal-azul {
-  background: #003366;
-  padding: 25px;
-  border-radius: 15px;
-  text-align: center;
-  width: 90%;
-  max-width: 350px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-  position: relative;
-  border: 2px solid #EAB308;
+  background: #003366; padding: 25px; border-radius: 15px; text-align: center;
+  width: 90%; max-width: 350px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 2px solid #EAB308;
+  max-height: 90vh; overflow-y: auto;
 }
 
 .btn-blanco {
-  background: white;
-  color: #003366;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 10px;
-  font-weight: 900;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  margin-bottom: 10px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  background: white; color: #003366; border: none; padding: 12px 20px;
+  border-radius: 10px; font-weight: 900; font-size: 1rem; display: flex;
+  align-items: center; justify-content: center; gap: 8px; width: 100%; margin-bottom: 10px;
 }
-
 .btn-rojo-texto {
-  background: transparent;
-  color: #fca5a5;
-  box-shadow: none;
-  border: 1px solid rgba(252, 165, 165, 0.3);
+  background: transparent; color: #fca5a5; box-shadow: none; border: 1px solid rgba(252, 165, 165, 0.3);
 }
 
-/* --- LISTA PREDICTIVA (AUTOCOMPLETAR) --- */
 .lista-sugerencias {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border-radius: 8px;
-  margin-top: 5px;
-  max-height: 180px;
-  overflow-y: auto;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
-  z-index: 999999; /* Asegura que pase por encima de los otros botones */
-  border: 1px solid #cbd5e1;
+  position: absolute; top: 100%; left: 0; right: 0; background: white; border-radius: 8px;
+  margin-top: 5px; max-height: 180px; overflow-y: auto; box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+  z-index: 999999; border: 1px solid #cbd5e1;
+}
+.item-sugerencia {
+  padding: 12px 15px; font-size: 0.85rem; color: #003366; font-weight: bold;
+  border-bottom: 1px solid #f1f5f9; cursor: pointer;
 }
 
-.item-sugerencia {
-  padding: 12px 15px;
-  font-size: 0.85rem;
+/* ==============================================
+   🌟 MODIFICACIONES PARA LOS SELECTS Y CALENDARIO
+   ============================================== */
+::ng-deep .popover-blanco-gietaes {
+  --background: #ffffff !important;
+  --color: #003366 !important;
+}
+::ng-deep .popover-blanco-gietaes ion-item {
+  --background: #ffffff !important;
+  --color: #003366 !important;
+  font-weight: bold;
+}
+::ng-deep .popover-blanco-gietaes ion-radio {
+  --color: #003366 !important;
+  --color-checked: #EAB308 !important;
+}
+
+/* ==============================================
+   🌟 MEJORA EL CALENDARIO (ION-DATETIME) CON CONTRASTE PERFECTO
+   ============================================== */
+ion-datetime {
+  /* Fondo y textos generales */
+  --background: #ffffff;
+  --title-color: #003366; /* Azul institucional para el título */
+  
+  /* Color principal del texto (Días del mes) */
+  --ion-text-color: #003366; 
+
+  /* Color de los días de la semana (D, L, M, M, J, V, S) */
+  --ion-color-step-600: #475569; /* Gris oscuro para contraste */
+
+  /* Colores de selección (Círculo de fecha seleccionada) */
+  --ion-color-base: #003366; /* Círculo azul oscuro */
+  --ion-color-primary: #003366; 
+  --ion-color-primary-contrast: #ffffff; /* Letra blanca dentro del círculo azul */
+  
+  /* Día actual (Hoy) */
+  --ion-color-step-850: #EAB308; /* Anillo dorado para el día actual */
+
+  /* Días bloqueados (deshabilitados) */
+  --ion-color-step-300: #cbd5e1; /* Gris claro */
+  --ion-color-step-350: #cbd5e1; /* Gris claro */
+
+  border-radius: 8px;
+}
+
+/* 🌟 Forzar colores específicos en el Shadow DOM del calendario */
+::ng-deep ion-datetime::part(month-year-button) {
+  color: #003366; /* Mes y Año en azul oscuro */
+  font-weight: 900;
+}
+
+::ng-deep ion-datetime::part(time-button) {
   color: #003366;
   font-weight: bold;
-  border-bottom: 1px solid #f1f5f9;
-  cursor: pointer;
-  transition: background 0.2s ease;
 }
 
-.item-sugerencia:active {
-  background: #f8fafc;
-  color: #d97706;
+/* 🌟 Asegurar que los días del mes y de la semana se pinten correctamente */
+::ng-deep ion-datetime::part(calendar-day) {
+  color: #003366; /* Días del mes en azul oscuro */
+  font-weight: 600;
+}
+
+::ng-deep ion-datetime::part(calendar-day disabled) {
+  color: #94a3b8; /* Días deshabilitados en gris */
+}
+
+::ng-deep ion-datetime::part(calendar-day-of-week) {
+  color: #475569; /* Iniciales de los días de la semana en gris oscuro */
+  font-weight: 700;
+}
+/* ==============================================
+   🌟 CORRECCIÓN DEFINITIVA DE CONTRASTE Y ESPACIO (MODAL PREMIUM)
+   ============================================== */
+.overlay-modal { 
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0; 
+  background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(4px); 
+  display: flex; justify-content: center; align-items: center; z-index: 1000; 
+}
+
+.modal-premium { 
+  background: #ffffff !important; /* 🌟 Fuerza el fondo a blanco siempre */
+  width: 90%; max-width: 360px; border-radius: 20px; 
+  box-shadow: 0 20px 40px rgba(0,0,0,0.25); 
+  overflow: hidden; 
+  display: flex; flex-direction: column; 
+  max-height: 75vh; /* 🌟 EVITA QUE CHOQUE CON EL TAB BAR DE ABAJO */
+}
+
+.modal-premium .modal-header { 
+  background: #f8fafc !important; padding: 20px 20px 15px; 
+  text-align: center; border-bottom: 1px solid #e2e8f0; 
+}
+
+/* 🌟 Fuerza los títulos a ser azul oscuro (evita que se hagan blancos) */
+.modal-premium .modal-header h2, 
+.modal-premium .modal-header h3, 
+.modal-premium .modal-header span {
+  color: #003366 !important;
+  font-weight: 900;
+  margin: 0;
+}
+
+.modal-premium .modal-body { 
+  padding: 20px; 
+  overflow-y: auto; /* 🌟 Permite hacer scroll interno si el teléfono es pequeño */
+}
+
+.step-item { 
+  display: flex; align-items: flex-start; gap: 15px; margin-bottom: 15px; 
+  background: #f1f5f9 !important; padding: 12px; border-radius: 12px; 
+  border-left: 4px solid #EAB308 !important; 
+}
+
+/* 🌟 Fuerza los textos de los pasos a ser legibles siempre */
+.step-item h4 { 
+  color: #003366 !important; 
+  margin: 0 0 5px 0; font-weight: 800; font-size: 0.95rem; 
+}
+.step-item p, .step-item span, .step-item div { 
+  color: #475569 !important; 
+  margin: 0; font-size: 0.85rem; line-height: 1.4; 
+}
+.step-item ion-icon { 
+  color: #EAB308 !important; font-size: 1.2rem; 
+}
+
+.modal-premium .modal-footer { 
+  padding: 15px 20px 20px; 
+  background: #ffffff !important; 
+}
+
+.btn-enviar { 
+  margin: 0; font-weight: 900; height: 45px; 
+  --border-radius: 10px; --background: #EAB308 !important; 
+  --color: #003366 !important; width: 100%; letter-spacing: 1px;
 }
